@@ -1,0 +1,12 @@
+{
+  "name": "granular-engine",
+  "exports": "createGranularEngine",
+  "version": "0.1.0",
+  "description": "Granular Engine",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Karim Barkati",
+  "license": "BSD3"
+}
