@@ -1,12 +1,16 @@
 {
   "name": "granular-engine",
-  "exports": "createGranularEngine",
-  "version": "0.1.0",
-  "description": "Granular Engine",
+  "version": "1.2.5",
+  "description": "WAVE audio library Granular engine",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Karim Barkati",
-  "license": "BSD3"
+  "authors": [
+    "Karim Barkati",
+    "Norbert Schnell",
+    "Victor Saiz"
+  ],
+  "license": "BSD-2-Clause"
 }

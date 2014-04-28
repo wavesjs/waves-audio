@@ -1,41 +1,28 @@
 /**
- * @fileoverview WAVE audio library element: a web audio granular engine, separated from the player.
- * @author Karim Barkati
- * @version 0.1.1 (CommonJS compliance)
+ * @fileoverview WAVE audio library element: a web audio granular engine.
+ * @author Karim.Barkati@ircam.fr, Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr
+ * @version 1.2.5
  */
-
 
 
 /**
- * Function invocation pattern for a granular engine.
+ * Function invocation pattern for object creation.
  * @public
  */
-var createGranularEngine = function createGranularEngine(audioContext, audioBuffer) {
+
+var createGranularEngine = function createGranularEngine(audioBuffer, audioContext, optName) {
   'use strict';
 
   /**
-   * Granular engine object as an ecmascript5 properties object.
+   * ECMAScript5 property descriptors object.
    */
-   
-  var granularEngineObject = {
 
+  var granularEngineObject = {
 
     // Properties with default values
     period: { // in sec
       writable: true,
       value: 0.01
-    },
-    lookahead: { // How frequently to call scheduling function (sec)
-      writable: true,
-      value: 0.025
-    },
-    scheduleAheadTime: { // How far ahead to schedule audio (sec)
-      writable: true,
-      value: 0.1
-    },
-    player: { // if a player is registered then "slave" mode for position handling
-      writable: true,
-      value: false
     },
     position: { // buffer position (in sec), assumed not normalized
       writable: true,
@@ -63,7 +50,7 @@ var createGranularEngine = function createGranularEngine(audioContext, audioBuff
     },
     maxGrainAmplitude: {
       writable: true,
-      value: 0.1
+      value: 0.2
     },
 
     // Other properties
@@ -76,13 +63,7 @@ var createGranularEngine = function createGranularEngine(audioContext, audioBuff
     bufferDuration: {
       writable: true
     },
-    nextGrainTime: {
-      writable: true
-    },
-    nextGrainPosition: { // For "position" variable replacement, when namespaced binding will be there...
-      writable: true
-    },
-    timerID: {
+    nextEventTime: {
       writable: true
     },
     gainNode: {
@@ -91,61 +72,62 @@ var createGranularEngine = function createGranularEngine(audioContext, audioBuff
     outputNode: {
       writable: true
     },
-    syncTime: {
-      writable: true
-    },
-    syncPosition: {
-      writable: true
-    },
     gain: {
       writable: true
     },
+    name: {
+      writable: true,
+    },
+
 
     /**
-     * Mandatory initialize method.
+     * Mandatory initialization method.
+     * @public
+     * @chainable
      */
     init: {
       enumerable: true,
-      value: function(audioContext, audioBuffer) {
+      value: function(audioBuffer, audioContext, optName) {
 
         this.context = audioContext;
         this.setBuffer(audioBuffer);
+        this.name = optName;
 
         // Create web audio nodes, relying on the given audio context.
         this.gainNode = this.context.createGain();
         this.outputNode = this.context.createGain(); // dummy node to provide a web audio-like output node
         this.connect(this.context.destination); // default destination
 
+        makeSchedulable(this); // an audio engine has to inherit schedulable properties
+
         return this; // for chainability
       }
     },
 
     /**
-     * Start and stop grain scheduling.
+     * Recommended self-checking public method.
      * @public
-     * @chainable
      */
-    enable: {
+    isValid: {
       enumerable: true,
-      value: function(bool) {
-        if (bool) {
-          if (this.buffer) {
-            this.enabled = true;
-            // schedule next grain immediately
-            this.nextGrainTime = this.context.currentTime;
-            if (this.player) {
-              this.player.synchronize(this.nextGrainTime, this.position);
-            }
-            this.schedule();
-          } else {
-            throw "No buffer is set";
-          }
+      value: function() {
+        if (this.buffer) {
+          return true;
         } else {
-          // remove the current settimeout
-          clearTimeout(this.timerID);
-          this.enabled = false;
+          console.error("No buffer is set");
+          return false;
         }
-        return this; // for chainability        
+      }
+    },
+
+    /**
+     * Optional phase resetting public method.
+     * @public
+     */
+    resetPhase: {
+      enumerable: true,
+      value: function() {
+        // This engine does not manage phase.
       }
     },
 
@@ -201,74 +183,52 @@ var createGranularEngine = function createGranularEngine(audioContext, audioBuff
     },
 
     /**
-     * Set external player to manage position advancement in the buffer.
+     * Set buffer position.
      * @public
      * @chainable
      */
-    setPlayer: {
+    seek: {
       enumerable: true,
-      value: function(player) {
-        if (player) {
-          this.player = player;
-          return this; // for chainability
+      value: function(position) {
+        if (!isNaN(parseFloat(position))) { // number check
+          if (position >= 0 && position <= this.bufferDuration) {
+            this.position = position;
+            return this;
+          } else {
+            console.log("Position is out of bounds");
+          }
         } else {
-          throw "Player setting error";
+          throw "Seeking error";
         }
       }
     },
 
     /**
-     * Coarse-grained scheduling of audio grains.
+     * Grain factory.
      * @private
      */
-    schedule: {
+    makeNextEvent: {
       enumerable: false,
       value: function() {
-        var that = this;
+        var source = this.context.createBufferSource();
+        var resamplingRate = this.computeResamplingRate();
+        var grainDuration = this.duration / resamplingRate;
+        var grainPosition = this.computeGrainPosition(grainDuration);
+        var grainEnvelopeNode = this.makeGrainEnvelope(grainDuration);
 
-        // While there are grains that will need to play before the next interval, 
-        // schedule them and advance the time pointer.
-        while (this.nextGrainTime <= this.context.currentTime + this.scheduleAheadTime) {
-          this.makeGrain();
-          this.nextGrainTime = this.computeNextGrainTime();
-        }
+        source.buffer = this.buffer;
+        source.playbackRate.value = resamplingRate;
 
-        // Store the setTimeout ID to remove it later.
-        this.timerID = setTimeout(function() {
-          that.schedule();
-        }, that.lookahead * 1000);
+        source.connect(grainEnvelopeNode);
+        grainEnvelopeNode.connect(this.gainNode);
+
+        // args: schedule time, buffer offset, duration (all in seconds)
+        source.start(this.nextEventTime, grainPosition, this.duration);
       }
     },
 
     /**
-     * Main grain factory.
-     * @private
-     */
-    makeGrain: {
-      enumerable: false,
-      value: function() {
-        if (this.enabled) {
-
-          var source = this.context.createBufferSource();
-          var resamplingRate = this.computeResamplingRate();
-          var grainDuration = this.duration / resamplingRate;
-          var grainPosition = this.computeGrainPosition(grainDuration);
-          var grainEnvelopeNode = this.makeGrainEnvelope(grainDuration);
-
-          source.buffer = this.buffer;
-          source.playbackRate.value = resamplingRate;
-
-          source.connect(grainEnvelopeNode);
-          grainEnvelopeNode.connect(this.gainNode);
-
-          // args: schedule time, buffer offset, duration (all in seconds)
-          source.start(this.nextGrainTime, grainPosition, this.duration);
-        }
-      }
-    },
-
-    /**
-     * Compute grain position from external player delegation or direct interaction.
+     * Compute grain position from direct interaction or external transporter delegation.
      * @private
      */
     computeGrainPosition: {
@@ -276,9 +236,16 @@ var createGranularEngine = function createGranularEngine(audioContext, audioBuff
       value: function(grainDuration) {
         var grainPosition;
 
-        // Update grain position on auto-play, from last synchronization
-        if (this.player) {
-          this.position = this.player.getPositionAtTime(this.nextGrainTime) % this.bufferDuration;
+        // Update grain position when slaved, from last synchronization
+        if (this.isTransportable) {
+          var position = this.transporter.getPositionAtTime(this.nextEventTime);
+
+          if (position >= 0 && position <= this.bufferDuration) {
+            this.position = position;
+          } else {
+            this.notifyEnd();
+            console.log("Position is out of bounds");
+          }
         }
 
         grainPosition = this.randomizeGrainPosition(this.position % this.bufferDuration);
@@ -313,12 +280,12 @@ var createGranularEngine = function createGranularEngine(audioContext, audioBuff
         var attackDuration = 0.5 * grainDuration;
         var releaseDuration = 0.5 * grainDuration;
 
-        var attackEndTime = this.nextGrainTime + attackDuration;
-        var grainEndTime = this.nextGrainTime + grainDuration;
+        var attackEndTime = this.nextEventTime + attackDuration;
+        var grainEndTime = this.nextEventTime + grainDuration;
         var releaseStartTime = grainEndTime - releaseDuration;
 
         // make attack and release
-        envelopeNode.gain.setValueAtTime(0.0, this.nextGrainTime);
+        envelopeNode.gain.setValueAtTime(0.0, this.nextEventTime);
         envelopeNode.gain.linearRampToValueAtTime(this.maxGrainAmplitude, attackEndTime);
 
         if (releaseStartTime > attackEndTime) {
@@ -327,22 +294,6 @@ var createGranularEngine = function createGranularEngine(audioContext, audioBuff
 
         envelopeNode.gain.linearRampToValueAtTime(0.0, grainEndTime);
         return envelopeNode;
-      }
-    },
-
-    /**
-     * Compute next grain time depending on the period.
-     * @private
-     */
-    computeNextGrainTime: {
-      enumerable: false,
-      value: function() {
-        if (this.enabled) {
-          this.nextGrainTime = this.nextGrainTime + this.period;
-        } else {
-          this.nextGrainTime = undefined; // ensure a false value to stop the scheduling loop
-        }
-        return this.nextGrainTime;
       }
     },
 
@@ -360,14 +311,66 @@ var createGranularEngine = function createGranularEngine(audioContext, audioBuff
       }
     },
 
-  };
+    // Required schedulable properties.
+
+    /**
+     * Compute next grain time depending on the period.
+     * @private
+     */
+    computeNextEventTime: {
+      enumerable: false,
+      value: function() {
+        this.nextEventTime = this.nextEventTime + this.period;
+        return this.nextEventTime;
+      }
+    },
+
+    /**
+     * Get next grain time.
+     * @private
+     */
+    getNextEventTime: {
+      enumerable: false,
+      value: function() {
+        return this.nextEventTime;
+      }
+    },
+
+    /**
+     * Set next grain time.
+     * @private
+     */
+    setNextEventTime: {
+      enumerable: false,
+      value: function(time) {
+        this.nextEventTime = time;
+      }
+    },
+
+    /**
+     * Notify end to the Transporter object.
+     * @private
+     */
+    notifyEnd: {
+      enumerable: false,
+      value: function() {
+        if (this.transporter) {
+          console.log("notifyEnd", this);
+          this.transporter.onTransportableObjectEnded(this);
+        } else {
+          throw "notifyEnd error";
+        }
+      }
+    },
+
+  }; // End of object definition.
 
 
-  // Instantiate a granular engine with audio context and buffer.
+  // Instantiate an object and initialize it.
   var granularEngine = Object.create({}, granularEngineObject);
-  return granularEngine.init(audioContext, audioBuffer);
+  return granularEngine.init(audioBuffer, audioContext, optName);
 };
 
 
 // CommonJS function export
-module.exports = createGranularEngine;
+// module.exports = createGranularEngine;
