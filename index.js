@@ -373,4 +373,4 @@ var createGranularEngine = function createGranularEngine(audioBuffer, audioConte
 
 
 // CommonJS function export
-// module.exports = createGranularEngine;
+module.exports = createGranularEngine;
