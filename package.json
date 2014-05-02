@@ -3,6 +3,7 @@
   "version": "3.2.0",
   "description": "WAVE audio library Scheduler",
   "main": "index.js",
+  "exports": "createScheduler",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
