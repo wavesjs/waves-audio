@@ -1,7 +1,7 @@
 /**
  * @fileoverview WAVE audio library element: a web audio scheduler.
  * @author Karim.Barkati@ircam.fr, Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr
- * @version 3.2.0
+ * @version 3.2.1
  */
 
 
@@ -140,9 +140,9 @@ var createScheduler = function createScheduler(audioContext) {
           //   nextEventTime = schedulable.makeNextEvent();
           // }
 
-          while (schedulable.getNextEventTime() <= this.getCurrentTime() + this.scheduleAheadTime) {
+          while (schedulable.getNextTime() <= this.getCurrentTime() + this.scheduleAheadTime) {
             // if (schedulable.isEnabled) {
-            schedulable.makeNextEvent();
+            schedulable.makeAtNextTime();
             schedulable.computeNextEventTime();
             // } else {
             // schedulable.setNextEventTime(undefined); // ensure a false value to stop the scheduling loop
