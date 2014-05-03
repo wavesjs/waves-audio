@@ -1,7 +1,7 @@
 /**
  * @fileoverview WAVE audio library element: a web audio granular engine.
  * @author Karim.Barkati@ircam.fr, Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr
- * @version 1.2.5
+ * @version 1.2.6
  */
 
 
@@ -207,7 +207,7 @@ var createGranularEngine = function createGranularEngine(audioBuffer, audioConte
      * Grain factory.
      * @private
      */
-    makeNextEvent: {
+    makeNextGrain: {
       enumerable: false,
       value: function() {
         var source = this.context.createBufferSource();
@@ -311,10 +311,25 @@ var createGranularEngine = function createGranularEngine(audioBuffer, audioConte
       }
     },
 
-    // Required schedulable properties.
+
+    //////////////////////////////////////
+    // Required schedulable properties. //
+    //////////////////////////////////////
+
 
     /**
-     * Compute next grain time depending on the period.
+     * Make next event.
+     * @private
+     */
+    makeAtNextTime: {
+      enumerable: false,
+      value: function() {
+        this.makeNextGrain();
+      }
+    },
+
+    /**
+     * Compute next event time.
      * @private
      */
     computeNextEventTime: {
@@ -326,10 +341,10 @@ var createGranularEngine = function createGranularEngine(audioBuffer, audioConte
     },
 
     /**
-     * Get next grain time.
+     * Get next event time.
      * @private
      */
-    getNextEventTime: {
+    getNextTime: {
       enumerable: false,
       value: function() {
         return this.nextEventTime;
@@ -337,7 +352,7 @@ var createGranularEngine = function createGranularEngine(audioBuffer, audioConte
     },
 
     /**
-     * Set next grain time.
+     * Set next event time.
      * @private
      */
     setNextEventTime: {
