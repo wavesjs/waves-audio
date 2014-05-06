@@ -4,6 +4,7 @@
  * @version 3.2.1
  */
 
+var nodeUuid = require("node-uuid");
 
 /**
  * Function invocation pattern for object creation.

@@ -14,6 +14,9 @@
     "Victor Saiz"
   ],
   "license": "BSD-2-Clause",
+  "dependencies": {
+    "node-uuid": "*"
+  },
   "devDependencies": {
     "grunt": "~0.4.2",
     "browserify": "~3.32.0",
