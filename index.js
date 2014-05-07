@@ -243,8 +243,10 @@ var createGranularEngine = function createGranularEngine(audioBuffer, audioConte
           if (position >= 0 && position <= this.bufferDuration) {
             this.position = position;
           } else {
-            this.notifyEnd();
-            console.log("Position is out of bounds");
+            console.log("Grain position is out of bounds");
+            if (this.hasOwnProperty("notifyEnd")) {
+              this.notifyEnd();
+            }
           }
         }
 
@@ -359,22 +361,6 @@ var createGranularEngine = function createGranularEngine(audioBuffer, audioConte
       enumerable: false,
       value: function(time) {
         this.nextEventTime = time;
-      }
-    },
-
-    /**
-     * Notify end to the Transporter object.
-     * @private
-     */
-    notifyEnd: {
-      enumerable: false,
-      value: function() {
-        if (this.transporter) {
-          console.log("notifyEnd", this);
-          this.transporter.onTransportableObjectEnded(this);
-        } else {
-          throw "notifyEnd error";
-        }
       }
     },
 
