@@ -1,7 +1,7 @@
 /**
  * @fileoverview WAVE audio library element: a web audio scheduler.
  * @author Karim.Barkati@ircam.fr, Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr
- * @version 3.2.1
+ * @version 3.2.2
  */
 
 var nodeUuid = require("node-uuid");
@@ -146,7 +146,7 @@ var createScheduler = function createScheduler(audioContext) {
             schedulable.makeAtNextTime();
             schedulable.computeNextEventTime();
             // } else {
-            // schedulable.setNextEventTime(undefined); // ensure a false value to stop the scheduling loop
+            // schedulable.setNextEventTime(null); // ensure a false value to stop the scheduling loop
             // }
           }
         }
