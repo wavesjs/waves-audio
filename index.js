@@ -1,7 +1,7 @@
 /**
  * @fileoverview WAVE audio library element: a web audio scheduler.
  * @author Karim.Barkati@ircam.fr, Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr
- * @version 3.3.0
+ * @version 3.3.1
  */
 
 var nodeUuid = require("node-uuid");
@@ -11,7 +11,7 @@ var nodeUuid = require("node-uuid");
  * @public
  */
 
-var createScheduler = function createScheduler(audioContext) {
+var createScheduler = function createScheduler(audioContext, optName) {
   'use strict';
 
   /**
@@ -36,6 +36,10 @@ var createScheduler = function createScheduler(audioContext) {
       writable: true,
       value: false
     },
+    name: {
+      writable: true,
+      value: "Scheduler"
+    },
 
     // Other properties
     context: {
@@ -52,9 +56,10 @@ var createScheduler = function createScheduler(audioContext) {
      */
     init: {
       enumerable: true,
-      value: function(audioContext) {
+      value: function(audioContext, optName) {
 
         this.context = audioContext;
+        this.name = optName;
 
         return this; // for chainability
       }
@@ -174,7 +179,7 @@ var createScheduler = function createScheduler(audioContext) {
 
   // Instantiate an object.
   var scheduler = Object.create({}, schedulerObject);
-  return scheduler.init(audioContext);
+  return scheduler.init(audioContext, optName);
 };
 
 
