@@ -1,7 +1,7 @@
 /**
  * @fileoverview WAVE audio library element: a web audio scheduler.
  * @author Karim.Barkati@ircam.fr, Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr
- * @version 3.2.2
+ * @version 3.3.0
  */
 
 var nodeUuid = require("node-uuid");
@@ -125,32 +125,22 @@ var createScheduler = function createScheduler(audioContext) {
       enumerable: false,
       value: function() {
         var that = this;
-        var schedulable = null;
-        var length = this.schedulingList.length;
-        var i;
-        for (i = 0; i < length; i++) {
-          schedulable = this.schedulingList[i];
-          // console.log("schedulable.nextEventTime <= this.getCurrentTime() + this.scheduleAheadTime : ", schedulable.nextEventTime, this.getCurrentTime(), this.scheduleAheadTime);
+        var scheduledObject = null;
+        var nextEventTime = null;
+        var i = null;
+
+        for (i = 0; i < this.schedulingList.length; i++) {
+          // For each scheduled object.
+          scheduledObject = this.schedulingList[i];
 
           // While there are events that will need to play before the next interval, 
           // schedule them and advance the time pointer.
-
-          // Alternative implementation.
-          // var nextEventTime = schedulable.getNextEventTime();
-          // while (nextEventTime <= this.getCurrentTime() + this.scheduleAheadTime) {
-          //   nextEventTime = schedulable.makeNextEvent();
-          // }
-
-          while (schedulable.getNextTime() <= this.getCurrentTime() + this.scheduleAheadTime) {
-            // if (schedulable.isEnabled) {
-            schedulable.makeAtNextTime();
-            schedulable.computeNextEventTime();
-            // } else {
-            // schedulable.setNextEventTime(null); // ensure a false value to stop the scheduling loop
-            // }
+          nextEventTime = scheduledObject.getNextTime();
+          while (nextEventTime <= this.getCurrentTime() + this.scheduleAheadTime) {
+            nextEventTime = scheduledObject.makeEventAndComputeNextTime();
           }
         }
-        // Store the setTimeout ID to remove it later.
+        // Store the setTimeout ID to allow removing.
         this.timerID = setTimeout(function() {
           that.run();
         }, that.schedulingPeriod * 1000);
