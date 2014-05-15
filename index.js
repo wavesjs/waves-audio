@@ -346,7 +346,6 @@ var createGranularEngine = function createGranularEngine(audioBuffer, audioConte
     /**
      * Set next event time.
      * @private
-     * @todo Unused?
      */
     setNextEventTime: {
       enumerable: false,
