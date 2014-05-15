@@ -347,12 +347,13 @@ var createGranularEngine = function createGranularEngine(audioBuffer, audioConte
      * Set next event time.
      * @private
      */
-    setNextEventTime: {
+    setNextTime: {
       enumerable: false,
       value: function(time) {
         this.nextEventTime = time;
       }
     },
+
 
   }; // End of object definition.
 
