@@ -1,7 +1,7 @@
 /**
  * @fileoverview WAVE audio library element: a web audio granular engine.
  * @author Karim.Barkati@ircam.fr, Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr
- * @version 1.2.7
+ * @version 1.2.8
  */
 
 
@@ -238,7 +238,7 @@ var createGranularEngine = function createGranularEngine(audioBuffer, audioConte
 
         // Update grain position when slaved, from last synchronization
         if (this.isTransportable) {
-          var position = this.transporter.getPositionAtTime(this.nextEventTime);
+          var position = this.timebase.getPositionAtTime(this.nextEventTime);
 
           if (position >= 0 && position <= this.bufferDuration) {
             this.position = position;
