@@ -1,7 +1,7 @@
 /**
  * @fileoverview WAVE audio library element: a web audio granular engine.
  * @author Karim.Barkati@ircam.fr, Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr
- * @version 1.2.8
+ * @version 1.2.9
  */
 
 
@@ -10,7 +10,7 @@
  * @public
  */
 
-var createGranularEngine = function createGranularEngine(audioBuffer, audioContext, optName) {
+var createGranularEngine = function createGranularEngine(audioBuffer, optName) {
   'use strict';
 
   /**
@@ -54,9 +54,6 @@ var createGranularEngine = function createGranularEngine(audioBuffer, audioConte
     },
 
     // Other properties
-    context: {
-      writable: true
-    },
     buffer: {
       writable: true
     },
@@ -87,16 +84,15 @@ var createGranularEngine = function createGranularEngine(audioBuffer, audioConte
      */
     init: {
       enumerable: true,
-      value: function(audioBuffer, audioContext, optName) {
+      value: function(audioBuffer, optName) {
 
-        this.context = audioContext;
         this.setBuffer(audioBuffer);
         this.name = optName;
 
-        // Create web audio nodes, relying on the given audio context.
-        this.gainNode = this.context.createGain();
-        this.outputNode = this.context.createGain(); // dummy node to provide a web audio-like output node
-        this.connect(this.context.destination); // default destination
+        // Create web audio nodes, relying on the web audio context.
+        this.gainNode = audioContext.createGain();
+        this.outputNode = audioContext.createGain(); // dummy node to provide a web audio-like output node
+        this.connect(audioContext.destination); // default destination
 
         makeSchedulable(this); // an audio engine has to inherit schedulable properties
 
@@ -140,7 +136,7 @@ var createGranularEngine = function createGranularEngine(audioBuffer, audioConte
       enumerable: true,
       value: function(target) {
         this.outputNode = target;
-        this.gainNode.connect(this.outputNode || this.context.destination);
+        this.gainNode.connect(this.outputNode || audioContext.destination);
         return this; // for chainability
       }
     },
@@ -210,7 +206,7 @@ var createGranularEngine = function createGranularEngine(audioBuffer, audioConte
     makeNextGrain: {
       enumerable: false,
       value: function() {
-        var source = this.context.createBufferSource();
+        var source = audioContext.createBufferSource();
         var resamplingRate = this.computeResamplingRate();
         var grainDuration = this.duration / resamplingRate;
         var grainPosition = this.computeGrainPosition(grainDuration);
@@ -278,7 +274,7 @@ var createGranularEngine = function createGranularEngine(audioBuffer, audioConte
     makeGrainEnvelope: {
       enumerable: false,
       value: function(grainDuration) {
-        var envelopeNode = this.context.createGain();
+        var envelopeNode = audioContext.createGain();
         var attackDuration = 0.5 * grainDuration;
         var releaseDuration = 0.5 * grainDuration;
 
@@ -360,7 +356,7 @@ var createGranularEngine = function createGranularEngine(audioBuffer, audioConte
 
   // Instantiate an object and initialize it.
   var granularEngine = Object.create({}, granularEngineObject);
-  return granularEngine.init(audioBuffer, audioContext, optName);
+  return granularEngine.init(audioBuffer, optName);
 };
 
 
