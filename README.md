@@ -17,11 +17,8 @@ The `scheduler` object provides these methods and tuning attributes:
 ```js
 // var createScheduler = require("create-scheduler");
 
-// we need a web audio context to get its clock
-var audioContext = new AudioContext();
-
 // let's instantiate a scheduler
-var scheduler = createScheduler(audioContext);
+var scheduler = createScheduler();
 
 // we can create an audio engine based on scheduled events
 var engine = function engine(scheduler) {
@@ -50,15 +47,16 @@ The `scheduler` object exposes the following API:
 
 Method | Description
 --- | ---
- `scheduler.add(schedulableObject)` | Schedule a schedulable object.
+`scheduler.add(schedulableObject)` | Schedule a schedulable object.
 `scheduler.remove(scheduledObject)` | Unschedule a scheduled object.
 `scheduler.getSchedulingPeriod()` | Get the scheduling period.
 `scheduler.getCurrentTime()` | Get the current time of the web audio context.
 
 Attribute | Default | Description
 --- | --- | ---
- `scheduler.schedulingPeriod` | 0.025 sec | How frequently to call scheduling loop.
+`scheduler.schedulingPeriod` | 0.025 sec | How frequently to call scheduling loop.
 `scheduler.scheduleAheadTime` | 0.01 sec |How far ahead to schedule audio.
+
 
 ## License
 

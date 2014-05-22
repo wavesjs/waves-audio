@@ -21,7 +21,7 @@ describe("Scheduler test", function() {
     };
   });
 
-  it('should I add an object to my sceduler', function(done) {
+  it('should I add an object to my scheduler', function(done) {
     scheduler.add(myObject);
     assert.equal(scheduler.isScheduling, true);
     assert.isObject(scheduler.schedulingList[0]);
@@ -29,14 +29,14 @@ describe("Scheduler test", function() {
     scheduler.remove(myObject);
   });
 
-  it('should I remove an object to my sceduler', function() {
+  it('should I remove an object to my scheduler', function() {
     scheduler.add(myObject);
     scheduler.remove(myObject);
     assert.equal(scheduler.isScheduling, false);
     assert.equal(scheduler.schedulingList.length, 0);
   });
 
-  it('should I have an error whend I try to add a non object', function() {
+  it('should I have an error when I try to add a non object', function() {
     try {
       scheduler.add("");
     } catch (e) {
@@ -44,7 +44,7 @@ describe("Scheduler test", function() {
     }
   });
 
-  it('should I have an error whend I try to add an unconvotional object', function() {
+  it('should I have an error when I try to add an unconventional object', function() {
     try {
       scheduler.add({});
     } catch (e) {
@@ -68,11 +68,11 @@ describe("Scheduler test", function() {
     }
   });
 
-  it('should my current time is correct ?', function() {
+  it('should my current time be correct ?', function() {
     assert.equal(scheduler.getCurrentTime(), audioContext.currentTime);
   });
 
-  it('should my scheduling period is correct ?', function() {
+  it('should my scheduling period be correct ?', function() {
     assert.equal(scheduler.getSchedulingPeriod(), 0.025);
   });
 

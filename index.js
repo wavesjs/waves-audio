@@ -1,7 +1,7 @@
 /**
  * @fileoverview WAVE audio library element: a web audio scheduler.
  * @author Karim.Barkati@ircam.fr, Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr
- * @version 3.3.1
+ * @version 3.4.0
  */
 
 var nodeUuid = require("node-uuid");
@@ -11,8 +11,11 @@ var nodeUuid = require("node-uuid");
  * @public
  */
 
-var createScheduler = function createScheduler(audioContext, optName) {
+var createScheduler = function createScheduler(optName) {
   'use strict';
+
+  // Ensure global availability of an "audioContext" instance of web audio AudioContext.
+  window.audioContext = window.audioContext || new AudioContext() || new webkitAudioContext();
 
   /**
    * ECMAScript5 property descriptors object.
@@ -42,9 +45,6 @@ var createScheduler = function createScheduler(audioContext, optName) {
     },
 
     // Other properties
-    context: {
-      writable: true
-    },
     timerID: {
       writable: true
     },
@@ -56,9 +56,8 @@ var createScheduler = function createScheduler(audioContext, optName) {
      */
     init: {
       enumerable: true,
-      value: function(audioContext, optName) {
+      value: function(optName) {
 
-        this.context = audioContext;
         this.name = optName;
 
         return this; // for chainability
@@ -170,7 +169,7 @@ var createScheduler = function createScheduler(audioContext, optName) {
     getCurrentTime: {
       enumerable: true,
       value: function() {
-        return this.context.currentTime;
+        return audioContext.currentTime;
       }
     },
 
@@ -179,7 +178,7 @@ var createScheduler = function createScheduler(audioContext, optName) {
 
   // Instantiate an object.
   var scheduler = Object.create({}, schedulerObject);
-  return scheduler.init(audioContext, optName);
+  return scheduler.init(optName);
 };
 
 
