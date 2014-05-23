@@ -1,7 +1,7 @@
 /**
  * @fileoverview WAVE audio library element: a web audio granular engine.
  * @author Karim.Barkati@ircam.fr, Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr
- * @version 1.2.9
+ * @version 2.0.0
  */
 
 
@@ -20,13 +20,13 @@ var createGranularEngine = function createGranularEngine(audioBuffer, optName) {
   var granularEngineObject = {
 
     // Properties with default values
-    period: { // in sec
+    period: {
       writable: true,
-      value: 0.01
+      value: 0.01 // in sec
     },
-    position: { // buffer position (in sec), assumed not normalized
+    position: {
       writable: true,
-      value: 0
+      value: 0 // buffer position (in sec), assumed not normalized
     },
     positionVariation: {
       writable: true,
