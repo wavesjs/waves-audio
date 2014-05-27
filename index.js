@@ -23,13 +23,13 @@ var createScheduler = function createScheduler(optName) {
   var schedulerObject = {
 
     // Properties with default values
-    schedulingPeriod: { // How frequently to call scheduling function (sec)
+    schedulingPeriod: {
       writable: true,
-      value: 0.025
+      value: 0.025 // How frequently to call scheduling function (sec)
     },
-    scheduleAheadTime: { // How far ahead to schedule audio (sec)
+    scheduleAheadTime: {
       writable: true,
-      value: 0.1
+      value: 0.1 // How far ahead to schedule audio (sec)
     },
     schedulingList: {
       writable: true,
