@@ -319,14 +319,14 @@ var createGranularEngine = function createGranularEngine(audioBuffer, optName) {
 
     /**
      * Time resetting.
-     * @public
+     * @private
      */
     resetAndReturnNextTime: {
-      enumerable: true,
+      enumerable: false,
       value: function(time) {
         if (!isNaN(parseFloat(time))) { // number check
-          this.nextEventTime = time;
-          return this.nextEventTime;
+          this.setNextTime(time);
+          return time; // start immediately
         } else {
           throw new TypeError("Time should be a float");
         }
