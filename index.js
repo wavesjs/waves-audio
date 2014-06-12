@@ -1,7 +1,7 @@
 /**
  * @fileoverview WAVE audio library element: a web audio granular engine.
  * @author Karim.Barkati@ircam.fr, Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr
- * @version 2.0.0
+ * @version 2.1.0
  */
 
 
@@ -113,17 +113,6 @@ var createGranularEngine = function createGranularEngine(audioBuffer, optName) {
           console.error("No buffer is set");
           return false;
         }
-      }
-    },
-
-    /**
-     * Optional phase resetting public method.
-     * @public
-     */
-    resetPhase: {
-      enumerable: true,
-      value: function() {
-        // This engine does not manage phase.
       }
     },
 
@@ -329,6 +318,22 @@ var createGranularEngine = function createGranularEngine(audioBuffer, optName) {
     },
 
     /**
+     * Time resetting.
+     * @public
+     */
+    resetAndReturnNextTime: {
+      enumerable: true,
+      value: function(time) {
+        if (!isNaN(parseFloat(time))) { // number check
+          this.nextEventTime = time;
+          return this.nextEventTime;
+        } else {
+          throw new TypeError("Time should be a float");
+        }
+      }
+    },
+
+    /**
      * Get next event time.
      * @private
      */
@@ -342,6 +347,7 @@ var createGranularEngine = function createGranularEngine(audioBuffer, optName) {
     /**
      * Set next event time.
      * @private
+     * @todo  Is this method still usefull if we already pass init time on reset()?
      */
     setNextTime: {
       enumerable: false,
