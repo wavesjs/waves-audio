@@ -347,7 +347,7 @@ var createGranularEngine = function createGranularEngine(audioBuffer, optName) {
     /**
      * Set next event time.
      * @private
-     * @todo  Is this method still usefull if we already pass init time on reset()?
+     * @todo Is this method still useful if we already pass init time on reset()?
      */
     setNextTime: {
       enumerable: false,
