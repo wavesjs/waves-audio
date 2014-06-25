@@ -143,7 +143,7 @@ var createGranularEngine = function createGranularEngine(audioBuffer, optName) {
           this.bufferDuration = buffer.duration;
           return this; // for chainability
         } else {
-          throw "Buffer setting error";
+          throw new ReferenceError("setBuffer(): no buffer");
         }
       }
     },
@@ -162,7 +162,7 @@ var createGranularEngine = function createGranularEngine(audioBuffer, optName) {
           this.gainNode.gain.value = gain * gain;
           return this; // for chainability
         } else {
-          throw "Gain setting error";
+          throw new ReferenceError("setGain(): no gain");
         }
       }
     },
@@ -183,7 +183,7 @@ var createGranularEngine = function createGranularEngine(audioBuffer, optName) {
             console.log("Position is out of bounds");
           }
         } else {
-          throw "Seeking error";
+          throw new ReferenceError("seek(): no position");
         }
       }
     },
