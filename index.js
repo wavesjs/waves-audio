@@ -175,7 +175,7 @@ var createGranularEngine = function createGranularEngine(audioBuffer, optName) {
     seek: {
       enumerable: true,
       value: function(position) {
-        if (!isNaN(parseFloat(position))) { // number check
+        if (position) {
           if (position >= 0 && position <= this.bufferDuration) {
             this.position = position;
             return this;
@@ -324,7 +324,7 @@ var createGranularEngine = function createGranularEngine(audioBuffer, optName) {
     resetAndReturnNextTime: {
       enumerable: false,
       value: function(time) {
-        if (!isNaN(parseFloat(time))) { // number check
+        if (time) {
           this.setNextTime(time);
           return time; // start immediately
         } else {
