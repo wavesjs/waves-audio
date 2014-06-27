@@ -180,7 +180,7 @@ var createGranularEngine = function createGranularEngine(audioBuffer, optName) {
             this.position = position;
             return this;
           } else {
-            console.log("Position is out of bounds");
+            throw new RangeError("seek(): position is out of bound");
           }
         } else {
           throw new ReferenceError("seek(): no position");
