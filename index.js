@@ -1,7 +1,7 @@
 /**
  * @fileoverview WAVE audio library element: a web audio scheduler, without time loop.
  * @author Karim.Barkati@ircam.fr, Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr
- * @version 3.8.2
+ * @version 3.8.3
  */
 
 var createEventQueue = require("../event-queue");
@@ -25,6 +25,7 @@ var createQueueScheduler = function createQueueScheduler(optName) {
     // Properties with default values
     isRunning: {
       writable: true,
+      enumerable: true,
       value: false
     },
     name: {
@@ -44,6 +45,10 @@ var createQueueScheduler = function createQueueScheduler(optName) {
       value: []
     },
     parent: {
+      writable: true,
+      value: null
+    },
+    runningStatusChangeCallback: { // required method, from the parent
       writable: true,
       value: null
     },
@@ -104,7 +109,7 @@ var createQueueScheduler = function createQueueScheduler(optName) {
           } else {
             this.schedulablesList.splice(index, 1);
             console.log("Unscheduling element #" + index, object.name ? '\"' + object.name + '\"' : "", object.schedulingID);
-            // Stop when scheduling list is empty.
+            // When the scheduling list is empty, stop scheduling.
             if (this.schedulablesList.length <= 0) {
               this.stop();
             }
@@ -120,13 +125,13 @@ var createQueueScheduler = function createQueueScheduler(optName) {
      * Start scheduling.
      * @private
      */
-    run: {
+    start: {
       enumerable: false,
       value: function() {
         if (!this.isRunning) {
           this.isRunning = true;
           console.log("Scheduling on", "(" + this.name + ")");
-          this.parent.start();
+          this.runningStatusChangeCallback(this.isRunning);
         }
       }
     },
@@ -141,6 +146,7 @@ var createQueueScheduler = function createQueueScheduler(optName) {
         this.parent.stop();
         this.isRunning = false;
         console.log("Scheduling off (" + this.name + ")");
+        this.runningStatusChangeCallback(this.isRunning);
       }
     },
 
@@ -203,14 +209,14 @@ var createQueueScheduler = function createQueueScheduler(optName) {
      * Update next scheduling time of a scheduled object.
      * @public
      * @param {Object} object reference
-     * @param {Float} new scheduling time of its next event
+     * @param {Float} new scheduling time of its next event; Infinity means 'unschedule'
      */
     updateNextTime: {
       enumerable: false,
       value: function(object, time) {
         if (time === Infinity) {
           this.eventQueue.remove(object);
-          // Stop when the queue is empty.
+          // When the queue is empty, stop scheduling.
           if (this.eventQueue.length <= 0) {
             this.stop();
           }
@@ -220,7 +226,7 @@ var createQueueScheduler = function createQueueScheduler(optName) {
           } else {
             this.eventQueue.move(object, time);
           }
-          this.run();
+          this.start();
         }
       }
     },
@@ -267,6 +273,20 @@ var createQueueScheduler = function createQueueScheduler(optName) {
       }
     },
 
+    /**
+     * Set parent and status change callback.
+     * @private
+     * @param {Object} parent The parent of a scheduler has to be set.
+     * @param {Function} callback This required callback triggers the parent,
+     * with a boolean on running status change.
+     */
+    setParent: {
+      enumerable: false,
+      value: function(parent, callback) {
+        this.parent = parent;
+        this.runningStatusChangeCallback = callback;
+      }
+    },
 
   }; // End of object definition.
 
