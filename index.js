@@ -207,7 +207,7 @@ var createScheduler = function createScheduler(optName) {
 
     /**
      * Update next scheduling time of a scheduled object.
-     * @public
+     * @private
      * @param {Object} object reference
      * @param {Float} new scheduling time of its next event; Infinity means 'unschedule'
      */
@@ -255,7 +255,6 @@ var createScheduler = function createScheduler(optName) {
      */
     getNextTime: {
       enumerable: true,
-      writable: true, // allow superseding for specific schedulers
       value: function() {
         this.nextEventTime = this.schedulablesList.length !== 0 ? this.eventQueue.getFirstValue() : Infinity;
         return this.nextEventTime;
@@ -282,8 +281,8 @@ var createScheduler = function createScheduler(optName) {
      */
     setParent: {
       enumerable: false,
-      value: function(parent, callback) {
-        this.parent = parent;
+      value: function(object, callback) {
+        this.parent = object;
         this.runningStatusChangeCallback = callback;
       }
     },
