@@ -1,7 +1,7 @@
 /**
  * @fileoverview WAVE audio library element: a web audio scheduler, without time loop.
  * @author Karim.Barkati@ircam.fr, Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr
- * @version 4.0.0
+ * @version 4.0.1
  */
 
 var createEventQueue = require("../event-queue");
@@ -14,8 +14,8 @@ var createEventQueue = require("../event-queue");
 var createScheduler = function createScheduler(optName) {
   'use strict';
 
-  // Ensure global availability of an "audioContext" instance of web audio AudioContext.
-  window.audioContext = window.audioContext || new AudioContext() || new webkitAudioContext();
+  // Ensure global availability of a "wako.scheduler" instance of WAVE's main scheduler.
+  require("../main-scheduler-singleton");
 
   /**
    * ECMAScript5 property descriptors object.
@@ -143,7 +143,6 @@ var createScheduler = function createScheduler(optName) {
     stop: {
       enumerable: false,
       value: function() {
-        this.parent.stop();
         this.isRunning = false;
         console.log("Scheduling off (" + this.name + ")");
         this.runningStatusChangeCallback(this.isRunning);
@@ -174,7 +173,7 @@ var createScheduler = function createScheduler(optName) {
         console.log("schedulablesList: ", this.schedulablesList);
         for (var i = this.schedulablesList.length - 1; i >= 0; i--) {
           element = this.schedulablesList[i];
-          time = element.resetAndReturnNextTime(audioContext.currentTime);
+          time = element.resetAndReturnNextTime(this.getCurrentTime());
           this.eventQueue.pushEvent(element, time);
         }
         this.eventQueue.sort();
@@ -195,13 +194,24 @@ var createScheduler = function createScheduler(optName) {
     },
 
     /**
-     * Get current time from the Web Audio context.
+     * Get current time from wako.scheduler.
      * @public
      */
     getCurrentTime: {
       enumerable: true,
       value: function() {
-        return audioContext.currentTime;
+        return wako.scheduler.getCurrentTime();
+      }
+    },
+
+    /**
+     * Get the scheduling period of the main scheduler.
+     * @public
+     */
+    getSchedulingPeriod: {
+      enumerable: true,
+      value: function() {
+        return wako.scheduler.getSchedulingPeriod();
       }
     },
 
@@ -209,14 +219,14 @@ var createScheduler = function createScheduler(optName) {
      * Update next scheduling time of a scheduled object.
      * @private
      * @param {Object} object reference
-     * @param {Float} new scheduling time of its next event; Infinity means 'unschedule'
+     * @param {Float} new scheduling time of its next event; "Infinity" means "remove from scheduling"
      */
     updateNextTime: {
       enumerable: false,
       value: function(object, time) {
         if (time === Infinity) {
           this.eventQueue.remove(object);
-          // When the queue is empty, stop scheduling.
+          // If the queue is empty, stop scheduling.
           if (this.eventQueue.length <= 0) {
             this.stop();
           }
@@ -257,6 +267,7 @@ var createScheduler = function createScheduler(optName) {
       enumerable: true,
       value: function() {
         this.nextEventTime = this.schedulablesList.length !== 0 ? this.eventQueue.getFirstValue() : Infinity;
+        // console.log("getNextTime", this.name, this.nextEventTime);
         return this.nextEventTime;
       }
     },
