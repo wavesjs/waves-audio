@@ -1,9 +1,9 @@
 {
-  "name": "queue-scheduler",
-  "version": "3.5.0",
+  "name": "scheduler",
+  "version": "4.0.0",
   "description": "WAVE audio library module for a scheduler with an event queue",
   "main": "index.js",
-  "exports": "createQueueScheduler",
+  "exports": "createScheduler",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -26,6 +26,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "http://github.com/ircamRnD/queue-scheduler.git"
+    "url": "http://github.com/ircamRnD/scheduler.git"
   }
 }

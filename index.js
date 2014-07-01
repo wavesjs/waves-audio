@@ -1,7 +1,7 @@
 /**
  * @fileoverview WAVE audio library element: a web audio scheduler, without time loop.
  * @author Karim.Barkati@ircam.fr, Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr
- * @version 3.8.3
+ * @version 4.0.0
  */
 
 var createEventQueue = require("../event-queue");
@@ -11,7 +11,7 @@ var createEventQueue = require("../event-queue");
  * @public
  */
 
-var createQueueScheduler = function createQueueScheduler(optName) {
+var createScheduler = function createScheduler(optName) {
   'use strict';
 
   // Ensure global availability of an "audioContext" instance of web audio AudioContext.
@@ -20,7 +20,7 @@ var createQueueScheduler = function createQueueScheduler(optName) {
   /**
    * ECMAScript5 property descriptors object.
    */
-  var queueSchedulerObject = {
+  var schedulerObject = {
 
     // Properties with default values
     isRunning: {
@@ -30,7 +30,7 @@ var createQueueScheduler = function createQueueScheduler(optName) {
     },
     name: {
       writable: true,
-      value: "QueueScheduler"
+      value: "Scheduler"
     },
     eventQueue: {
       writable: true,
@@ -292,10 +292,10 @@ var createQueueScheduler = function createQueueScheduler(optName) {
 
 
   // Instantiate an object.
-  var instance = Object.create({}, queueSchedulerObject);
+  var instance = Object.create({}, schedulerObject);
   return instance.init(optName);
 };
 
 
 // CommonJS function export
-module.exports = createQueueScheduler;
+module.exports = createScheduler;
