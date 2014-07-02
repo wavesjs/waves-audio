@@ -151,9 +151,9 @@ var createScheduler = function createScheduler(optName) {
 
     /**
      * Reset all schedulables objects of this scheduler.
-     * @private
+     * @public
      */
-    resetAll: {
+    reset: {
       enumerable: false,
       value: function() {
         this.eventQueue.flush();
