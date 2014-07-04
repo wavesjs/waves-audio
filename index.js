@@ -1,7 +1,7 @@
 /**
  * @fileoverview WAVE audio library element: a web audio scheduler, without time loop.
  * @author Karim.Barkati@ircam.fr, Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr
- * @version 4.0.1
+ * @version 4.0.2
  */
 
 var createEventQueue = require("../event-queue");
@@ -265,10 +265,14 @@ var createScheduler = function createScheduler(optName) {
      */
     getNextTime: {
       enumerable: true,
+      // console.log("getNextTime", this.name, this.nextEventTime);
       value: function() {
-        this.nextEventTime = this.schedulablesList.length !== 0 ? this.eventQueue.getFirstValue() : Infinity;
-        // console.log("getNextTime", this.name, this.nextEventTime);
-        return this.nextEventTime;
+        if (this.schedulablesList.length > 0) {
+          this.nextEventTime = this.eventQueue.getFirstValue();
+          return this.nextEventTime;
+        } else {
+          return Infinity;
+        }
       }
     },
 
