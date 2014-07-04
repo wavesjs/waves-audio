@@ -170,7 +170,7 @@ var createScheduler = function createScheduler(optName) {
       value: function() {
         var time = null;
         var element = null;
-        console.log("schedulablesList: ", this.schedulablesList);
+        // console.log("schedulablesList: ", this.schedulablesList);
         for (var i = this.schedulablesList.length - 1; i >= 0; i--) {
           element = this.schedulablesList[i];
           time = element.resetAndReturnNextTime(this.getCurrentTime());
