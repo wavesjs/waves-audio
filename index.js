@@ -92,7 +92,7 @@ var createGranularEngine = function createGranularEngine(audioBuffer, optName) {
         // Create web audio nodes, relying on the web audio context.
         this.gainNode = audioContext.createGain();
         this.outputNode = audioContext.createGain(); // dummy node to provide a web audio-like output node
-        this.connect(audioContext.destination); // default destination
+        // this.connect(audioContext.destination); // remainder: audio connection has to done
 
         makeSchedulable(this); // an audio engine has to inherit schedulable properties
 
@@ -125,7 +125,20 @@ var createGranularEngine = function createGranularEngine(audioBuffer, optName) {
       enumerable: true,
       value: function(target) {
         this.outputNode = target;
-        this.gainNode.connect(this.outputNode || audioContext.destination);
+        this.gainNode.connect(this.outputNode);
+        return this; // for chainability
+      }
+    },
+
+    /**
+     * Web audio API-like disconnect method.
+     * @public
+     * @chainable
+     */
+    disconnect: {
+      enumerable: true,
+      value: function(output) {
+        this.gainNode.disconnect(output);
         return this; // for chainability
       }
     },
