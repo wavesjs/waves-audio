@@ -223,7 +223,7 @@ var createGranularEngine = function createGranularEngine(audioBuffer, optName) {
 
         // Update grain position when slaved, from last synchronization
         if (this.isTransportable) {
-          var position = this.timebase.getPositionAtTime(this.nextEventTime);
+          var position = this.transporter.getPositionAtTime(this.nextEventTime);
 
           if (position >= 0 && position <= this.bufferDuration) {
             this.position = position;
