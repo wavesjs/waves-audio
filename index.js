@@ -277,17 +277,6 @@ var createScheduler = function createScheduler(optName) {
     },
 
     /**
-     * Set next event time.
-     * @private
-     */
-    setNextTime: {
-      enumerable: false,
-      value: function(time) {
-        this.nextEventTime = time;
-      }
-    },
-
-    /**
      * Set parent and status change callback.
      * @private
      * @param {Object} parent The parent of a scheduler has to be set.
