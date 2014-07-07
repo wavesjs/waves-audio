@@ -81,7 +81,7 @@ var createScheduler = function createScheduler(optName) {
           var length = this.schedulablesList.push(object);
           var index = length - 1;
           var name = object.name ? object.name : object.schedulingID;
-          console.log("Scheduling element #" + index + ' \"' + name + '\"');
+          console.log("add():", this.name, "scheduling element #" + index + ' \"' + name + '\"');
           if (!this.isRunning) {
             // this.resetAll();
           }
