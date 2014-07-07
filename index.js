@@ -325,7 +325,7 @@ var createGranularEngine = function createGranularEngine(audioBuffer, optName) {
       enumerable: false,
       value: function(time) {
         if (time) {
-          this.setNextTime(time);
+          this.nextEventTime = time;
           return time; // start immediately
         } else {
           throw new TypeError("Time should be a float");
@@ -341,18 +341,6 @@ var createGranularEngine = function createGranularEngine(audioBuffer, optName) {
       enumerable: false,
       value: function() {
         return this.nextEventTime;
-      }
-    },
-
-    /**
-     * Set next event time.
-     * @private
-     * @todo Is this method still useful if we already pass init time on reset()?
-     */
-    setNextTime: {
-      enumerable: false,
-      value: function(time) {
-        this.nextEventTime = time;
       }
     },
 
