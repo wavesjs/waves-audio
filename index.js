@@ -346,17 +346,6 @@ var createGranularEngine = function createGranularEngine(audioBuffer, optName) {
       }
     },
 
-    /**
-     * Get next event time.
-     * @private
-     */
-    getNextTime: {
-      enumerable: false,
-      value: function() {
-        return this.nextEventTime;
-      }
-    },
-
 
   }; // End of object definition.
 
