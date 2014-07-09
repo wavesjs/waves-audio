@@ -321,7 +321,7 @@ var createGranularEngine = function createGranularEngine(audioBuffer, optName) {
      * Make event and compute next event time.
      * @private
      */
-    makeEventAndComputeNextTime: {
+    makeEventAndReturnNextTime: {
       enumerable: false,
       value: function() {
         this.makeNextGrain();
