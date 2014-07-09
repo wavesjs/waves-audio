@@ -205,17 +205,6 @@ var createScheduler = function createScheduler(optName) {
     },
 
     /**
-     * Get the scheduling period of the main scheduler.
-     * @public
-     */
-    getSchedulingPeriod: {
-      enumerable: true,
-      value: function() {
-        return wako.scheduler.getSchedulingPeriod();
-      }
-    },
-
-    /**
      * Update next scheduling time of a scheduled object.
      * @private
      * @param {Object} object reference
