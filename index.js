@@ -259,7 +259,7 @@ var createScheduler = function createScheduler(optName) {
       enumerable: true,
       value: function() {
         var engine = this.eventQueue.getFirstObject();
-        this.nextEventTime = engine.makeEventAndComputeNextTime();
+        this.nextEventTime = engine.makeEventAndReturnNextTime();
         this.eventQueue.moveFirstEvent(engine, this.nextEventTime);
       }
     },
