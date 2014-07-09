@@ -230,6 +230,22 @@ var createScheduler = function createScheduler(optName) {
       }
     },
 
+    /**
+     * Set parent and status change callback.
+     * @private
+     * @param {Object} parent The parent of a scheduler has to be set.
+     * @param {Function} callback This required callback triggers the parent,
+     * with a boolean on running status change.
+     */
+    setParent: {
+      enumerable: false,
+      value: function(object, callback) {
+        this.parent = object;
+        this.runningStatusChangeCallback = callback;
+      }
+    },
+
+
     /////////////////////////////
     /// Transporting methods ///
     /////////////////////////////
@@ -265,20 +281,6 @@ var createScheduler = function createScheduler(optName) {
       }
     },
 
-    /**
-     * Set parent and status change callback.
-     * @private
-     * @param {Object} parent The parent of a scheduler has to be set.
-     * @param {Function} callback This required callback triggers the parent,
-     * with a boolean on running status change.
-     */
-    setParent: {
-      enumerable: false,
-      value: function(object, callback) {
-        this.parent = object;
-        this.runningStatusChangeCallback = callback;
-      }
-    },
 
   }; // End of object definition.
 
