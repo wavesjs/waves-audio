@@ -1,10 +1,11 @@
+!function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.createScheduler=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 /**
  * @fileoverview WAVE audio library element: a web audio scheduler, without time loop.
  * @author Karim.Barkati@ircam.fr, Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr
  * @version 4.0.2
  */
 
-var createEventQueue = require("event-queue");
+var createEventQueue = _dereq_("event-queue");
 
 /**
  * Function invocation pattern for object creation.
@@ -293,3 +294,282 @@ var createScheduler = function createScheduler(optName) {
 
 // CommonJS function export
 module.exports = createScheduler;
+},{"event-queue":2}],2:[function(_dereq_,module,exports){
+/**
+ * @fileoverview WAVE audio library element: an event queue manager.
+ * @author Karim.Barkati@ircam.fr, Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr
+ * @version 0.3.2
+ * @description An event is made of an object (such as an engine) and a value (such as a time or a position).
+ */
+
+
+/**
+ * Function invocation pattern for object creation.
+ * @public
+ */
+var createEventQueue = function createEventQueue() {
+  'use strict';
+
+  /**
+   * ECMAScript5 property descriptors object.
+   */
+  var eventQueueObject = {
+
+    // Attributes
+    eventList: {
+      writable: true,
+      value: []
+    },
+    name: {
+      writable: true,
+      value: "EventQueue"
+    },
+    length: {
+      enumerable: true,
+      get: function() {
+        return this.eventList.length;
+      }
+    },
+    isBackward: {
+      writable: true,
+      value: false
+    },
+
+    /**
+     * Mandatory initialization method.
+     * @public
+     * @chainable
+     */
+    init: {
+      enumerable: false,
+      value: function() {
+        return this;
+      }
+    },
+
+    /**
+     * Insert an event (an ordered pair [object, value]) into eventList.
+     * @public
+     * @param {Object} object reference
+     * @param {Float} value for scheduling or sequencing, ie either time or position value
+     */
+    insert: {
+      enumerable: true,
+      value: function(object, value) {
+        this.pushEvent(object, value);
+        this.sort();
+      }
+    },
+
+    /**
+     * Push an event (an ordered pair [object, value]) into eventList without sorting.
+     * @public
+     * @param {Object} object reference
+     * @param {Float} value for scheduling or sequencing, ie either time or position value
+     */
+    pushEvent: {
+      enumerable: true,
+      value: function(object, value) {
+        this.eventList.push([object, value]);
+      }
+    },
+
+    /**
+     * Remove an event from the event list.
+     * @public
+     * @chainable
+     * @param {Object} object of the event to remove (1 to 1 hypothesis)
+     */
+    remove: {
+      enumerable: true,
+      value: function(object) {
+        if (object) {
+          // Search for the index of the object in the list (not the full event pair).
+          var index = this.indexOf(object);
+          if (index < 0) {
+            throw new Error("remove(): no object");
+          } else {
+            this.eventList.splice(index, 1);
+          }
+          return this; // for chainability
+        } else {
+          throw new ReferenceError("remove(): no object");
+        }
+      }
+    },
+
+    /**
+     * Move an event (an ordered pair [object, value]) into the event list.
+     * @public
+     * @param {Object} object reference
+     * @param {Float} value for scheduling or sequencing, i.e. either time or position value
+     * @todo Optimize algorithm: at least, test if moving is necessary?
+     */
+    move: {
+      enumerable: true,
+      value: function(object, value) {
+        this.remove(object);
+        this.insert(object, value);
+      }
+    },
+
+    /**
+     * Move the first event of the event list only if needed.
+     * @public
+     * @param {Object} object reference
+     * @param {Float} value for scheduling or sequencing, ie either time or position value
+     */
+    moveFirstEvent: {
+      enumerable: true,
+      value: function(object, value) {
+        if (this.isBackward) {
+          if (value > this.getValueOfIndex(1)) {
+            this.eventList[0][1] = value;
+          } else {
+            this.eventList.shift();
+            this.insert(object, value);
+          }
+        } else {
+          if (value <= this.getValueOfIndex(1)) {
+            this.eventList[0][1] = value;
+          } else {
+            this.eventList.shift();
+            this.insert(object, value);
+          }
+        }
+      }
+    },
+
+    /**
+     * Get first event from the event list.
+     * @public
+     */
+    getFirstEvent: {
+      enumerable: true,
+      value: function() {
+        return this.eventList[0];
+      }
+    },
+
+    /**
+     * Get object of first event from the event list.
+     * @public
+     */
+    getFirstObject: {
+      enumerable: true,
+      value: function() {
+        return this.eventList[0][0];
+      }
+    },
+
+    /**
+     * Get value of first event from the event list (either time or position).
+     * @public
+     */
+    getFirstValue: {
+      enumerable: true,
+      value: function() {
+        return this.eventList[0][1];
+      }
+    },
+
+    /**
+     * Get value of the specified event from the event list (either time or position).
+     * @public
+     */
+    getValueOfIndex: {
+      enumerable: true,
+      value: function(index) {
+        if (this.eventList[index]) {
+          return this.eventList[index][1];
+        } else {
+          return Infinity;
+        }
+      }
+    },
+
+    /**
+     * Flush the event list.
+     * @public
+     */
+    flush: {
+      enumerable: true,
+      value: function() {
+        this.eventList = [];
+      }
+    },
+
+    /**
+     * Sort the whole event list.
+     * @public
+     */
+    sort: {
+      enumerable: false,
+      value: function() {
+        if (this.isBackward) {
+          this.eventList.sort(this.reverseCompare);
+        } else {
+          this.eventList.sort(this.compare);
+        }
+      }
+    },
+
+    /**
+     * Compare two events based on their value only.
+     * @private
+     * @param {Event} a
+     * @param {Event} b
+     */
+    compare: {
+      enumerable: false,
+      value: function(a, b) {
+        return a[1] - b[1];
+      }
+    },
+
+    /**
+     * Compare two events based on their value only, in reverse order.
+     * @private
+     * @param {Event} a
+     * @param {Event} b
+     */
+    reverseCompare: {
+      enumerable: false,
+      value: function(a, b) {
+        return b[1] - a[1];
+      }
+    },
+
+    /**
+     * Get the index of an object in the event list.
+     * @private
+     */
+    indexOf: {
+      enumerable: false,
+      value: function(object) {
+        var i = null;
+        for (i = 0; i < this.eventList.length; i++) {
+          if (object === this.eventList[i][0]) {
+            return i;
+          }
+        }
+        return -1;
+      }
+    },
+
+  }; // End of property object definition.
+
+
+  // Instantiate an object and initialize it.
+  var eventQueueInstance = Object.create({}, eventQueueObject);
+  return eventQueueInstance.init();
+
+};
+
+
+// CommonJS function export
+module.exports = createEventQueue;
+
+},{}]},{},[1])
+(1)
+});
