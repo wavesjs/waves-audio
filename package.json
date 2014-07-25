@@ -1,7 +1,7 @@
 {
   "name": "granular-engine",
   "version": "1.2.5",
-  "description": "WAVE audio library Granular engine",
+  "description": "WAVE audio library element: a web audio granular engine.",
   "main": "index.js",
   "exports": "createGranularEngine",
   "scripts": {
@@ -13,5 +13,21 @@
     "Norbert Schnell",
     "Victor Saiz"
   ],
-  "license": "BSD-2-Clause"
+  "license": "BSD-3",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Ircam-RnD/granular-engine"
+  },
+  "dependencies": {
+    "makeSchedulable": "git://github.com/Ircam-RnD/make-schedulable.git#master"
+  },
+  "devDependencies": {
+    "module-boilerplate": "git://github.com/Ircam-RnD/module-boilerplate.git#master",
+    "fs-utils" : "0.4.3",
+    "browserify": "~4.1.2",
+    "mocha": "~1.17.1",
+    "chai": "~1.9.0",
+    "blanket": "~1.1.6",
+    "gulp": "~3.8.2"
+  }
 }

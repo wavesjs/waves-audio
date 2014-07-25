@@ -4,6 +4,7 @@
  * @version 2.1.0
  */
 
+var makeSchedulable = require("makeSchedulable");
 
 /**
  * Function invocation pattern for object creation.
