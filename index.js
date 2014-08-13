@@ -38,6 +38,7 @@ var Scheduler = (function(){var DP$0 = Object.defineProperty;
    * @chainable
    */
   Scheduler.prototype.add = function(object) {
+    
     object.scheduler = this;
     var length = this.schedulablesList.push(object);
     var index = length - 1;

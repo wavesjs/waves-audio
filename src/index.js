@@ -38,6 +38,7 @@ class Scheduler {
    * @chainable
    */
   add(object) {
+    
     object.scheduler = this;
     var length = this.schedulablesList.push(object);
     var index = length - 1;
