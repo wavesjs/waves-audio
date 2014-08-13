@@ -10,7 +10,7 @@
 var EventQueue = require("../event-queue");
 
 // Make a global instance of the wako.scheduler available
-require("../main-scheduler-singleton");
+require("../main-scheduler");
 
 var Scheduler = (function(){var DP$0 = Object.defineProperty;
 
