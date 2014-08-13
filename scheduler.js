@@ -1,575 +1,556 @@
-!function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.createScheduler=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
-/**
- * @fileoverview WAVE audio library element: a web audio scheduler, without time loop.
- * @author Karim.Barkati@ircam.fr, Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr
- * @version 4.0.2
- */
-
-var createEventQueue = _dereq_("event-queue");
-
-/**
- * Function invocation pattern for object creation.
- * @public
- */
-
-var createScheduler = function createScheduler(optName) {
-  'use strict';
-
-  // Ensure global availability of a "wako.scheduler" instance of WAVE's main scheduler.
-  //require("../main-scheduler-singleton");
-
-  /**
-   * ECMAScript5 property descriptors object.
-   */
-  var schedulerObject = {
-
-    // Properties with default values
-    isRunning: {
-      writable: true,
-      enumerable: true,
-      value: false
-    },
-    name: {
-      writable: true,
-      value: "Scheduler"
-    },
-    eventQueue: {
-      writable: true,
-      value: createEventQueue()
-    },
-    nextEventTime: {
-      writable: true,
-      value: Infinity
-    },
-    schedulablesList: {
-      writable: true,
-      value: []
-    },
-    parent: {
-      writable: true,
-      value: null
-    },
-    runningStatusChangeCallback: { // required method, from the parent
-      writable: true,
-      value: null
-    },
-
-    /**
-     * Mandatory initialization method.
-     * @public
-     * @chainable
-     */
-    init: {
-      enumerable: true,
-      value: function(optName) {
-        if (optName) {
-          this.name = optName;
-        }
-        return this;
-      }
-    },
-
-    /**
-     * Schedule a schedulable object and add it to the scheduling list.
-     * @public
-     * @chainable
-     */
-    add: {
-      enumerable: true,
-      value: function(object) {
-        if (object && object.isSchedulable) {
-          object.setScheduler(this);
-          var length = this.schedulablesList.push(object);
-          var index = length - 1;
-          var name = object.name ? object.name : object.schedulingID;
-          console.log("add():", this.name, "scheduling element #" + index + ' \"' + name + '\"');
-          if (!this.isRunning) {
-            // this.resetAll();
-          }
-          return this; // for chainability
-        } else {
-          throw new Error("add(): object must be schedulable");
-        }
-      }
-    },
-
-    /**
-     * Unschedule a schedulable object and remove it from the scheduling list.
-     * @public
-     * @chainable
-     */
-    remove: {
-      enumerable: true,
-      value: function(object) {
-        if (object) {
-          // Search for the object in the scheduling list.
-          var index = this.schedulablesList.indexOf(object);
-
-          if (index < 0) {
-            throw new Error("remove(): object not found," + object);
-          } else {
-            this.schedulablesList.splice(index, 1);
-            console.log("Unscheduling element #" + index, object.name ? '\"' + object.name + '\"' : "", object.schedulingID);
-            // When the scheduling list is empty, stop scheduling.
-            if (this.schedulablesList.length <= 0) {
-              this.stop();
-            }
-          }
-          return this; // for chainability
-        } else {
-          throw new Error("remove(): no object");
-        }
-      }
-    },
-
-    /**
-     * Start scheduling.
-     * @private
-     */
-    start: {
-      enumerable: false,
-      value: function() {
-        if (!this.isRunning) {
-          this.isRunning = true;
-          console.log("Scheduling on", "(" + this.name + ")");
-          this.runningStatusChangeCallback(this.isRunning);
-        }
-      }
-    },
-
-    /**
-     * Stop scheduling.
-     * @private
-     */
-    stop: {
-      enumerable: false,
-      value: function() {
-        this.isRunning = false;
-        console.log("Scheduling off (" + this.name + ")");
-        this.runningStatusChangeCallback(this.isRunning);
-      }
-    },
-
-    /**
-     * Reset all schedulables objects of this scheduler.
-     * @public
-     */
-    reset: {
-      enumerable: false,
-      value: function() {
-        this.eventQueue.flush();
-        this.insertAll();
-      }
-    },
-
-    /**
-     * Push all events into the event queue and sort it afterward.
-     * @private
-     */
-    insertAll: {
-      enumerable: false,
-      value: function() {
-        var time = null;
-        var element = null;
-        // console.log("schedulablesList: ", this.schedulablesList);
-        for (var i = this.schedulablesList.length - 1; i >= 0; i--) {
-          element = this.schedulablesList[i];
-          time = element.resetAndReturnNextTime(this.getCurrentTime());
-          this.eventQueue.pushEvent(element, time);
-        }
-        this.eventQueue.sort();
-      }
-    },
-
-    /**
-     * Insert an event into the event queue.
-     * @public
-     */
-    insertEvent: {
-      enumerable: true,
-      value: function(object, time) {
-        if (time !== Infinity) {
-          this.eventQueue.Insert(object, time);
-        }
-      }
-    },
-
-    /**
-     * Get current time from wako.scheduler.
-     * @public
-     */
-    getCurrentTime: {
-      enumerable: true,
-      value: function() {
-        return wako.scheduler.getCurrentTime();
-      }
-    },
-
-    /**
-     * Update next scheduling time of a scheduled object.
-     * @private
-     * @param {Object} object reference
-     * @param {Float} new scheduling time of its next event; "Infinity" means "remove from scheduling"
-     */
-    updateNextTime: {
-      enumerable: false,
-      value: function(object, time) {
-        if (time === Infinity) {
-          this.eventQueue.remove(object);
-          // If the queue is empty, stop scheduling.
-          if (this.eventQueue.length <= 0) {
-            this.stop();
-          }
-        } else {
-          if (this.eventQueue.indexOf(object) < 0) {
-            this.eventQueue.insert(object, time);
-          } else {
-            this.eventQueue.move(object, time);
-          }
-          this.start();
-        }
-      }
-    },
-
-    /**
-     * Set parent and status change callback.
-     * @private
-     * @param {Object} parent The parent of a scheduler has to be set.
-     * @param {Function} callback This required callback triggers the parent,
-     * with a boolean on running status change.
-     */
-    setParent: {
-      enumerable: false,
-      value: function(object, callback) {
-        this.parent = object;
-        this.runningStatusChangeCallback = callback;
-      }
-    },
-
-
-    /////////////////////////////
-    /// Transporting methods ///
-    /////////////////////////////
-
-    /**
-     * Call the event making method of the first schedulable object,
-     * and then update the first event of the queue.
-     * @public
-     */
-    makeNextEvent: {
-      enumerable: true,
-      value: function() {
-        var engine = this.eventQueue.getFirstObject();
-        this.nextEventTime = engine.makeEventAndReturnNextTime();
-        this.eventQueue.moveFirstEvent(engine, this.nextEventTime);
-      }
-    },
-
-    /**
-     * Get next event time by querying it in the event queue.
-     * @public
-     */
-    getNextTime: {
-      enumerable: true,
-      // console.log("getNextTime", this.name, this.nextEventTime);
-      value: function() {
-        if (this.schedulablesList.length > 0) {
-          this.nextEventTime = this.eventQueue.getFirstValue();
-          return this.nextEventTime;
-        } else {
-          return Infinity;
-        }
-      }
-    },
-
-
-  }; // End of object definition.
-
-
-  // Instantiate an object.
-  var instance = Object.create({}, schedulerObject);
-  return instance.init(optName);
-};
-
-
-// CommonJS function export
-module.exports = createScheduler;
-},{"event-queue":2}],2:[function(_dereq_,module,exports){
-/**
+(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+/* Generated by es6-transpiler v 0.7.14-2 *//**
  * @fileoverview WAVE audio library element: an event queue manager.
  * @author Karim.Barkati@ircam.fr, Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr
  * @version 0.3.2
  * @description An event is made of an object (such as an engine) and a value (such as a time or a position).
  */
 
+'use strict';
 
-/**
- * Function invocation pattern for object creation.
- * @public
- */
-var createEventQueue = function createEventQueue() {
-  'use strict';
+var EventQueue = (function(){var DP$0 = Object.defineProperty;
+  
+  function EventQueue() {
+    if (!(this instanceof EventQueue)) throw new Error('You seem to have forgotten the new operator… shame on you!');
+
+    this.eventList = [];
+    this.name = require('./package.json').name;
+    
+    this.__isBackward = false;
+  }Object.defineProperties(EventQueue.prototype, {length: {"get": length$get$0, "configurable": true, "enumerable": true}});DP$0(EventQueue, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
   /**
-   * ECMAScript5 property descriptors object.
+   * Compare two events based on their value only.
+   * @private
+   * @param {Event} a
+   * @param {Event} b
    */
-  var eventQueueObject = {
+  EventQueue.prototype.__compare = function(a, b) {
+    return a[1] - b[1];
+  }
 
-    // Attributes
-    eventList: {
-      writable: true,
-      value: []
-    },
-    name: {
-      writable: true,
-      value: "EventQueue"
-    },
-    length: {
-      enumerable: true,
-      get: function() {
-        return this.eventList.length;
+  /**
+   * Compare two events based on their value only, in reverse order.
+   * @private
+   * @param {Event} a
+   * @param {Event} b
+   */
+  EventQueue.prototype.__reverseCompare = function(a, b) {
+    return b[1] - a[1];
+  }
+
+  /**
+   * Get the index of an object in the event list.
+   * @private
+   */
+  EventQueue.prototype.__indexOf = function(object) {
+    var i = null;
+    for (i = 0; i < this.__eventList.length; i++) {
+      if (object === this.__eventList[i][0]) {
+        return i;
       }
-    },
-    isBackward: {
-      writable: true,
-      value: false
-    },
+    }
+    return -1;
+  }
 
-    /**
-     * Mandatory initialization method.
-     * @public
-     * @chainable
-     */
-    init: {
-      enumerable: false,
-      value: function() {
-        return this;
+  // this.length helper
+  function length$get$0() {
+    return this.__eventList.length;
+  }
+
+  /**
+   * Insert an event (an ordered pair [object, value]) into eventList.
+   * @public
+   * @param {Object} object reference
+   * @param {Float} value for scheduling or sequencing, ie either time or position value
+   */
+  EventQueue.prototype.insert = function(object, value) {
+    this.pushEvent(object, value);
+    this.sort();
+  }
+
+  /**
+   * Push an event (an ordered pair [object, value]) into eventList without sorting.
+   * @public
+   * @param {Object} object reference
+   * @param {Float} value for scheduling or sequencing, ie either time or position value
+   */
+  EventQueue.prototype.pushEvent = function(object, value) {
+    this.__eventList.push([object, value]);
+  }
+
+  /**
+   * Remove an event from the event list.
+   * @public
+   * @chainable
+   * @param {Object} object of the event to remove (1 to 1 hypothesis)
+   */
+  EventQueue.prototype.remove = function(object) {
+    if (object) {
+      // Search for the index of the object in the list (not the full event pair).
+      var index = this.__indexOf(object);
+      if (index < 0) {
+        throw new Error("remove(): no object");
+      } else {
+        this.__eventList.splice(index, 1);
       }
-    },
+      return this; // for chainability
+    } else {
+      throw new ReferenceError("remove(): no object");
+    }
+  }
 
-    /**
-     * Insert an event (an ordered pair [object, value]) into eventList.
-     * @public
-     * @param {Object} object reference
-     * @param {Float} value for scheduling or sequencing, ie either time or position value
-     */
-    insert: {
-      enumerable: true,
-      value: function(object, value) {
-        this.pushEvent(object, value);
-        this.sort();
-      }
-    },
+  /**
+   * Move an event (an ordered pair [object, value]) into the event list.
+   * @public
+   * @param {Object} object reference
+   * @param {Float} value for scheduling or sequencing, i.e. either time or position value
+   * @todo Optimize algorithm: at least, test if moving is necessary?
+   */
+  EventQueue.prototype.move = function(object, value) {
+    this.remove(object);
+    this.insert(object, value);
+  }
 
-    /**
-     * Push an event (an ordered pair [object, value]) into eventList without sorting.
-     * @public
-     * @param {Object} object reference
-     * @param {Float} value for scheduling or sequencing, ie either time or position value
-     */
-    pushEvent: {
-      enumerable: true,
-      value: function(object, value) {
-        this.eventList.push([object, value]);
-      }
-    },
-
-    /**
-     * Remove an event from the event list.
-     * @public
-     * @chainable
-     * @param {Object} object of the event to remove (1 to 1 hypothesis)
-     */
-    remove: {
-      enumerable: true,
-      value: function(object) {
-        if (object) {
-          // Search for the index of the object in the list (not the full event pair).
-          var index = this.indexOf(object);
-          if (index < 0) {
-            throw new Error("remove(): no object");
-          } else {
-            this.eventList.splice(index, 1);
-          }
-          return this; // for chainability
-        } else {
-          throw new ReferenceError("remove(): no object");
-        }
-      }
-    },
-
-    /**
-     * Move an event (an ordered pair [object, value]) into the event list.
-     * @public
-     * @param {Object} object reference
-     * @param {Float} value for scheduling or sequencing, i.e. either time or position value
-     * @todo Optimize algorithm: at least, test if moving is necessary?
-     */
-    move: {
-      enumerable: true,
-      value: function(object, value) {
-        this.remove(object);
+  /**
+   * Move the first event of the event list only if needed.
+   * @public
+   * @param {Object} object reference
+   * @param {Float} value for scheduling or sequencing, ie either time or position value
+   */
+  EventQueue.prototype.moveFirstEvent = function(object, value) {
+    if (this.__isBackward) {
+      if (value > this.getValueOfIndex(1)) {
+        this.__eventList[0][1] = value;
+      } else {
+        this.__eventList.shift();
         this.insert(object, value);
       }
-    },
-
-    /**
-     * Move the first event of the event list only if needed.
-     * @public
-     * @param {Object} object reference
-     * @param {Float} value for scheduling or sequencing, ie either time or position value
-     */
-    moveFirstEvent: {
-      enumerable: true,
-      value: function(object, value) {
-        if (this.isBackward) {
-          if (value > this.getValueOfIndex(1)) {
-            this.eventList[0][1] = value;
-          } else {
-            this.eventList.shift();
-            this.insert(object, value);
-          }
-        } else {
-          if (value <= this.getValueOfIndex(1)) {
-            this.eventList[0][1] = value;
-          } else {
-            this.eventList.shift();
-            this.insert(object, value);
-          }
-        }
+    } else {
+      if (value <= this.getValueOfIndex(1)) {
+        this.__eventList[0][1] = value;
+      } else {
+        this.__eventList.shift();
+        this.insert(object, value);
       }
-    },
+    }
+  }
 
-    /**
-     * Get first event from the event list.
-     * @public
-     */
-    getFirstEvent: {
-      enumerable: true,
-      value: function() {
-        return this.eventList[0];
+  /**
+   * Get first event from the event list.
+   * @public
+   */
+  EventQueue.prototype.getFirstEvent = function() {
+    return this.__eventList[0];
+  }
+
+  /**
+   * Get object of first event from the event list.
+   * @public
+   */
+  EventQueue.prototype.getFirstObject = function() {
+    return this.__eventList[0][0];
+  }
+
+  /**
+   * Get value of first event from the event list (either time or position).
+   * @public
+   */
+  EventQueue.prototype.getFirstValue = function() {
+    return this.__eventList[0][1];
+  }
+
+  /**
+   * Get value of the specified event from the event list (either time or position).
+   * @public
+   */
+  EventQueue.prototype.getValueOfIndex = function(index) {
+    if (this.__eventList[index]) {
+      return this.__eventList[index][1];
+    } else {
+      return Infinity;
+    }
+  }
+
+  /**
+   * Flush the event list.
+   * @public
+   */
+  EventQueue.prototype.flush = function() {
+    this.__eventList = [];
+  }
+
+
+  /**
+   * Sort the whole event list.
+   * @public
+   */
+  EventQueue.prototype.sort = function() {
+    if (this.__isBackward) {
+      this.__eventList.sort(this.__reverseCompare);
+    } else {
+      this.__eventList.sort(this.__compare);
+    }
+  }
+
+;return EventQueue;})();
+
+module.exports = EventQueue;
+},{"./package.json":2}],2:[function(require,module,exports){
+module.exports={
+  "name": "event-queue",
+  "version": "0.2.0",
+  "description": "WAVE audio library module for an event queue",
+  "main": "index.js",
+  "exports": "createEventQueue",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Karim Barkati",
+  "authors": [
+    "Karim Barkati",
+    "Norbert Schnell",
+    "Victor Saiz"
+  ],
+  "license": "BSD-3-Clause",
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/Ircam-RnD/event-queue.git"
+  },
+  "devDependencies": {
+    "module-boilerplate": "git://github.com/Ircam-RnD/module-boilerplate.git#master",
+    "fs-utils" : "0.4.3",
+    "browserify": "~4.1.2",
+    "mocha": "~1.17.1",
+    "chai": "~1.9.0",
+    "blanket": "~1.1.6",
+    "gulp": "~3.8.2"
+  }
+}
+},{}],3:[function(require,module,exports){
+/* Generated by es6-transpiler v 0.7.14-2 */
+/**
+ * @fileoverview WAVE audio library element: the main audio scheduler of the library,
+ * as a singleton in the global variable 'wako'.
+ * @author Karim.Barkati@ircam.fr, Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr
+ * @version 5.1.0
+ */
+
+'use strict';
+
+// Ensure there is a globally available "audioContext" instance of the web audio AudioContext.
+window.audioContext = window.audioContext || new AudioContext();
+
+var Scheduler = require("../scheduler");
+
+var MainScheduler = (function(){var DP$0 = Object.defineProperty;
+
+  function MainScheduler() {
+
+    this.name = "wako.scheduler"
+    // How frequently to call scheduling function (sec).
+    this.schedulingPeriod =  0.025;
+    // How far ahead to schedule events (sec), should be greater than schedulingPeriod.
+    this.scheduleAheadTime = 0.1; 
+    this.scheduler = new Scheduler();
+
+    this.timerID = null;
+
+    this.scheduler.setParent(this, this.onRunningStatusChange);
+    return this;
+  }DP$0(MainScheduler, "prototype", {"configurable": false, "enumerable": false, "writable": false});
+
+  /**
+   * React to running status change of the main scheduler through this callback.
+   * @private
+   */
+  MainScheduler.prototype.onRunningStatusChange = function(bool) {
+    console.log("onRunningStatusChange (mainScheduler)", bool);
+    if (bool) {
+      this.parent.start();
+    } else {
+      this.parent.stop();
+    }
+  }
+
+  /**
+   * Coarse-grained scheduling of audio events.
+   * @public
+   */
+  MainScheduler.prototype.start = function() {
+    var that = this; // for the setTimeout closure, faster than a bind()
+    var nextEventTime = Infinity;
+
+    // While there are events that will need to be played before the next interval, 
+    // schedule them and advance the time pointer.
+    nextEventTime = this.scheduler.getNextTime();
+    while (nextEventTime <= audioContext.currentTime + this.scheduleAheadTime) {
+      // nextEventTime = this.scheduler.makeEventAndReturnNextTime();
+      this.scheduler.makeNextEvent();
+      nextEventTime = this.scheduler.getNextTime();
+    }
+    // Store the setTimeout ID to allow removing.
+    this.timerID = setTimeout(function() {
+      that.start();
+    }, that.schedulingPeriod * 1000);
+  }
+
+  /**
+   * Stop the scheduling loop.
+   * @public
+   */
+  MainScheduler.prototype.stop = function() {
+    clearTimeout(this.timerID);
+  }
+
+  /**
+   * Forward the add() method to the internal scheduler.
+   * @public
+   * @chainable
+   */
+  MainScheduler.prototype.add = function(object) {
+    this.scheduler.add(object);
+    return this;
+  }
+
+  /**
+   * Forward the remove() method to the internal scheduler.
+   * @public
+   * @chainable
+   */
+  MainScheduler.prototype.remove = function(object) {
+    this.scheduler.remove(object);
+    return this;
+  }
+
+  /**
+   * Get scheduling period.
+   * @public
+   */
+  MainScheduler.prototype.getSchedulingPeriod = function() {
+    return this.schedulingPeriod;
+  }
+
+  /**
+   * Get current time from the Web Audio context.
+   * @public
+   */
+  MainScheduler.prototype.getCurrentTime = function() {
+    return audioContext.currentTime;
+  }
+
+;return MainScheduler;})();
+
+// Ensure there is a globally available "wako" instance of the WAVE's global name-space.
+window.wako = window.wako || {};
+
+// Provide wako with a MainScheduler singleton, only if not already there.
+wako.scheduler = wako.scheduler || new MainScheduler();
+},{"../scheduler":4}],4:[function(require,module,exports){
+/* Generated by es6-transpiler v 0.7.14-2 */
+/**
+ * @fileoverview WAVE audio library element: a web audio scheduler, without time loop.
+ * @author Karim.Barkati@ircam.fr, Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr
+ * @version 4.1.0
+ */
+
+'use strict';
+
+var EventQueue = require("../event-queue");
+
+// Make a global instance of the wako.scheduler available
+require("../main-scheduler-singleton");
+
+var Scheduler = (function(){var DP$0 = Object.defineProperty;
+
+  function Scheduler(optName) {
+
+    if (!this || this === window)
+      throw new SyntaxError("You seem to have forgotten the new operator; Shame on you!");
+
+    this.name = optName || "Scheduler";
+    this.isRunning = false;    
+    this.eventQueue = null;
+    this.nextEventTime = Infinity
+    this.schedulablesList = []
+    this.parent = null
+    // required method, from the parent
+    this.runningStatusChangeCallback = null;
+    this.eventQueue = new EventQueue();
+
+    return this;
+  }DP$0(Scheduler, "prototype", {"configurable": false, "enumerable": false, "writable": false});
+
+  /**
+   * Schedule a schedulable object and add it to the scheduling list.
+   * @public
+   * @chainable
+   */
+  Scheduler.prototype.add = function(object) {
+    object.scheduler = this;
+    var length = this.schedulablesList.push(object);
+    var index = length - 1;
+    var name = object.name ? object.name : object.schedulingID;
+    console.log("add():", this.name, "scheduling element #" + index + ' \"' + name + '\"');
+    if (!this.isRunning) {
+      // this.resetAll();
+    }
+    return this;
+  }
+
+  /**
+   * Unschedule a schedulable object and remove it from the scheduling list.
+   * @public
+   * @chainable
+   */
+  Scheduler.prototype.remove = function(object) {
+    // Search for the object in the scheduling list.
+    var index = this.schedulablesList.indexOf(object);
+
+    if (index < 0) {
+      throw new Error("remove(): object not found," + object);
+    } else {
+      this.schedulablesList.splice(index, 1);
+      console.log("Unscheduling element #" + index, object.name ? '\"' + object.name + '\"' : "", object.schedulingID);
+      // When the scheduling list is empty, stop scheduling.
+      if (this.schedulablesList.length <= 0) {
+        this.stop();
       }
-    },
+    }
+    return this;
+  }
 
-    /**
-     * Get object of first event from the event list.
-     * @public
-     */
-    getFirstObject: {
-      enumerable: true,
-      value: function() {
-        return this.eventList[0][0];
+  /**
+   * Start scheduling.
+   * @private
+   */
+  Scheduler.prototype.start = function() {
+    if (!this.isRunning) {
+      this.isRunning = true;
+      console.log("Scheduling on", "(" + this.name + ")");
+      this.runningStatusChangeCallback(this.isRunning);
+    }
+  }
+
+  /**
+   * Stop scheduling.
+   * @private
+   */
+  Scheduler.prototype.stop = function() {
+    this.isRunning = false;
+    console.log("Scheduling off (" + this.name + ")");
+    this.runningStatusChangeCallback(this.isRunning);
+  }
+
+  /**
+   * Reset all schedulables objects of this scheduler.
+   * @public
+   */
+  Scheduler.prototype.reset = function() {
+    this.eventQueue.flush();
+    this.insertAll();
+  }
+
+  /**
+   * Push all events into the event queue and sort it afterward.
+   * @private
+   */
+  Scheduler.prototype.insertAll = function() {
+    var time = null;
+    var element = null;
+    // console.log("schedulablesList: ", this.schedulablesList);
+    for (var i = this.schedulablesList.length - 1; i >= 0; i--) {
+      element = this.schedulablesList[i];
+      time = element.resetAndReturnNextTime(this.getCurrentTime());
+      this.eventQueue.pushEvent(element, time);
+    }
+    this.eventQueue.sort();
+  }
+
+  /**
+   * Insert an event into the event queue.
+   * @public
+   */
+  Scheduler.prototype.insertEvent = function(object, time) {
+    if (time !== Infinity) {
+      this.eventQueue.Insert(object, time);
+    }
+  }
+
+  /**
+   * Get current time from wako.scheduler.
+   * @public
+   */
+  Scheduler.prototype.getCurrentTime = function() {
+    return wako.scheduler.getCurrentTime();
+  }
+
+  /**
+   * Update next scheduling time of a scheduled object.
+   * @private
+   * @param {Object} object reference
+   * @param {Float} new scheduling time of its next event; "Infinity" means "remove from scheduling"
+   */
+  Scheduler.prototype.updateNextTime = function(object, time) {
+    if (time === Infinity) {
+      this.eventQueue.remove(object);
+      // If the queue is empty, stop scheduling.
+      if (this.eventQueue.length <= 0) {
+        this.stop();
       }
-    },
-
-    /**
-     * Get value of first event from the event list (either time or position).
-     * @public
-     */
-    getFirstValue: {
-      enumerable: true,
-      value: function() {
-        return this.eventList[0][1];
+    } else {
+      if (this.eventQueue.indexOf(object) < 0) {
+        this.eventQueue.insert(object, time);
+      } else {
+        this.eventQueue.move(object, time);
       }
-    },
+      this.start();
+    }
+  }
 
-    /**
-     * Get value of the specified event from the event list (either time or position).
-     * @public
-     */
-    getValueOfIndex: {
-      enumerable: true,
-      value: function(index) {
-        if (this.eventList[index]) {
-          return this.eventList[index][1];
-        } else {
-          return Infinity;
-        }
-      }
-    },
-
-    /**
-     * Flush the event list.
-     * @public
-     */
-    flush: {
-      enumerable: true,
-      value: function() {
-        this.eventList = [];
-      }
-    },
-
-    /**
-     * Sort the whole event list.
-     * @public
-     */
-    sort: {
-      enumerable: false,
-      value: function() {
-        if (this.isBackward) {
-          this.eventList.sort(this.reverseCompare);
-        } else {
-          this.eventList.sort(this.compare);
-        }
-      }
-    },
-
-    /**
-     * Compare two events based on their value only.
-     * @private
-     * @param {Event} a
-     * @param {Event} b
-     */
-    compare: {
-      enumerable: false,
-      value: function(a, b) {
-        return a[1] - b[1];
-      }
-    },
-
-    /**
-     * Compare two events based on their value only, in reverse order.
-     * @private
-     * @param {Event} a
-     * @param {Event} b
-     */
-    reverseCompare: {
-      enumerable: false,
-      value: function(a, b) {
-        return b[1] - a[1];
-      }
-    },
-
-    /**
-     * Get the index of an object in the event list.
-     * @private
-     */
-    indexOf: {
-      enumerable: false,
-      value: function(object) {
-        var i = null;
-        for (i = 0; i < this.eventList.length; i++) {
-          if (object === this.eventList[i][0]) {
-            return i;
-          }
-        }
-        return -1;
-      }
-    },
-
-  }; // End of property object definition.
+  /**
+   * Set parent and status change callback.
+   * @private
+   * @param {Object} parent The parent of a scheduler has to be set.
+   * @param {Function} callback This required callback triggers the parent,
+   * with a boolean on running status change.
+   */
+  Scheduler.prototype.setParent = function(object, callback) {
+    this.parent = object;
+    this.runningStatusChangeCallback = callback;
+  }
 
 
-  // Instantiate an object and initialize it.
-  var eventQueueInstance = Object.create({}, eventQueueObject);
-  return eventQueueInstance.init();
+  /////////////////////////////
+  /// Transporting methods ///
+  /////////////////////////////
 
-};
+  /**
+   * Call the event making method of the first schedulable object,
+   * and then update the first event of the queue.
+   * @public
+   */
+  Scheduler.prototype.makeNextEvent = function() {
+    var engine = this.eventQueue.getFirstObject();
+    this.nextEventTime = engine.makeEventAndReturnNextTime();
+    this.eventQueue.moveFirstEvent(engine, this.nextEventTime);
+  }
 
+  /**
+   * Get next event time by querying it in the event queue.
+   * @public
+   */
+  Scheduler.prototype.getNextTime = function() {
+    if (this.schedulablesList.length > 0) {
+      this.nextEventTime = this.eventQueue.getFirstValue();
+      return this.nextEventTime;
+    } else {
+      return Infinity;
+    }
+  }
 
-// CommonJS function export
-module.exports = createEventQueue;
+;return Scheduler;})();
 
-},{}]},{},[1])
-(1)
-});
+module.exports = Scheduler;
+},{"../event-queue":1,"../main-scheduler-singleton":3}]},{},[4])
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi9Wb2x1bWVzL0hvbWUvRG9jdW1lbnRzL1dBVkUvZ3VscEJyb3dFcnN5Ni9ub2RlX21vZHVsZXMvYnJvd3NlcmlmeS9ub2RlX21vZHVsZXMvYnJvd3Nlci1wYWNrL19wcmVsdWRlLmpzIiwiL1ZvbHVtZXMvSG9tZS9Eb2N1bWVudHMvd2F2ZS9yZXBvL2xpYi9naXRodWIvYXVkaW8vZXZlbnQtcXVldWUvaW5kZXguanMiLCIvVm9sdW1lcy9Ib21lL0RvY3VtZW50cy93YXZlL3JlcG8vbGliL2dpdGh1Yi9hdWRpby9ldmVudC1xdWV1ZS9wYWNrYWdlLmpzb24iLCIvVm9sdW1lcy9Ib21lL0RvY3VtZW50cy93YXZlL3JlcG8vbGliL2dpdGh1Yi9hdWRpby9tYWluLXNjaGVkdWxlci1zaW5nbGV0b24vaW5kZXguanMiLCIvVm9sdW1lcy9Ib21lL0RvY3VtZW50cy93YXZlL3JlcG8vbGliL2dpdGh1Yi9hdWRpby9zY2hlZHVsZXIvaW5kZXguanMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUE7QUNBQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBOztBQ3BNQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7O0FDN0JBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBOztBQ3JIQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQSIsImZpbGUiOiJnZW5lcmF0ZWQuanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlc0NvbnRlbnQiOlsiKGZ1bmN0aW9uIGUodCxuLHIpe2Z1bmN0aW9uIHMobyx1KXtpZighbltvXSl7aWYoIXRbb10pe3ZhciBhPXR5cGVvZiByZXF1aXJlPT1cImZ1bmN0aW9uXCImJnJlcXVpcmU7aWYoIXUmJmEpcmV0dXJuIGEobywhMCk7aWYoaSlyZXR1cm4gaShvLCEwKTt2YXIgZj1uZXcgRXJyb3IoXCJDYW5ub3QgZmluZCBtb2R1bGUgJ1wiK28rXCInXCIpO3Rocm93IGYuY29kZT1cIk1PRFVMRV9OT1RfRk9VTkRcIixmfXZhciBsPW5bb109e2V4cG9ydHM6e319O3Rbb11bMF0uY2FsbChsLmV4cG9ydHMsZnVuY3Rpb24oZSl7dmFyIG49dFtvXVsxXVtlXTtyZXR1cm4gcyhuP246ZSl9LGwsbC5leHBvcnRzLGUsdCxuLHIpfXJldHVybiBuW29dLmV4cG9ydHN9dmFyIGk9dHlwZW9mIHJlcXVpcmU9PVwiZnVuY3Rpb25cIiYmcmVxdWlyZTtmb3IodmFyIG89MDtvPHIubGVuZ3RoO28rKylzKHJbb10pO3JldHVybiBzfSkiLCIvKiBHZW5lcmF0ZWQgYnkgZXM2LXRyYW5zcGlsZXIgdiAwLjcuMTQtMiAqLy8qKlxuICogQGZpbGVvdmVydmlldyBXQVZFIGF1ZGlvIGxpYnJhcnkgZWxlbWVudDogYW4gZXZlbnQgcXVldWUgbWFuYWdlci5cbiAqIEBhdXRob3IgS2FyaW0uQmFya2F0aUBpcmNhbS5mciwgTm9yYmVydC5TY2huZWxsQGlyY2FtLmZyLCBWaWN0b3IuU2FpekBpcmNhbS5mclxuICogQHZlcnNpb24gMC4zLjJcbiAqIEBkZXNjcmlwdGlvbiBBbiBldmVudCBpcyBtYWRlIG9mIGFuIG9iamVjdCAoc3VjaCBhcyBhbiBlbmdpbmUpIGFuZCBhIHZhbHVlIChzdWNoIGFzIGEgdGltZSBvciBhIHBvc2l0aW9uKS5cbiAqL1xuXG4ndXNlIHN0cmljdCc7XG5cbnZhciBFdmVudFF1ZXVlID0gKGZ1bmN0aW9uKCl7dmFyIERQJDAgPSBPYmplY3QuZGVmaW5lUHJvcGVydHk7XG4gIFxuICBmdW5jdGlvbiBFdmVudFF1ZXVlKCkge1xuICAgIGlmICghKHRoaXMgaW5zdGFuY2VvZiBFdmVudFF1ZXVlKSkgdGhyb3cgbmV3IEVycm9yKCdZb3Ugc2VlbSB0byBoYXZlIGZvcmdvdHRlbiB0aGUgbmV3IG9wZXJhdG9y4oCmIHNoYW1lIG9uIHlvdSEnKTtcblxuICAgIHRoaXMuZXZlbnRMaXN0ID0gW107XG4gICAgdGhpcy5uYW1lID0gcmVxdWlyZSgnLi9wYWNrYWdlLmpzb24nKS5uYW1lO1xuICAgIFxuICAgIHRoaXMuX19pc0JhY2t3YXJkID0gZmFsc2U7XG4gIH1PYmplY3QuZGVmaW5lUHJvcGVydGllcyhFdmVudFF1ZXVlLnByb3RvdHlwZSwge2xlbmd0aDoge1wiZ2V0XCI6IGxlbmd0aCRnZXQkMCwgXCJjb25maWd1cmFibGVcIjogdHJ1ZSwgXCJlbnVtZXJhYmxlXCI6IHRydWV9fSk7RFAkMChFdmVudFF1ZXVlLCBcInByb3RvdHlwZVwiLCB7XCJjb25maWd1cmFibGVcIjogZmFsc2UsIFwiZW51bWVyYWJsZVwiOiBmYWxzZSwgXCJ3cml0YWJsZVwiOiBmYWxzZX0pO1xuXG4gIC8qKlxuICAgKiBDb21wYXJlIHR3byBldmVudHMgYmFzZWQgb24gdGhlaXIgdmFsdWUgb25seS5cbiAgICogQHByaXZhdGVcbiAgICogQHBhcmFtIHtFdmVudH0gYVxuICAgKiBAcGFyYW0ge0V2ZW50fSBiXG4gICAqL1xuICBFdmVudFF1ZXVlLnByb3RvdHlwZS5fX2NvbXBhcmUgPSBmdW5jdGlvbihhLCBiKSB7XG4gICAgcmV0dXJuIGFbMV0gLSBiWzFdO1xuICB9XG5cbiAgLyoqXG4gICAqIENvbXBhcmUgdHdvIGV2ZW50cyBiYXNlZCBvbiB0aGVpciB2YWx1ZSBvbmx5LCBpbiByZXZlcnNlIG9yZGVyLlxuICAgKiBAcHJpdmF0ZVxuICAgKiBAcGFyYW0ge0V2ZW50fSBhXG4gICAqIEBwYXJhbSB7RXZlbnR9IGJcbiAgICovXG4gIEV2ZW50UXVldWUucHJvdG90eXBlLl9fcmV2ZXJzZUNvbXBhcmUgPSBmdW5jdGlvbihhLCBiKSB7XG4gICAgcmV0dXJuIGJbMV0gLSBhWzFdO1xuICB9XG5cbiAgLyoqXG4gICAqIEdldCB0aGUgaW5kZXggb2YgYW4gb2JqZWN0IGluIHRoZSBldmVudCBsaXN0LlxuICAgKiBAcHJpdmF0ZVxuICAgKi9cbiAgRXZlbnRRdWV1ZS5wcm90b3R5cGUuX19pbmRleE9mID0gZnVuY3Rpb24ob2JqZWN0KSB7XG4gICAgdmFyIGkgPSBudWxsO1xuICAgIGZvciAoaSA9IDA7IGkgPCB0aGlzLl9fZXZlbnRMaXN0Lmxlbmd0aDsgaSsrKSB7XG4gICAgICBpZiAob2JqZWN0ID09PSB0aGlzLl9fZXZlbnRMaXN0W2ldWzBdKSB7XG4gICAgICAgIHJldHVybiBpO1xuICAgICAgfVxuICAgIH1cbiAgICByZXR1cm4gLTE7XG4gIH1cblxuICAvLyB0aGlzLmxlbmd0aCBoZWxwZXJcbiAgZnVuY3Rpb24gbGVuZ3RoJGdldCQwKCkge1xuICAgIHJldHVybiB0aGlzLl9fZXZlbnRMaXN0Lmxlbmd0aDtcbiAgfVxuXG4gIC8qKlxuICAgKiBJbnNlcnQgYW4gZXZlbnQgKGFuIG9yZGVyZWQgcGFpciBbb2JqZWN0LCB2YWx1ZV0pIGludG8gZXZlbnRMaXN0LlxuICAgKiBAcHVibGljXG4gICAqIEBwYXJhbSB7T2JqZWN0fSBvYmplY3QgcmVmZXJlbmNlXG4gICAqIEBwYXJhbSB7RmxvYXR9IHZhbHVlIGZvciBzY2hlZHVsaW5nIG9yIHNlcXVlbmNpbmcsIGllIGVpdGhlciB0aW1lIG9yIHBvc2l0aW9uIHZhbHVlXG4gICAqL1xuICBFdmVudFF1ZXVlLnByb3RvdHlwZS5pbnNlcnQgPSBmdW5jdGlvbihvYmplY3QsIHZhbHVlKSB7XG4gICAgdGhpcy5wdXNoRXZlbnQob2JqZWN0LCB2YWx1ZSk7XG4gICAgdGhpcy5zb3J0KCk7XG4gIH1cblxuICAvKipcbiAgICogUHVzaCBhbiBldmVudCAoYW4gb3JkZXJlZCBwYWlyIFtvYmplY3QsIHZhbHVlXSkgaW50byBldmVudExpc3Qgd2l0aG91dCBzb3J0aW5nLlxuICAgKiBAcHVibGljXG4gICAqIEBwYXJhbSB7T2JqZWN0fSBvYmplY3QgcmVmZXJlbmNlXG4gICAqIEBwYXJhbSB7RmxvYXR9IHZhbHVlIGZvciBzY2hlZHVsaW5nIG9yIHNlcXVlbmNpbmcsIGllIGVpdGhlciB0aW1lIG9yIHBvc2l0aW9uIHZhbHVlXG4gICAqL1xuICBFdmVudFF1ZXVlLnByb3RvdHlwZS5wdXNoRXZlbnQgPSBmdW5jdGlvbihvYmplY3QsIHZhbHVlKSB7XG4gICAgdGhpcy5fX2V2ZW50TGlzdC5wdXNoKFtvYmplY3QsIHZhbHVlXSk7XG4gIH1cblxuICAvKipcbiAgICogUmVtb3ZlIGFuIGV2ZW50IGZyb20gdGhlIGV2ZW50IGxpc3QuXG4gICAqIEBwdWJsaWNcbiAgICogQGNoYWluYWJsZVxuICAgKiBAcGFyYW0ge09iamVjdH0gb2JqZWN0IG9mIHRoZSBldmVudCB0byByZW1vdmUgKDEgdG8gMSBoeXBvdGhlc2lzKVxuICAgKi9cbiAgRXZlbnRRdWV1ZS5wcm90b3R5cGUucmVtb3ZlID0gZnVuY3Rpb24ob2JqZWN0KSB7XG4gICAgaWYgKG9iamVjdCkge1xuICAgICAgLy8gU2VhcmNoIGZvciB0aGUgaW5kZXggb2YgdGhlIG9iamVjdCBpbiB0aGUgbGlzdCAobm90IHRoZSBmdWxsIGV2ZW50IHBhaXIpLlxuICAgICAgdmFyIGluZGV4ID0gdGhpcy5fX2luZGV4T2Yob2JqZWN0KTtcbiAgICAgIGlmIChpbmRleCA8IDApIHtcbiAgICAgICAgdGhyb3cgbmV3IEVycm9yKFwicmVtb3ZlKCk6IG5vIG9iamVjdFwiKTtcbiAgICAgIH0gZWxzZSB7XG4gICAgICAgIHRoaXMuX19ldmVudExpc3Quc3BsaWNlKGluZGV4LCAxKTtcbiAgICAgIH1cbiAgICAgIHJldHVybiB0aGlzOyAvLyBmb3IgY2hhaW5hYmlsaXR5XG4gICAgfSBlbHNlIHtcbiAgICAgIHRocm93IG5ldyBSZWZlcmVuY2VFcnJvcihcInJlbW92ZSgpOiBubyBvYmplY3RcIik7XG4gICAgfVxuICB9XG5cbiAgLyoqXG4gICAqIE1vdmUgYW4gZXZlbnQgKGFuIG9yZGVyZWQgcGFpciBbb2JqZWN0LCB2YWx1ZV0pIGludG8gdGhlIGV2ZW50IGxpc3QuXG4gICAqIEBwdWJsaWNcbiAgICogQHBhcmFtIHtPYmplY3R9IG9iamVjdCByZWZlcmVuY2VcbiAgICogQHBhcmFtIHtGbG9hdH0gdmFsdWUgZm9yIHNjaGVkdWxpbmcgb3Igc2VxdWVuY2luZywgaS5lLiBlaXRoZXIgdGltZSBvciBwb3NpdGlvbiB2YWx1ZVxuICAgKiBAdG9kbyBPcHRpbWl6ZSBhbGdvcml0aG06IGF0IGxlYXN0LCB0ZXN0IGlmIG1vdmluZyBpcyBuZWNlc3Nhcnk/XG4gICAqL1xuICBFdmVudFF1ZXVlLnByb3RvdHlwZS5tb3ZlID0gZnVuY3Rpb24ob2JqZWN0LCB2YWx1ZSkge1xuICAgIHRoaXMucmVtb3ZlKG9iamVjdCk7XG4gICAgdGhpcy5pbnNlcnQob2JqZWN0LCB2YWx1ZSk7XG4gIH1cblxuICAvKipcbiAgICogTW92ZSB0aGUgZmlyc3QgZXZlbnQgb2YgdGhlIGV2ZW50IGxpc3Qgb25seSBpZiBuZWVkZWQuXG4gICAqIEBwdWJsaWNcbiAgICogQHBhcmFtIHtPYmplY3R9IG9iamVjdCByZWZlcmVuY2VcbiAgICogQHBhcmFtIHtGbG9hdH0gdmFsdWUgZm9yIHNjaGVkdWxpbmcgb3Igc2VxdWVuY2luZywgaWUgZWl0aGVyIHRpbWUgb3IgcG9zaXRpb24gdmFsdWVcbiAgICovXG4gIEV2ZW50UXVldWUucHJvdG90eXBlLm1vdmVGaXJzdEV2ZW50ID0gZnVuY3Rpb24ob2JqZWN0LCB2YWx1ZSkge1xuICAgIGlmICh0aGlzLl9faXNCYWNrd2FyZCkge1xuICAgICAgaWYgKHZhbHVlID4gdGhpcy5nZXRWYWx1ZU9mSW5kZXgoMSkpIHtcbiAgICAgICAgdGhpcy5fX2V2ZW50TGlzdFswXVsxXSA9IHZhbHVlO1xuICAgICAgfSBlbHNlIHtcbiAgICAgICAgdGhpcy5fX2V2ZW50TGlzdC5zaGlmdCgpO1xuICAgICAgICB0aGlzLmluc2VydChvYmplY3QsIHZhbHVlKTtcbiAgICAgIH1cbiAgICB9IGVsc2Uge1xuICAgICAgaWYgKHZhbHVlIDw9IHRoaXMuZ2V0VmFsdWVPZkluZGV4KDEpKSB7XG4gICAgICAgIHRoaXMuX19ldmVudExpc3RbMF1bMV0gPSB2YWx1ZTtcbiAgICAgIH0gZWxzZSB7XG4gICAgICAgIHRoaXMuX19ldmVudExpc3Quc2hpZnQoKTtcbiAgICAgICAgdGhpcy5pbnNlcnQob2JqZWN0LCB2YWx1ZSk7XG4gICAgICB9XG4gICAgfVxuICB9XG5cbiAgLyoqXG4gICAqIEdldCBmaXJzdCBldmVudCBmcm9tIHRoZSBldmVudCBsaXN0LlxuICAgKiBAcHVibGljXG4gICAqL1xuICBFdmVudFF1ZXVlLnByb3RvdHlwZS5nZXRGaXJzdEV2ZW50ID0gZnVuY3Rpb24oKSB7XG4gICAgcmV0dXJuIHRoaXMuX19ldmVudExpc3RbMF07XG4gIH1cblxuICAvKipcbiAgICogR2V0IG9iamVjdCBvZiBmaXJzdCBldmVudCBmcm9tIHRoZSBldmVudCBsaXN0LlxuICAgKiBAcHVibGljXG4gICAqL1xuICBFdmVudFF1ZXVlLnByb3RvdHlwZS5nZXRGaXJzdE9iamVjdCA9IGZ1bmN0aW9uKCkge1xuICAgIHJldHVybiB0aGlzLl9fZXZlbnRMaXN0WzBdWzBdO1xuICB9XG5cbiAgLyoqXG4gICAqIEdldCB2YWx1ZSBvZiBmaXJzdCBldmVudCBmcm9tIHRoZSBldmVudCBsaXN0IChlaXRoZXIgdGltZSBvciBwb3NpdGlvbikuXG4gICAqIEBwdWJsaWNcbiAgICovXG4gIEV2ZW50UXVldWUucHJvdG90eXBlLmdldEZpcnN0VmFsdWUgPSBmdW5jdGlvbigpIHtcbiAgICByZXR1cm4gdGhpcy5fX2V2ZW50TGlzdFswXVsxXTtcbiAgfVxuXG4gIC8qKlxuICAgKiBHZXQgdmFsdWUgb2YgdGhlIHNwZWNpZmllZCBldmVudCBmcm9tIHRoZSBldmVudCBsaXN0IChlaXRoZXIgdGltZSBvciBwb3NpdGlvbikuXG4gICAqIEBwdWJsaWNcbiAgICovXG4gIEV2ZW50UXVldWUucHJvdG90eXBlLmdldFZhbHVlT2ZJbmRleCA9IGZ1bmN0aW9uKGluZGV4KSB7XG4gICAgaWYgKHRoaXMuX19ldmVudExpc3RbaW5kZXhdKSB7XG4gICAgICByZXR1cm4gdGhpcy5fX2V2ZW50TGlzdFtpbmRleF1bMV07XG4gICAgfSBlbHNlIHtcbiAgICAgIHJldHVybiBJbmZpbml0eTtcbiAgICB9XG4gIH1cblxuICAvKipcbiAgICogRmx1c2ggdGhlIGV2ZW50IGxpc3QuXG4gICAqIEBwdWJsaWNcbiAgICovXG4gIEV2ZW50UXVldWUucHJvdG90eXBlLmZsdXNoID0gZnVuY3Rpb24oKSB7XG4gICAgdGhpcy5fX2V2ZW50TGlzdCA9IFtdO1xuICB9XG5cblxuICAvKipcbiAgICogU29ydCB0aGUgd2hvbGUgZXZlbnQgbGlzdC5cbiAgICogQHB1YmxpY1xuICAgKi9cbiAgRXZlbnRRdWV1ZS5wcm90b3R5cGUuc29ydCA9IGZ1bmN0aW9uKCkge1xuICAgIGlmICh0aGlzLl9faXNCYWNrd2FyZCkge1xuICAgICAgdGhpcy5fX2V2ZW50TGlzdC5zb3J0KHRoaXMuX19yZXZlcnNlQ29tcGFyZSk7XG4gICAgfSBlbHNlIHtcbiAgICAgIHRoaXMuX19ldmVudExpc3Quc29ydCh0aGlzLl9fY29tcGFyZSk7XG4gICAgfVxuICB9XG5cbjtyZXR1cm4gRXZlbnRRdWV1ZTt9KSgpO1xuXG5tb2R1bGUuZXhwb3J0cyA9IEV2ZW50UXVldWU7IiwibW9kdWxlLmV4cG9ydHM9e1xuICBcIm5hbWVcIjogXCJldmVudC1xdWV1ZVwiLFxuICBcInZlcnNpb25cIjogXCIwLjIuMFwiLFxuICBcImRlc2NyaXB0aW9uXCI6IFwiV0FWRSBhdWRpbyBsaWJyYXJ5IG1vZHVsZSBmb3IgYW4gZXZlbnQgcXVldWVcIixcbiAgXCJtYWluXCI6IFwiaW5kZXguanNcIixcbiAgXCJleHBvcnRzXCI6IFwiY3JlYXRlRXZlbnRRdWV1ZVwiLFxuICBcInNjcmlwdHNcIjoge1xuICAgIFwidGVzdFwiOiBcImVjaG8gXFxcIkVycm9yOiBubyB0ZXN0IHNwZWNpZmllZFxcXCIgJiYgZXhpdCAxXCJcbiAgfSxcbiAgXCJhdXRob3JcIjogXCJLYXJpbSBCYXJrYXRpXCIsXG4gIFwiYXV0aG9yc1wiOiBbXG4gICAgXCJLYXJpbSBCYXJrYXRpXCIsXG4gICAgXCJOb3JiZXJ0IFNjaG5lbGxcIixcbiAgICBcIlZpY3RvciBTYWl6XCJcbiAgXSxcbiAgXCJsaWNlbnNlXCI6IFwiQlNELTMtQ2xhdXNlXCIsXG4gIFwicmVwb3NpdG9yeVwiOiB7XG4gICAgXCJ0eXBlXCI6IFwiZ2l0XCIsXG4gICAgXCJ1cmxcIjogXCJodHRwOi8vZ2l0aHViLmNvbS9JcmNhbS1SbkQvZXZlbnQtcXVldWUuZ2l0XCJcbiAgfSxcbiAgXCJkZXZEZXBlbmRlbmNpZXNcIjoge1xuICAgIFwibW9kdWxlLWJvaWxlcnBsYXRlXCI6IFwiZ2l0Oi8vZ2l0aHViLmNvbS9JcmNhbS1SbkQvbW9kdWxlLWJvaWxlcnBsYXRlLmdpdCNtYXN0ZXJcIixcbiAgICBcImZzLXV0aWxzXCIgOiBcIjAuNC4zXCIsXG4gICAgXCJicm93c2VyaWZ5XCI6IFwifjQuMS4yXCIsXG4gICAgXCJtb2NoYVwiOiBcIn4xLjE3LjFcIixcbiAgICBcImNoYWlcIjogXCJ+MS45LjBcIixcbiAgICBcImJsYW5rZXRcIjogXCJ+MS4xLjZcIixcbiAgICBcImd1bHBcIjogXCJ+My44LjJcIlxuICB9XG59IiwiLyogR2VuZXJhdGVkIGJ5IGVzNi10cmFuc3BpbGVyIHYgMC43LjE0LTIgKi9cbi8qKlxuICogQGZpbGVvdmVydmlldyBXQVZFIGF1ZGlvIGxpYnJhcnkgZWxlbWVudDogdGhlIG1haW4gYXVkaW8gc2NoZWR1bGVyIG9mIHRoZSBsaWJyYXJ5LFxuICogYXMgYSBzaW5nbGV0b24gaW4gdGhlIGdsb2JhbCB2YXJpYWJsZSAnd2FrbycuXG4gKiBAYXV0aG9yIEthcmltLkJhcmthdGlAaXJjYW0uZnIsIE5vcmJlcnQuU2NobmVsbEBpcmNhbS5mciwgVmljdG9yLlNhaXpAaXJjYW0uZnJcbiAqIEB2ZXJzaW9uIDUuMS4wXG4gKi9cblxuJ3VzZSBzdHJpY3QnO1xuXG4vLyBFbnN1cmUgdGhlcmUgaXMgYSBnbG9iYWxseSBhdmFpbGFibGUgXCJhdWRpb0NvbnRleHRcIiBpbnN0YW5jZSBvZiB0aGUgd2ViIGF1ZGlvIEF1ZGlvQ29udGV4dC5cbndpbmRvdy5hdWRpb0NvbnRleHQgPSB3aW5kb3cuYXVkaW9Db250ZXh0IHx8IG5ldyBBdWRpb0NvbnRleHQoKTtcblxudmFyIFNjaGVkdWxlciA9IHJlcXVpcmUoXCIuLi9zY2hlZHVsZXJcIik7XG5cbnZhciBNYWluU2NoZWR1bGVyID0gKGZ1bmN0aW9uKCl7dmFyIERQJDAgPSBPYmplY3QuZGVmaW5lUHJvcGVydHk7XG5cbiAgZnVuY3Rpb24gTWFpblNjaGVkdWxlcigpIHtcblxuICAgIHRoaXMubmFtZSA9IFwid2Frby5zY2hlZHVsZXJcIlxuICAgIC8vIEhvdyBmcmVxdWVudGx5IHRvIGNhbGwgc2NoZWR1bGluZyBmdW5jdGlvbiAoc2VjKS5cbiAgICB0aGlzLnNjaGVkdWxpbmdQZXJpb2QgPSAgMC4wMjU7XG4gICAgLy8gSG93IGZhciBhaGVhZCB0byBzY2hlZHVsZSBldmVudHMgKHNlYyksIHNob3VsZCBiZSBncmVhdGVyIHRoYW4gc2NoZWR1bGluZ1BlcmlvZC5cbiAgICB0aGlzLnNjaGVkdWxlQWhlYWRUaW1lID0gMC4xOyBcbiAgICB0aGlzLnNjaGVkdWxlciA9IG5ldyBTY2hlZHVsZXIoKTtcblxuICAgIHRoaXMudGltZXJJRCA9IG51bGw7XG5cbiAgICB0aGlzLnNjaGVkdWxlci5zZXRQYXJlbnQodGhpcywgdGhpcy5vblJ1bm5pbmdTdGF0dXNDaGFuZ2UpO1xuICAgIHJldHVybiB0aGlzO1xuICB9RFAkMChNYWluU2NoZWR1bGVyLCBcInByb3RvdHlwZVwiLCB7XCJjb25maWd1cmFibGVcIjogZmFsc2UsIFwiZW51bWVyYWJsZVwiOiBmYWxzZSwgXCJ3cml0YWJsZVwiOiBmYWxzZX0pO1xuXG4gIC8qKlxuICAgKiBSZWFjdCB0byBydW5uaW5nIHN0YXR1cyBjaGFuZ2Ugb2YgdGhlIG1haW4gc2NoZWR1bGVyIHRocm91Z2ggdGhpcyBjYWxsYmFjay5cbiAgICogQHByaXZhdGVcbiAgICovXG4gIE1haW5TY2hlZHVsZXIucHJvdG90eXBlLm9uUnVubmluZ1N0YXR1c0NoYW5nZSA9IGZ1bmN0aW9uKGJvb2wpIHtcbiAgICBjb25zb2xlLmxvZyhcIm9uUnVubmluZ1N0YXR1c0NoYW5nZSAobWFpblNjaGVkdWxlcilcIiwgYm9vbCk7XG4gICAgaWYgKGJvb2wpIHtcbiAgICAgIHRoaXMucGFyZW50LnN0YXJ0KCk7XG4gICAgfSBlbHNlIHtcbiAgICAgIHRoaXMucGFyZW50LnN0b3AoKTtcbiAgICB9XG4gIH1cblxuICAvKipcbiAgICogQ29hcnNlLWdyYWluZWQgc2NoZWR1bGluZyBvZiBhdWRpbyBldmVudHMuXG4gICAqIEBwdWJsaWNcbiAgICovXG4gIE1haW5TY2hlZHVsZXIucHJvdG90eXBlLnN0YXJ0ID0gZnVuY3Rpb24oKSB7XG4gICAgdmFyIHRoYXQgPSB0aGlzOyAvLyBmb3IgdGhlIHNldFRpbWVvdXQgY2xvc3VyZSwgZmFzdGVyIHRoYW4gYSBiaW5kKClcbiAgICB2YXIgbmV4dEV2ZW50VGltZSA9IEluZmluaXR5O1xuXG4gICAgLy8gV2hpbGUgdGhlcmUgYXJlIGV2ZW50cyB0aGF0IHdpbGwgbmVlZCB0byBiZSBwbGF5ZWQgYmVmb3JlIHRoZSBuZXh0IGludGVydmFsLCBcbiAgICAvLyBzY2hlZHVsZSB0aGVtIGFuZCBhZHZhbmNlIHRoZSB0aW1lIHBvaW50ZXIuXG4gICAgbmV4dEV2ZW50VGltZSA9IHRoaXMuc2NoZWR1bGVyLmdldE5leHRUaW1lKCk7XG4gICAgd2hpbGUgKG5leHRFdmVudFRpbWUgPD0gYXVkaW9Db250ZXh0LmN1cnJlbnRUaW1lICsgdGhpcy5zY2hlZHVsZUFoZWFkVGltZSkge1xuICAgICAgLy8gbmV4dEV2ZW50VGltZSA9IHRoaXMuc2NoZWR1bGVyLm1ha2VFdmVudEFuZFJldHVybk5leHRUaW1lKCk7XG4gICAgICB0aGlzLnNjaGVkdWxlci5tYWtlTmV4dEV2ZW50KCk7XG4gICAgICBuZXh0RXZlbnRUaW1lID0gdGhpcy5zY2hlZHVsZXIuZ2V0TmV4dFRpbWUoKTtcbiAgICB9XG4gICAgLy8gU3RvcmUgdGhlIHNldFRpbWVvdXQgSUQgdG8gYWxsb3cgcmVtb3ZpbmcuXG4gICAgdGhpcy50aW1lcklEID0gc2V0VGltZW91dChmdW5jdGlvbigpIHtcbiAgICAgIHRoYXQuc3RhcnQoKTtcbiAgICB9LCB0aGF0LnNjaGVkdWxpbmdQZXJpb2QgKiAxMDAwKTtcbiAgfVxuXG4gIC8qKlxuICAgKiBTdG9wIHRoZSBzY2hlZHVsaW5nIGxvb3AuXG4gICAqIEBwdWJsaWNcbiAgICovXG4gIE1haW5TY2hlZHVsZXIucHJvdG90eXBlLnN0b3AgPSBmdW5jdGlvbigpIHtcbiAgICBjbGVhclRpbWVvdXQodGhpcy50aW1lcklEKTtcbiAgfVxuXG4gIC8qKlxuICAgKiBGb3J3YXJkIHRoZSBhZGQoKSBtZXRob2QgdG8gdGhlIGludGVybmFsIHNjaGVkdWxlci5cbiAgICogQHB1YmxpY1xuICAgKiBAY2hhaW5hYmxlXG4gICAqL1xuICBNYWluU2NoZWR1bGVyLnByb3RvdHlwZS5hZGQgPSBmdW5jdGlvbihvYmplY3QpIHtcbiAgICB0aGlzLnNjaGVkdWxlci5hZGQob2JqZWN0KTtcbiAgICByZXR1cm4gdGhpcztcbiAgfVxuXG4gIC8qKlxuICAgKiBGb3J3YXJkIHRoZSByZW1vdmUoKSBtZXRob2QgdG8gdGhlIGludGVybmFsIHNjaGVkdWxlci5cbiAgICogQHB1YmxpY1xuICAgKiBAY2hhaW5hYmxlXG4gICAqL1xuICBNYWluU2NoZWR1bGVyLnByb3RvdHlwZS5yZW1vdmUgPSBmdW5jdGlvbihvYmplY3QpIHtcbiAgICB0aGlzLnNjaGVkdWxlci5yZW1vdmUob2JqZWN0KTtcbiAgICByZXR1cm4gdGhpcztcbiAgfVxuXG4gIC8qKlxuICAgKiBHZXQgc2NoZWR1bGluZyBwZXJpb2QuXG4gICAqIEBwdWJsaWNcbiAgICovXG4gIE1haW5TY2hlZHVsZXIucHJvdG90eXBlLmdldFNjaGVkdWxpbmdQZXJpb2QgPSBmdW5jdGlvbigpIHtcbiAgICByZXR1cm4gdGhpcy5zY2hlZHVsaW5nUGVyaW9kO1xuICB9XG5cbiAgLyoqXG4gICAqIEdldCBjdXJyZW50IHRpbWUgZnJvbSB0aGUgV2ViIEF1ZGlvIGNvbnRleHQuXG4gICAqIEBwdWJsaWNcbiAgICovXG4gIE1haW5TY2hlZHVsZXIucHJvdG90eXBlLmdldEN1cnJlbnRUaW1lID0gZnVuY3Rpb24oKSB7XG4gICAgcmV0dXJuIGF1ZGlvQ29udGV4dC5jdXJyZW50VGltZTtcbiAgfVxuXG47cmV0dXJuIE1haW5TY2hlZHVsZXI7fSkoKTtcblxuLy8gRW5zdXJlIHRoZXJlIGlzIGEgZ2xvYmFsbHkgYXZhaWxhYmxlIFwid2Frb1wiIGluc3RhbmNlIG9mIHRoZSBXQVZFJ3MgZ2xvYmFsIG5hbWUtc3BhY2UuXG53aW5kb3cud2FrbyA9IHdpbmRvdy53YWtvIHx8IHt9O1xuXG4vLyBQcm92aWRlIHdha28gd2l0aCBhIE1haW5TY2hlZHVsZXIgc2luZ2xldG9uLCBvbmx5IGlmIG5vdCBhbHJlYWR5IHRoZXJlLlxud2Frby5zY2hlZHVsZXIgPSB3YWtvLnNjaGVkdWxlciB8fCBuZXcgTWFpblNjaGVkdWxlcigpOyIsIi8qIEdlbmVyYXRlZCBieSBlczYtdHJhbnNwaWxlciB2IDAuNy4xNC0yICovXG4vKipcbiAqIEBmaWxlb3ZlcnZpZXcgV0FWRSBhdWRpbyBsaWJyYXJ5IGVsZW1lbnQ6IGEgd2ViIGF1ZGlvIHNjaGVkdWxlciwgd2l0aG91dCB0aW1lIGxvb3AuXG4gKiBAYXV0aG9yIEthcmltLkJhcmthdGlAaXJjYW0uZnIsIE5vcmJlcnQuU2NobmVsbEBpcmNhbS5mciwgVmljdG9yLlNhaXpAaXJjYW0uZnJcbiAqIEB2ZXJzaW9uIDQuMS4wXG4gKi9cblxuJ3VzZSBzdHJpY3QnO1xuXG52YXIgRXZlbnRRdWV1ZSA9IHJlcXVpcmUoXCIuLi9ldmVudC1xdWV1ZVwiKTtcblxuLy8gTWFrZSBhIGdsb2JhbCBpbnN0YW5jZSBvZiB0aGUgd2Frby5zY2hlZHVsZXIgYXZhaWxhYmxlXG5yZXF1aXJlKFwiLi4vbWFpbi1zY2hlZHVsZXItc2luZ2xldG9uXCIpO1xuXG52YXIgU2NoZWR1bGVyID0gKGZ1bmN0aW9uKCl7dmFyIERQJDAgPSBPYmplY3QuZGVmaW5lUHJvcGVydHk7XG5cbiAgZnVuY3Rpb24gU2NoZWR1bGVyKG9wdE5hbWUpIHtcblxuICAgIGlmICghdGhpcyB8fCB0aGlzID09PSB3aW5kb3cpXG4gICAgICB0aHJvdyBuZXcgU3ludGF4RXJyb3IoXCJZb3Ugc2VlbSB0byBoYXZlIGZvcmdvdHRlbiB0aGUgbmV3IG9wZXJhdG9yOyBTaGFtZSBvbiB5b3UhXCIpO1xuXG4gICAgdGhpcy5uYW1lID0gb3B0TmFtZSB8fCBcIlNjaGVkdWxlclwiO1xuICAgIHRoaXMuaXNSdW5uaW5nID0gZmFsc2U7ICAgIFxuICAgIHRoaXMuZXZlbnRRdWV1ZSA9IG51bGw7XG4gICAgdGhpcy5uZXh0RXZlbnRUaW1lID0gSW5maW5pdHlcbiAgICB0aGlzLnNjaGVkdWxhYmxlc0xpc3QgPSBbXVxuICAgIHRoaXMucGFyZW50ID0gbnVsbFxuICAgIC8vIHJlcXVpcmVkIG1ldGhvZCwgZnJvbSB0aGUgcGFyZW50XG4gICAgdGhpcy5ydW5uaW5nU3RhdHVzQ2hhbmdlQ2FsbGJhY2sgPSBudWxsO1xuICAgIHRoaXMuZXZlbnRRdWV1ZSA9IG5ldyBFdmVudFF1ZXVlKCk7XG5cbiAgICByZXR1cm4gdGhpcztcbiAgfURQJDAoU2NoZWR1bGVyLCBcInByb3RvdHlwZVwiLCB7XCJjb25maWd1cmFibGVcIjogZmFsc2UsIFwiZW51bWVyYWJsZVwiOiBmYWxzZSwgXCJ3cml0YWJsZVwiOiBmYWxzZX0pO1xuXG4gIC8qKlxuICAgKiBTY2hlZHVsZSBhIHNjaGVkdWxhYmxlIG9iamVjdCBhbmQgYWRkIGl0IHRvIHRoZSBzY2hlZHVsaW5nIGxpc3QuXG4gICAqIEBwdWJsaWNcbiAgICogQGNoYWluYWJsZVxuICAgKi9cbiAgU2NoZWR1bGVyLnByb3RvdHlwZS5hZGQgPSBmdW5jdGlvbihvYmplY3QpIHtcbiAgICBvYmplY3Quc2NoZWR1bGVyID0gdGhpcztcbiAgICB2YXIgbGVuZ3RoID0gdGhpcy5zY2hlZHVsYWJsZXNMaXN0LnB1c2gob2JqZWN0KTtcbiAgICB2YXIgaW5kZXggPSBsZW5ndGggLSAxO1xuICAgIHZhciBuYW1lID0gb2JqZWN0Lm5hbWUgPyBvYmplY3QubmFtZSA6IG9iamVjdC5zY2hlZHVsaW5nSUQ7XG4gICAgY29uc29sZS5sb2coXCJhZGQoKTpcIiwgdGhpcy5uYW1lLCBcInNjaGVkdWxpbmcgZWxlbWVudCAjXCIgKyBpbmRleCArICcgXFxcIicgKyBuYW1lICsgJ1xcXCInKTtcbiAgICBpZiAoIXRoaXMuaXNSdW5uaW5nKSB7XG4gICAgICAvLyB0aGlzLnJlc2V0QWxsKCk7XG4gICAgfVxuICAgIHJldHVybiB0aGlzO1xuICB9XG5cbiAgLyoqXG4gICAqIFVuc2NoZWR1bGUgYSBzY2hlZHVsYWJsZSBvYmplY3QgYW5kIHJlbW92ZSBpdCBmcm9tIHRoZSBzY2hlZHVsaW5nIGxpc3QuXG4gICAqIEBwdWJsaWNcbiAgICogQGNoYWluYWJsZVxuICAgKi9cbiAgU2NoZWR1bGVyLnByb3RvdHlwZS5yZW1vdmUgPSBmdW5jdGlvbihvYmplY3QpIHtcbiAgICAvLyBTZWFyY2ggZm9yIHRoZSBvYmplY3QgaW4gdGhlIHNjaGVkdWxpbmcgbGlzdC5cbiAgICB2YXIgaW5kZXggPSB0aGlzLnNjaGVkdWxhYmxlc0xpc3QuaW5kZXhPZihvYmplY3QpO1xuXG4gICAgaWYgKGluZGV4IDwgMCkge1xuICAgICAgdGhyb3cgbmV3IEVycm9yKFwicmVtb3ZlKCk6IG9iamVjdCBub3QgZm91bmQsXCIgKyBvYmplY3QpO1xuICAgIH0gZWxzZSB7XG4gICAgICB0aGlzLnNjaGVkdWxhYmxlc0xpc3Quc3BsaWNlKGluZGV4LCAxKTtcbiAgICAgIGNvbnNvbGUubG9nKFwiVW5zY2hlZHVsaW5nIGVsZW1lbnQgI1wiICsgaW5kZXgsIG9iamVjdC5uYW1lID8gJ1xcXCInICsgb2JqZWN0Lm5hbWUgKyAnXFxcIicgOiBcIlwiLCBvYmplY3Quc2NoZWR1bGluZ0lEKTtcbiAgICAgIC8vIFdoZW4gdGhlIHNjaGVkdWxpbmcgbGlzdCBpcyBlbXB0eSwgc3RvcCBzY2hlZHVsaW5nLlxuICAgICAgaWYgKHRoaXMuc2NoZWR1bGFibGVzTGlzdC5sZW5ndGggPD0gMCkge1xuICAgICAgICB0aGlzLnN0b3AoKTtcbiAgICAgIH1cbiAgICB9XG4gICAgcmV0dXJuIHRoaXM7XG4gIH1cblxuICAvKipcbiAgICogU3RhcnQgc2NoZWR1bGluZy5cbiAgICogQHByaXZhdGVcbiAgICovXG4gIFNjaGVkdWxlci5wcm90b3R5cGUuc3RhcnQgPSBmdW5jdGlvbigpIHtcbiAgICBpZiAoIXRoaXMuaXNSdW5uaW5nKSB7XG4gICAgICB0aGlzLmlzUnVubmluZyA9IHRydWU7XG4gICAgICBjb25zb2xlLmxvZyhcIlNjaGVkdWxpbmcgb25cIiwgXCIoXCIgKyB0aGlzLm5hbWUgKyBcIilcIik7XG4gICAgICB0aGlzLnJ1bm5pbmdTdGF0dXNDaGFuZ2VDYWxsYmFjayh0aGlzLmlzUnVubmluZyk7XG4gICAgfVxuICB9XG5cbiAgLyoqXG4gICAqIFN0b3Agc2NoZWR1bGluZy5cbiAgICogQHByaXZhdGVcbiAgICovXG4gIFNjaGVkdWxlci5wcm90b3R5cGUuc3RvcCA9IGZ1bmN0aW9uKCkge1xuICAgIHRoaXMuaXNSdW5uaW5nID0gZmFsc2U7XG4gICAgY29uc29sZS5sb2coXCJTY2hlZHVsaW5nIG9mZiAoXCIgKyB0aGlzLm5hbWUgKyBcIilcIik7XG4gICAgdGhpcy5ydW5uaW5nU3RhdHVzQ2hhbmdlQ2FsbGJhY2sodGhpcy5pc1J1bm5pbmcpO1xuICB9XG5cbiAgLyoqXG4gICAqIFJlc2V0IGFsbCBzY2hlZHVsYWJsZXMgb2JqZWN0cyBvZiB0aGlzIHNjaGVkdWxlci5cbiAgICogQHB1YmxpY1xuICAgKi9cbiAgU2NoZWR1bGVyLnByb3RvdHlwZS5yZXNldCA9IGZ1bmN0aW9uKCkge1xuICAgIHRoaXMuZXZlbnRRdWV1ZS5mbHVzaCgpO1xuICAgIHRoaXMuaW5zZXJ0QWxsKCk7XG4gIH1cblxuICAvKipcbiAgICogUHVzaCBhbGwgZXZlbnRzIGludG8gdGhlIGV2ZW50IHF1ZXVlIGFuZCBzb3J0IGl0IGFmdGVyd2FyZC5cbiAgICogQHByaXZhdGVcbiAgICovXG4gIFNjaGVkdWxlci5wcm90b3R5cGUuaW5zZXJ0QWxsID0gZnVuY3Rpb24oKSB7XG4gICAgdmFyIHRpbWUgPSBudWxsO1xuICAgIHZhciBlbGVtZW50ID0gbnVsbDtcbiAgICAvLyBjb25zb2xlLmxvZyhcInNjaGVkdWxhYmxlc0xpc3Q6IFwiLCB0aGlzLnNjaGVkdWxhYmxlc0xpc3QpO1xuICAgIGZvciAodmFyIGkgPSB0aGlzLnNjaGVkdWxhYmxlc0xpc3QubGVuZ3RoIC0gMTsgaSA+PSAwOyBpLS0pIHtcbiAgICAgIGVsZW1lbnQgPSB0aGlzLnNjaGVkdWxhYmxlc0xpc3RbaV07XG4gICAgICB0aW1lID0gZWxlbWVudC5yZXNldEFuZFJldHVybk5leHRUaW1lKHRoaXMuZ2V0Q3VycmVudFRpbWUoKSk7XG4gICAgICB0aGlzLmV2ZW50UXVldWUucHVzaEV2ZW50KGVsZW1lbnQsIHRpbWUpO1xuICAgIH1cbiAgICB0aGlzLmV2ZW50UXVldWUuc29ydCgpO1xuICB9XG5cbiAgLyoqXG4gICAqIEluc2VydCBhbiBldmVudCBpbnRvIHRoZSBldmVudCBxdWV1ZS5cbiAgICogQHB1YmxpY1xuICAgKi9cbiAgU2NoZWR1bGVyLnByb3RvdHlwZS5pbnNlcnRFdmVudCA9IGZ1bmN0aW9uKG9iamVjdCwgdGltZSkge1xuICAgIGlmICh0aW1lICE9PSBJbmZpbml0eSkge1xuICAgICAgdGhpcy5ldmVudFF1ZXVlLkluc2VydChvYmplY3QsIHRpbWUpO1xuICAgIH1cbiAgfVxuXG4gIC8qKlxuICAgKiBHZXQgY3VycmVudCB0aW1lIGZyb20gd2Frby5zY2hlZHVsZXIuXG4gICAqIEBwdWJsaWNcbiAgICovXG4gIFNjaGVkdWxlci5wcm90b3R5cGUuZ2V0Q3VycmVudFRpbWUgPSBmdW5jdGlvbigpIHtcbiAgICByZXR1cm4gd2Frby5zY2hlZHVsZXIuZ2V0Q3VycmVudFRpbWUoKTtcbiAgfVxuXG4gIC8qKlxuICAgKiBVcGRhdGUgbmV4dCBzY2hlZHVsaW5nIHRpbWUgb2YgYSBzY2hlZHVsZWQgb2JqZWN0LlxuICAgKiBAcHJpdmF0ZVxuICAgKiBAcGFyYW0ge09iamVjdH0gb2JqZWN0IHJlZmVyZW5jZVxuICAgKiBAcGFyYW0ge0Zsb2F0fSBuZXcgc2NoZWR1bGluZyB0aW1lIG9mIGl0cyBuZXh0IGV2ZW50OyBcIkluZmluaXR5XCIgbWVhbnMgXCJyZW1vdmUgZnJvbSBzY2hlZHVsaW5nXCJcbiAgICovXG4gIFNjaGVkdWxlci5wcm90b3R5cGUudXBkYXRlTmV4dFRpbWUgPSBmdW5jdGlvbihvYmplY3QsIHRpbWUpIHtcbiAgICBpZiAodGltZSA9PT0gSW5maW5pdHkpIHtcbiAgICAgIHRoaXMuZXZlbnRRdWV1ZS5yZW1vdmUob2JqZWN0KTtcbiAgICAgIC8vIElmIHRoZSBxdWV1ZSBpcyBlbXB0eSwgc3RvcCBzY2hlZHVsaW5nLlxuICAgICAgaWYgKHRoaXMuZXZlbnRRdWV1ZS5sZW5ndGggPD0gMCkge1xuICAgICAgICB0aGlzLnN0b3AoKTtcbiAgICAgIH1cbiAgICB9IGVsc2Uge1xuICAgICAgaWYgKHRoaXMuZXZlbnRRdWV1ZS5pbmRleE9mKG9iamVjdCkgPCAwKSB7XG4gICAgICAgIHRoaXMuZXZlbnRRdWV1ZS5pbnNlcnQob2JqZWN0LCB0aW1lKTtcbiAgICAgIH0gZWxzZSB7XG4gICAgICAgIHRoaXMuZXZlbnRRdWV1ZS5tb3ZlKG9iamVjdCwgdGltZSk7XG4gICAgICB9XG4gICAgICB0aGlzLnN0YXJ0KCk7XG4gICAgfVxuICB9XG5cbiAgLyoqXG4gICAqIFNldCBwYXJlbnQgYW5kIHN0YXR1cyBjaGFuZ2UgY2FsbGJhY2suXG4gICAqIEBwcml2YXRlXG4gICAqIEBwYXJhbSB7T2JqZWN0fSBwYXJlbnQgVGhlIHBhcmVudCBvZiBhIHNjaGVkdWxlciBoYXMgdG8gYmUgc2V0LlxuICAgKiBAcGFyYW0ge0Z1bmN0aW9ufSBjYWxsYmFjayBUaGlzIHJlcXVpcmVkIGNhbGxiYWNrIHRyaWdnZXJzIHRoZSBwYXJlbnQsXG4gICAqIHdpdGggYSBib29sZWFuIG9uIHJ1bm5pbmcgc3RhdHVzIGNoYW5nZS5cbiAgICovXG4gIFNjaGVkdWxlci5wcm90b3R5cGUuc2V0UGFyZW50ID0gZnVuY3Rpb24ob2JqZWN0LCBjYWxsYmFjaykge1xuICAgIHRoaXMucGFyZW50ID0gb2JqZWN0O1xuICAgIHRoaXMucnVubmluZ1N0YXR1c0NoYW5nZUNhbGxiYWNrID0gY2FsbGJhY2s7XG4gIH1cblxuXG4gIC8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vXG4gIC8vLyBUcmFuc3BvcnRpbmcgbWV0aG9kcyAvLy9cbiAgLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy9cblxuICAvKipcbiAgICogQ2FsbCB0aGUgZXZlbnQgbWFraW5nIG1ldGhvZCBvZiB0aGUgZmlyc3Qgc2NoZWR1bGFibGUgb2JqZWN0LFxuICAgKiBhbmQgdGhlbiB1cGRhdGUgdGhlIGZpcnN0IGV2ZW50IG9mIHRoZSBxdWV1ZS5cbiAgICogQHB1YmxpY1xuICAgKi9cbiAgU2NoZWR1bGVyLnByb3RvdHlwZS5tYWtlTmV4dEV2ZW50ID0gZnVuY3Rpb24oKSB7XG4gICAgdmFyIGVuZ2luZSA9IHRoaXMuZXZlbnRRdWV1ZS5nZXRGaXJzdE9iamVjdCgpO1xuICAgIHRoaXMubmV4dEV2ZW50VGltZSA9IGVuZ2luZS5tYWtlRXZlbnRBbmRSZXR1cm5OZXh0VGltZSgpO1xuICAgIHRoaXMuZXZlbnRRdWV1ZS5tb3ZlRmlyc3RFdmVudChlbmdpbmUsIHRoaXMubmV4dEV2ZW50VGltZSk7XG4gIH1cblxuICAvKipcbiAgICogR2V0IG5leHQgZXZlbnQgdGltZSBieSBxdWVyeWluZyBpdCBpbiB0aGUgZXZlbnQgcXVldWUuXG4gICAqIEBwdWJsaWNcbiAgICovXG4gIFNjaGVkdWxlci5wcm90b3R5cGUuZ2V0TmV4dFRpbWUgPSBmdW5jdGlvbigpIHtcbiAgICBpZiAodGhpcy5zY2hlZHVsYWJsZXNMaXN0Lmxlbmd0aCA+IDApIHtcbiAgICAgIHRoaXMubmV4dEV2ZW50VGltZSA9IHRoaXMuZXZlbnRRdWV1ZS5nZXRGaXJzdFZhbHVlKCk7XG4gICAgICByZXR1cm4gdGhpcy5uZXh0RXZlbnRUaW1lO1xuICAgIH0gZWxzZSB7XG4gICAgICByZXR1cm4gSW5maW5pdHk7XG4gICAgfVxuICB9XG5cbjtyZXR1cm4gU2NoZWR1bGVyO30pKCk7XG5cbm1vZHVsZS5leHBvcnRzID0gU2NoZWR1bGVyOyJdfQ==
