@@ -1,0 +1,32 @@
+{
+  "name": "transport",
+  "version": "4.0.0",
+  "description": "WAVE audio transport",
+  "authors": [
+    "Norbert Schnell",
+    "Victor Saiz",
+    "Karim Barkati"
+  ],
+  "main": "index.js",
+  "exports": "Transport",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Ircam-RnD/transport"
+  },
+  "dependencies": {
+    "event-engine": "git://github.com/Ircam-RnD/event-engine.git#master",
+    "event-queue": "git://github.com/Ircam-RnD/event-queue.git#master"
+  },
+  "devDependencies": {
+    "module-boilerplate": "git://github.com/Ircam-RnD/module-boilerplate.git#master",
+    "fs-utils" : "0.4.3",
+    "browserify": "~4.1.2",
+    "mocha": "~1.17.1",
+    "chai": "~1.9.0",
+    "blanket": "~1.1.6",
+    "gulp": "~3.8.2"
+  }
+}
