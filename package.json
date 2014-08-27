@@ -1,10 +1,14 @@
 {
   "name": "metronome",
-  "exports": "Metronome",
-  "version": "0.1.0",
-  "description": "Wave module",
-  "author": "schnell",
+  "version": "4.0.0",
+  "description": "WAVE audio metronome engine",
+  "authors": [
+    "Norbert Schnell",
+    "Victor Saiz",
+    "Karim Barkati"
+  ],
   "main": "index.js",
+  "exports": "Metronome",
   "scripts": {
     "test": "echo \"Erro: no test specified\" && exit 1"
   },
@@ -12,7 +16,10 @@
     "type": "git",
     "url": "https://github.com/Ircam-RnD/metronome"
   },
-  "dependencies": {},
+  "dependencies": {
+    "audio-context": "git://github.com/Ircam-RnD/audio-context.git#master",
+    "event-engine": "git://github.com/Ircam-RnD/event-engine.git#master"
+  },
   "devDependencies": {
     "fs-utils": "0.4.3",
     "browserify": "~4.1.2",
