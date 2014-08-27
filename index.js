@@ -5,8 +5,8 @@
  */
 "use strict";
 
-var audioContext = require("../audio-context");
-var EventEngine = require("../event-engine");
+var audioContext = require("audio-context");
+var EventEngine = require("event-engine");
 
 var Metronome = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};MIXIN$0(Metronome, super$0);
   function Metronome() {var period = arguments[0];if(period === void 0)period = 1;var frequency = arguments[1];if(frequency === void 0)frequency = 600;var attack = arguments[2];if(attack === void 0)attack = 0.002;var release = arguments[3];if(release === void 0)release = 0.098;

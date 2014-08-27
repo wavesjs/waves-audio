@@ -5,8 +5,8 @@
  */
 "use strict";
 
-var audioContext = require("../audio-context");
-var EventEngine = require("../event-engine");
+var audioContext = require("audio-context");
+var EventEngine = require("event-engine");
 
 class Metronome extends EventEngine {
   constructor(period = 1, frequency = 600, attack = 0.002, release = 0.098) {
