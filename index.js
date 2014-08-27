@@ -5,8 +5,8 @@
  */
 "use strict";
 
-var audioContext = require("../audio-context");
-var EventEngine = require("../event-engine");
+var audioContext = require("audio-context");
+var EventEngine = require("event-engine");
 
 var GranularEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};MIXIN$0(GranularEngine, super$0);
 

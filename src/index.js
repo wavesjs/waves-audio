@@ -5,8 +5,8 @@
  */
 "use strict";
 
-var audioContext = require("../audio-context");
-var EventEngine = require("../event-engine");
+var audioContext = require("audio-context");
+var EventEngine = require("event-engine");
 
 class GranularEngine extends EventEngine {
 
