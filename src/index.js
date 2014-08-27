@@ -1,137 +1,129 @@
+/* written in ECMAscript 6 */
 /**
- * @fileoverview WAVE audio library element: a web audio scheduler, without time loop.
- * @author Karim.Barkati@ircam.fr, Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr
- * @version 4.1.0
+ * @fileoverview WAVE audio global event scheduler based on audio time
+ * @author Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
+ * @version 5.1.0
  */
-
 'use strict';
 
+var audioContext = require("../audio-context");
 var EventQueue = require("../event-queue");
 
 class Scheduler {
 
-  constructor(parent) {
-    this.__objects = []
-    this.__parent = parent;
+  constructor() {
     this.__eventQueue = new EventQueue();
+
+    this.__eventTime = null;
+    this.__nextTime = Infinity;
+    this.__timeout = null;
+
+    this.schedulingPeriod = 0.025;
+    this.scheduleAheadTime = 0.1; // how far ahead to schedule events (> schedulingPeriod)
+
+    return this;
   }
 
-  /**
-   * Schedule a schedulable object and add it to the scheduling list.
-   * @public
-   */
-  add(object) {
-    var firstTime = this.__eventQueue.getFirstTime();
+ // global setTimeout scheduling loop
+  __tick() {
+    this.__looping = true;
 
-    // assign scheduler to schedulable object
-    object.scheduler = this;
+    while (this.__nextTime <= audioContext.currentTime + this.scheduleAheadTime) {
+      this.__eventTime = this.__nextTime;
+      this.__nextTime = this.__eventQueue.advance(this.__nextTime, this.__nextTime);
+    }
 
-    // add to list of schedulable objects
-    this.__objects.push(object);
+    this.__eventTime = null;
 
-    // reset object and get next scheduling time
-    var time = object.reset(this.__parent.currentTime); // TODO: fix me to leave me
-
-    // add event to queue of scheduled events
-    this.__eventQueue.insert(object, time);
-
-    var nextTime = this.__eventQueue.getFirstTime();
-
-    if (nextTime !== firstTime)
-      this.__parent.reschedule(nextTime);
+    this.__timeout = setTimeout(() => {
+      this.__tick();
+    }, this.schedulingPeriod * 1000);
   }
 
-  /**
-   * Unschedule a schedulable object and remove it from the scheduling list.
-   */
-  remove(object) {
-    var index = this.__objects.indexOf(object);
-    var firstTime = this.__eventQueue.getFirstTime();
-
-    if (index >= 0) {
-      // remove from object list
-      this.__objects.splice(index, 1);
-
-      // remove event from queue of scheduled events
-      this.__eventQueue.remove(object);
-
-    // reset schedulable object
-      object.scheduler = null;
-
-      var nextTime = this.__eventQueue.getFirstTime();
-
-      if (nextTime !== firstTime)
-        this.__parent.reschedule(nextTime);
+  __reschedule(time) {
+    if (this.__nextTime !== Infinity) {
+      if (!this.__timeout)
+        this.__tick();
+    } 
+    else if (this.__timeout) {
+      clearTimeout(this.__timeout);
+      this.__timeout = null;
     }
   }
 
   /**
-   * Update next scheduling time of a scheduled object.
-   * @param {Object} object reference
-   * @param {Float} new scheduling time of its next event; "Infinity" means "remove from scheduling"
+   * Get global scheduler time
    */
-  reschedule(object, time) {
-    var firstTime = this.__eventQueue.getFirstTime();
+  get time() {
+    return this.__eventTime || audioContext.currentTime + this.scheduleAheadTime;
+  }
 
-    if (time === Infinity) {
-      this.__eventQueue.remove(object);
-
-      if (this.__eventQueue.empty) {
-        this.__parent.reschedule(time);
+  /**
+   * Add a callback to the global scheduler at given time
+   */
+  callback(callback, delay = 0) {
+    var event = {
+      executeEvent: function(time, audioTime) {
+        callback(time, audioTime);
+        return Infinity;
       }
-    } else {
-      var wasEmpty = this.__eventQueue.empty;
+    };
 
-      this.__eventQueue.insert(object, time);
+    this.__nextTime  = this.__eventQueue.insert(event, this.time + delay, false);
+    this.__reschedule();
 
-      var nextTime = this.__eventQueue.getFirstTime();
-
-      if (nextTime !== firstTime)
-        this.__parent.reschedule(nextTime);
-    }
-  }
-
-  /***********************************************************************
-   *
-   *  Functions called by parent
-   *
-   */
-
-  /**
-   * Reset all schedulables objects of this scheduler and return first time.
-   */
-  reset() {
-    this.__eventQueue.clear();
-
-    var object, time;
-
-    for (var i = this.__objects.length - 1; i > 0; i--) {
-      object = this.__objects[i];
-      time = object.reset(this.time);
-      this.__eventQueue.insert(object, time, false); // don't sort
-    }
-
-    object = this.__objects[0];
-    time = object.reset(this.time);
-    this.__eventQueue.insert(object, time, true); // now sort
-
-    return this.__eventQueue.getFirstTime();
+    return event;
   }
 
   /**
-   * Call the event making method of the first schedulable object,
-   * and then update the first event of the queue.
-   * @public
+   * Add event engine to the global scheduler
    */
-  execute() {
-    var object = this.__eventQueue.getFirstObject();
-    var time = this.__eventQueue.getFirstTime();
-    var nextTime = object.execute(time);
+  add(engine, delay = 0) {
+    if (engine.scheduler === null) {
+      this.__nextTime = this.__eventQueue.insert(engine, this.time + delay);
 
-    this.__eventQueue.insert(object, nextTime);
+      engine.scheduler = this;
 
-    return this.__eventQueue.getFirstTime();
+      this.__reschedule();
+    }
+  }
+
+  /**
+   * Remove event (engine) from the global scheduler
+   */
+  remove(engine) {
+    if (engine.scheduler === this) {
+      this.__nextTime = this.__eventQueue.remove(engine);
+
+      engine.scheduler = null;
+
+      this.__reschedule();
+    }
+  }
+
+  /**
+   * Resychronize event engine
+   * (called by event engine)
+   */
+  resync(engine) {
+    if (engine.scheduler === this) {
+      this.__nextTime = this.__eventQueue.move(engine, this.time);
+
+      this.__reschedule();
+    }
+  }
+
+  /**
+   * Reschedule event engine
+   * (called by event engine)
+   */
+  reschedule(engine, time) {
+    if (engine.scheduler === this) {
+      this.__nextTime = this.__eventQueue.move(engine, time, false);
+
+      this.__reschedule();
+    }
   }
 }
 
-module.exports = Scheduler;
+module.exports = new Scheduler; // export global scheduler singleton
