@@ -38,12 +38,11 @@ class Transport extends EventEngine {
     this.__time = Infinity;
     this.__position = 0.0;
     this.__speed = 0.0;
-    this.__playSpeed = 1.0;
 
     this.__speedListeners = [];
     this.__seekListeners = [];
 
-    this.muteOnstill = true;
+    this.__playingSpeed = 1.0;
 
     return this;
   }
@@ -203,14 +202,6 @@ class Transport extends EventEngine {
     }
   }
 
-  start(seek = null, speed = null) {
-    transport.speed = playSpeed;
-  }
-
-  stop(seek = null, speed = null) {
-    transport.speed = playSpeed;
-  }
-
   /**
    * Add an engine to the transport
    */
@@ -323,6 +314,63 @@ class Transport extends EventEngine {
         this.__reschedule();
       }
     }
+  }
+
+  /**
+   * Start playing (high level API)
+   */
+  startPlaying(seek = null, speed = null) {
+    if (seek)
+      this.seek(seek);
+
+    if (speed)
+      this.playingSpeed = speed;
+
+    this.speed = this.playingSpeed;
+  }
+
+  /**
+   * Pause playing (high level API)
+   */
+  pausePlaying() {
+    this.speed = 0;
+  }
+
+  /**
+   * Stop playing (high level API)
+   */
+  stopPlaying() {
+    this.speed = 0;
+    this.seek(0);
+  }
+
+  /**
+   * Set playing speed (high level API)
+   */
+  set playingSpeed(value) {
+    if (value < 0) {
+      if (value < -16)
+        value = -16
+      else if (value > -0.0625)
+        value = -0.0625;
+    } else if (value > 0) {
+      if (value < 0.0625)
+        value = 0.0625;
+      else if (value > 16)
+        value = 16;
+    }
+
+    this.__playingSpeed = value;
+
+    if (this.__speed !== 0)
+      this.speed = value;
+  }
+
+  /**
+   * Get playing speed (high level API)
+   */
+  get playingSpeed() {
+    return this.__playingSpeed;
   }
 }
 
