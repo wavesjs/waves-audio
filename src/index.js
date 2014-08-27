@@ -6,8 +6,8 @@
  */
 'use strict';
 
-var audioContext = require("../audio-context");
-var EventQueue = require("../event-queue");
+var audioContext = require("audio-context");
+var EventQueue = require("event-queue");
 
 class Scheduler {
 

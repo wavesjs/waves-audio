@@ -6,8 +6,8 @@
  */
 'use strict';
 
-var audioContext = require("../audio-context");
-var EventQueue = require("../event-queue");
+var audioContext = require("audio-context");
+var EventQueue = require("event-queue");
 
 var Scheduler = (function(){var DP$0 = Object.defineProperty;
 
