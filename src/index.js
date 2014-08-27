@@ -6,8 +6,8 @@
  */
 'use strict';
 
-var EventQueue = require("../event-queue");
-var EventEngine = require("../event-engine");
+var EventQueue = require("event-queue");
+var EventEngine = require("event-engine");
 
 function arrayRemove(array, value) {
   var index = array.indexOf(value);
