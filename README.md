@@ -1,6 +1,6 @@
 ## granular-engine
 
-> WAVE audio library element: a web audio granular engine.
+> WAVE audio granular engine
 
 
 
