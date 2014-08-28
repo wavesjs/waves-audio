@@ -1,6 +1,6 @@
 {
   "name": "granular-engine",
-  "version": "4.0.0",
+  "version": "0.7.0",
   "description": "WAVE audio granular engine",
   "authors": [
     "Norbert Schnell",
