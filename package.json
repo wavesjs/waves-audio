@@ -1,6 +1,6 @@
 {
   "name": "segment-engine",
-  "version": "4.0.0",
+  "version": "0.7.0",
   "description": "WAVE audio segment engine",
   "authors": [
     "Norbert Schnell",
