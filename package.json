@@ -17,8 +17,8 @@
     "url": "https://github.com/Ircam-RnD/metronome"
   },
   "dependencies": {
-    "audio-context": "git://github.com/Ircam-RnD/audio-context.git#master",
-    "event-engine": "git://github.com/Ircam-RnD/event-engine.git#master"
+    "audio-context": "git://github.com/Ircam-RnD/audio-context.git#master"
+    "event-engine": "git://github.com/Ircam-RnD/event-engine.git#master",
   },
   "devDependencies": {
     "fs-utils": "0.4.3",
