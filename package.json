@@ -1,6 +1,6 @@
 {
   "name": "scheduler",
-  "version": "4.0.0",
+  "version": "0.7.0",
   "description": "WAVE audio global event scheduler singleton",
   "authors": [
     "Norbert Schnell",
