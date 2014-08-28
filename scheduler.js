@@ -45,7 +45,7 @@ var Scheduler = (function(){var DP$0 = Object.defineProperty;
     if (this.__nextTime !== Infinity) {
       if (!this.__timeout)
         this.__tick();
-    } 
+    }
     else if (this.__timeout) {
       clearTimeout(this.__timeout);
       this.__timeout = null;
