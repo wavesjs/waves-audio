@@ -51,7 +51,7 @@ class GranularEngine extends EventEngine {
   }
 
   trigger(time) {
-    var grainTime = time || audioContext.currentTime;
+    var grainTime = time || audioContext.currentTime;
     var grainPeriod = this.periodAbs;
     var grainPosition = this.position;
     var grainDuration = this.durationAbs;
