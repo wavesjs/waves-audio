@@ -51,7 +51,7 @@ var GranularEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIX
   }
 
   GranularEngine.prototype.trigger = function(time) {
-    var grainTime = time || audioContext.currentTime;
+    var grainTime = time || audioContext.currentTime;
     var grainPeriod = this.periodAbs;
     var grainPosition = this.position;
     var grainDuration = this.durationAbs;
