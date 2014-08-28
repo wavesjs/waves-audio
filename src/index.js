@@ -44,7 +44,7 @@ class Scheduler {
     if (this.__nextTime !== Infinity) {
       if (!this.__timeout)
         this.__tick();
-    } 
+    }
     else if (this.__timeout) {
       clearTimeout(this.__timeout);
       this.__timeout = null;
