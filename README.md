@@ -1,8 +1,6 @@
 ## scheduler
 
-> WAVE audio library module for a scheduler with an event queue
-
-
+> WAVE audio transport
 
 ### Usage
 
