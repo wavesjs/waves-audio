@@ -4,15 +4,9 @@
 
 The scheduler is a global singleton that allows for scheduling event engines (see [EventEngine](https://github.com/Ircam-RnD/event-engine)) and simple callback functions.
 
-- callback(callback, delay = 0)
-- add(engine, delay = 0)
-- 
-- 
-- 
-
 ## API
 
-The `bufferLoader` object exposes the following API:
+The `scheduler` object exposes the following API:
 
 Method | Description
 --- | ---
