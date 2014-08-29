@@ -8,32 +8,33 @@
 var audioContext = require("audio-context");
 var EventEngine = require("event-engine");
 
-class GranularEngine extends EventEngine {
+class SegmentEngine extends EventEngine {
 
   constructor(buffer = null) {
     super(false); // by default events don't sync to transport position
 
     this.buffer = buffer; // audio buffer
-    this.periodAbs = 0.01; // absolute period
-    this.periodRel = 0; // period relative to duration
+    this.periodAbs = 0.1; // absolute period
+    this.periodRel = 0; // period relative to inter-segment distance
     this.periodVar = 0; // period variation relative to grain period
     this.positionArray = [0.0]; // segment positions
-    this.positionVar = 0.003; // position variation in sec
+    this.positionVar = 0; // position variation in sec
     this.durationArray = [0.0]; // segment durations
-    this.durationAbs = 0.1; // absolute grain duration
-    this.durationRel = 0; // duration relative to absolute period
+    this.durationAbs = 0; // absolute grain duration
+    this.durationRel = 1; // duration relative to segment duration of inter-segment distance
     this.offsetArray = [0.0]; // segment offsets
-    this.offsetsAbs = 0.1; // absolute offset
-    this.offsetsRel = 0; // offset relative to duration
-    this.attackAbs = 0; // absolute attack time
-    this.attackRel = 0.5; // attack time relative to duration
-    this.releaseAbs = 0; // absolute release time
-    this.releaseRel = 0.5; // release time relative to duration
+    this.offsetAbs = 0.005; // absolute offset
+    this.offsetRel = 0; // offset relative to duration
+    this.attackAbs = 0.005; // absolute attack time
+    this.attackRel = 0; // attack time relative to duration
+    this.releaseAbs = 0.005; // absolute release time
+    this.releaseRel = 0; // release time relative to duration
     this.resampling = 0; // resampling in cent
     this.resamplingVar = 0; // resampling variation in cent
-    this.markerIndex = 0;
 
-    this.callback = null;
+    this.markerIndex = 0;
+    this.cyclic = false;
+
     this.__gainNode = audioContext.createGain();
 
     this.outputNode = this.__gainNode;
@@ -41,15 +42,16 @@ class GranularEngine extends EventEngine {
 
   // EventEngine syncEvent
   syncEvent(time) {
-    var cycles = -this.__phase;
+    var delay = 0;
 
-    if (this.__aligned || this.transport) // is always aligned in transport
-      cycles += time / this.period;
+    if (this.__aligned || this.transport) { // is always aligned in transport
+      var cycles = time / this.period;
 
-    if (this.transport && this.transport.reverse)
-      cycles *= -1;
+      if (this.transport && this.transport.reverse)
+        cycles *= -1;
 
-    var delay = (Math.ceil(cycles) - cycles) * this.period;
+      delay = (Math.ceil(cycles) - cycles) * this.period;
+    }
 
     return delay;
   }
@@ -68,7 +70,7 @@ class GranularEngine extends EventEngine {
   }
 
   trigger(time) {
-    var grainTime = time ||  audioContext.currentTime;
+    var grainTime = time || audioContext.currentTime;
     var grainPeriod = this.periodAbs;
     var markerIndex = this.markerIndex;
 
@@ -77,6 +79,20 @@ class GranularEngine extends EventEngine {
       var grainDuration = 0.0;
       var grainOffset = 0.0;
       var resamplingRate = 1.0;
+
+      if(this.cyclic)
+        markerIndex = markerIndex % this.positionArray.length;
+      else
+        markerIndex = Math.max(0, Math.min(markerIndex, this.positionArray.length - 1));
+
+      if (this.positionArray)
+        grainPosition = this.positionArray[markerIndex] || 0;
+
+      if (this.durationArray)
+        grainDuration = this.durationArray[markerIndex] || 0;
+
+      if (this.offsetArray)
+        grainOffset = this.offsetArray[markerIndex] || 0;
 
       // calculate resampling
       if (this.resampling !== 0 || this.resamplingVar > 0) {
@@ -170,7 +186,7 @@ class GranularEngine extends EventEngine {
           envelopeNode.gain.setValueAtTime(this.gain, releaseStartTime);
 
         envelopeNode.gain.linearRampToValueAtTime(0.0, grainEndTime);
-        envelopeNode.connect(this.gainNode);
+        envelopeNode.connect(this.__gainNode);
 
         // make source
         var source = audioContext.createBufferSource();
@@ -178,7 +194,7 @@ class GranularEngine extends EventEngine {
         source.buffer = this.buffer;
         source.playbackRate.value = resamplingRate;
         source.connect(envelopeNode);
-        envelopeNode.connect(this.gainNode);
+        envelopeNode.connect(this.__gainNode);
 
         source.start(grainTime, grainPosition);
         source.stop(grainTime + grainDuration / resamplingRate);
@@ -188,4 +204,4 @@ class GranularEngine extends EventEngine {
     return grainPeriod;
   }
 }
-module.exports = GranularEngine;
+module.exports = SegmentEngine;

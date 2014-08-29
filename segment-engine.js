@@ -9,54 +9,56 @@
 var audioContext = _dereq_("audio-context");
 var EventEngine = _dereq_("event-engine");
 
-var GranularEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};MIXIN$0(GranularEngine, super$0);
+var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};MIXIN$0(SegmentEngine, super$0);
 
-  function GranularEngine() {var buffer = arguments[0];if(buffer === void 0)buffer = null;
+  function SegmentEngine() {var buffer = arguments[0];if(buffer === void 0)buffer = null;
     super$0.call(this, false); // by default events don't sync to transport position
 
     this.buffer = buffer; // audio buffer
-    this.periodAbs = 0.01; // absolute period
-    this.periodRel = 0; // period relative to duration
+    this.periodAbs = 0.1; // absolute period
+    this.periodRel = 0; // period relative to inter-segment distance
     this.periodVar = 0; // period variation relative to grain period
     this.positionArray = [0.0]; // segment positions
-    this.positionVar = 0.003; // position variation in sec
+    this.positionVar = 0; // position variation in sec
     this.durationArray = [0.0]; // segment durations
-    this.durationAbs = 0.1; // absolute grain duration
-    this.durationRel = 0; // duration relative to absolute period
+    this.durationAbs = 0; // absolute grain duration
+    this.durationRel = 1; // duration relative to segment duration of inter-segment distance
     this.offsetArray = [0.0]; // segment offsets
-    this.offsetsAbs = 0.1; // absolute offset
-    this.offsetsRel = 0; // offset relative to duration
-    this.attackAbs = 0; // absolute attack time
-    this.attackRel = 0.5; // attack time relative to duration
-    this.releaseAbs = 0; // absolute release time
-    this.releaseRel = 0.5; // release time relative to duration
+    this.offsetAbs = 0.005; // absolute offset
+    this.offsetRel = 0; // offset relative to duration
+    this.attackAbs = 0.005; // absolute attack time
+    this.attackRel = 0; // attack time relative to duration
+    this.releaseAbs = 0.005; // absolute release time
+    this.releaseRel = 0; // release time relative to duration
     this.resampling = 0; // resampling in cent
     this.resamplingVar = 0; // resampling variation in cent
-    this.markerIndex = 0;
 
-    this.callback = null;
+    this.markerIndex = 0;
+    this.cyclic = false;
+
     this.__gainNode = audioContext.createGain();
 
     this.outputNode = this.__gainNode;
-  }GranularEngine.prototype = Object.create(super$0.prototype, {"constructor": {"value": GranularEngine, "configurable": true, "writable": true}, gain: {"get": gain$get$0, "set": gain$set$0, "configurable": true, "enumerable": true} });DP$0(GranularEngine, "prototype", {"configurable": false, "enumerable": false, "writable": false});
+  }SegmentEngine.prototype = Object.create(super$0.prototype, {"constructor": {"value": SegmentEngine, "configurable": true, "writable": true}, gain: {"get": gain$get$0, "set": gain$set$0, "configurable": true, "enumerable": true} });DP$0(SegmentEngine, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
   // EventEngine syncEvent
-  GranularEngine.prototype.syncEvent = function(time) {
-    var cycles = -this.__phase;
+  SegmentEngine.prototype.syncEvent = function(time) {
+    var delay = 0;
 
-    if (this.__aligned || this.transport) // is always aligned in transport
-      cycles += time / this.period;
+    if (this.__aligned || this.transport) { // is always aligned in transport
+      var cycles = time / this.period;
 
-    if (this.transport && this.transport.reverse)
-      cycles *= -1;
+      if (this.transport && this.transport.reverse)
+        cycles *= -1;
 
-    var delay = (Math.ceil(cycles) - cycles) * this.period;
+      delay = (Math.ceil(cycles) - cycles) * this.period;
+    }
 
     return delay;
   }
 
   // EventEngine executeEvent
-  GranularEngine.prototype.executeEvent = function(time, audioTime) {
+  SegmentEngine.prototype.executeEvent = function(time, audioTime) {
     return this.trigger(audioTime);
   }
 
@@ -68,8 +70,8 @@ var GranularEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIX
     return this.__gainNode.gain.value;
   }
 
-  GranularEngine.prototype.trigger = function(time) {
-    var grainTime = time ||  audioContext.currentTime;
+  SegmentEngine.prototype.trigger = function(time) {
+    var grainTime = time || audioContext.currentTime;
     var grainPeriod = this.periodAbs;
     var markerIndex = this.markerIndex;
 
@@ -78,6 +80,20 @@ var GranularEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIX
       var grainDuration = 0.0;
       var grainOffset = 0.0;
       var resamplingRate = 1.0;
+
+      if(this.cyclic)
+        markerIndex = markerIndex % this.positionArray.length;
+      else
+        markerIndex = Math.max(0, Math.min(markerIndex, this.positionArray.length - 1));
+
+      if (this.positionArray)
+        grainPosition = this.positionArray[markerIndex] || 0;
+
+      if (this.durationArray)
+        grainDuration = this.durationArray[markerIndex] || 0;
+
+      if (this.offsetArray)
+        grainOffset = this.offsetArray[markerIndex] || 0;
 
       // calculate resampling
       if (this.resampling !== 0 || this.resamplingVar > 0) {
@@ -171,7 +187,7 @@ var GranularEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIX
           envelopeNode.gain.setValueAtTime(this.gain, releaseStartTime);
 
         envelopeNode.gain.linearRampToValueAtTime(0.0, grainEndTime);
-        envelopeNode.connect(this.gainNode);
+        envelopeNode.connect(this.__gainNode);
 
         // make source
         var source = audioContext.createBufferSource();
@@ -179,7 +195,7 @@ var GranularEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIX
         source.buffer = this.buffer;
         source.playbackRate.value = resamplingRate;
         source.connect(envelopeNode);
-        envelopeNode.connect(this.gainNode);
+        envelopeNode.connect(this.__gainNode);
 
         source.start(grainTime, grainPosition);
         source.stop(grainTime + grainDuration / resamplingRate);
@@ -188,12 +204,12 @@ var GranularEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIX
 
     return grainPeriod;
   }
-;return GranularEngine;})(EventEngine);
-module.exports = GranularEngine;
+;return SegmentEngine;})(EventEngine);
+module.exports = SegmentEngine;
 },{"audio-context":2,"event-engine":3}],2:[function(_dereq_,module,exports){
 /* Generated by es6-transpiler v 0.7.14-2 */
 // instantiates an audio context in the global scope if not there already
-var context = window.audioContext || new AudioContext();
+var context = window.audioContext || new AudioContext() || new webkitAudioContext();
 window.audioContext = context;
 module.exports = context;
 },{}],3:[function(_dereq_,module,exports){
