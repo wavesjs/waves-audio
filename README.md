@@ -1,7 +1,14 @@
 ## scheduler
 
-> WAVE audio library module for a scheduler with an event queue
+> WAVE audio event scheduler singleton
 
+The scheduler is a global singleton that allows for scheduling event engines (see [EventEngine](https://github.com/Ircam-RnD/event-engine)) and simple callbacks through the following methods:
+
+- callback(callback, delay = 0)
+- add(engine, delay = 0)
+- remove(engine)
+- resync(engine)
+- reschedule(engine, time)
 
 
 ### Usage
