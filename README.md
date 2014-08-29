@@ -6,8 +6,6 @@ The scheduler is a global singleton that allows for scheduling event engines (se
 
 ## API
 
-The `scheduler` object exposes the following API:
-
 Method | Description
 --- | ---
 `callback(callback, delay = 0)` | Schedule an arbitrary callback called with (time, audioTime).
@@ -16,7 +14,13 @@ Method | Description
 `resync(engine)` | Resynchronize an already scheduled event engine.
 `reschedule(engine, time)` | Reschedule an already scheduled event engine at teh given time.
 
-### Usage
+### Example
+
+```js
+var metro = new Metronome();
+scheduler.add(metro);
+scheduler.callback(function(time) { scheduler.remove(metro); }, 10);
+```
 
 ### Status
 
