@@ -2,14 +2,25 @@
 
 > WAVE audio event scheduler singleton
 
-The scheduler is a global singleton that allows for scheduling event engines (see [EventEngine](https://github.com/Ircam-RnD/event-engine)) and simple callbacks through the following methods:
+The scheduler is a global singleton that allows for scheduling event engines (see [EventEngine](https://github.com/Ircam-RnD/event-engine)) and simple callback functions.
 
 - callback(callback, delay = 0)
 - add(engine, delay = 0)
-- remove(engine)
-- resync(engine)
-- reschedule(engine, time)
+- 
+- 
+- 
 
+## API
+
+The `bufferLoader` object exposes the following API:
+
+Method | Description
+--- | ---
+`callback(callback, delay = 0)` | Schedule an arbitrary callback called with (time, audioTime).
+`add(engine, delay = 0)` Add an event engine to the scheduler with an optional delay.
+`remove(engine)` | Remove an event engine from the scheduler.
+`resync(engine)` | Resynchronize an already scheduled event engine.
+`reschedule(engine, time)` | Reschedule an already scheduled event engine at teh given time.
 
 ### Usage
 
