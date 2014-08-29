@@ -11,7 +11,7 @@ The `scheduler` object exposes the following API:
 Method | Description
 --- | ---
 `callback(callback, delay = 0)` | Schedule an arbitrary callback called with (time, audioTime).
-`add(engine, delay = 0)` Add an event engine to the scheduler with an optional delay.
+`add(engine, delay = 0)` | Add an event engine to the scheduler with an optional delay.
 `remove(engine)` | Remove an event engine from the scheduler.
 `resync(engine)` | Resynchronize an already scheduled event engine.
 `reschedule(engine, time)` | Reschedule an already scheduled event engine at teh given time.
