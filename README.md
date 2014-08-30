@@ -2,7 +2,7 @@
 
 > WAVE audio event scheduler singleton
 
-The scheduler is a global singleton that allows for scheduling event engines (see [EventEngine](https://github.com/Ircam-RnD/event-engine)) and simple callback functions.
+The scheduler is a global singleton that allows for scheduling event engines (see [EventEngine](https://github.com/Ircam-RnD/event-engine)) (e.g. the [granular](https://github.com/Ircam-RnD/granular-engine or the [metronome](https://github.com/Ircam-RnD/metronome) as well as simple callback functions.
 
 ## API
 
