@@ -14,38 +14,39 @@ var Scheduler = (function(){var DP$0 = Object.defineProperty;
   function Scheduler() {
     this.__eventQueue = new EventQueue();
 
-    this.__eventTime = null;
+    this.__currentTime = null;
     this.__nextTime = Infinity;
     this.__timeout = null;
 
     this.period = 0.025;
-    this.advance = 0.1; // how far ahead to schedule events (must be > period)
+    this.advance = 0.1; // how far ahead to schedule events (> period)
 
     return this;
   }Object.defineProperties(Scheduler.prototype, {time: {"get": time$get$0, "configurable": true, "enumerable": true}});DP$0(Scheduler, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
- // global setTimeout scheduling loop
+  // global setTimeout scheduling loop
   Scheduler.prototype.__tick = function() {var this$0 = this;
     this.__looping = true;
 
-    while (this.__nextTime <= audioContext.currentTime + this.scheduleAheadTime) {
-      this.__eventTime = this.__nextTime;
+    while (this.__nextTime <= audioContext.currentTime + this.advance) {
+      this.__currentTime = this.__nextTime;
       this.__nextTime = this.__eventQueue.advance(this.__nextTime, this.__nextTime);
     }
 
-    this.__eventTime = null;
+    this.__currentTime = null;
 
-    this.__timeout = setTimeout(function()  {
-      this$0.__tick();
-    }, this.schedulingPeriod * 1000);
+    if (this.__nextTime !== Infinity) {
+      this.__timeout = setTimeout(function()  {
+        this$0.__tick();
+      }, this.period * 1000);
+    }
   }
 
   Scheduler.prototype.__reschedule = function(time) {
     if (this.__nextTime !== Infinity) {
       if (!this.__timeout)
         this.__tick();
-    }
-    else if (this.__timeout) {
+    } else if (this.__timeout) {
       clearTimeout(this.__timeout);
       this.__timeout = null;
     }
@@ -55,7 +56,7 @@ var Scheduler = (function(){var DP$0 = Object.defineProperty;
    * Get global scheduler time
    */
   function time$get$0() {
-    return this.__eventTime || audioContext.currentTime + this.scheduleAheadTime;
+    return this.__currentTime || audioContext.currentTime + this.advance;
   }
 
   /**
@@ -69,7 +70,7 @@ var Scheduler = (function(){var DP$0 = Object.defineProperty;
       }
     };
 
-    this.__nextTime  = this.__eventQueue.insert(event, this.time + delay, false);
+    this.__nextTime = this.__eventQueue.insert(event, this.time + delay, false);
     this.__reschedule();
 
     return event;
@@ -81,9 +82,7 @@ var Scheduler = (function(){var DP$0 = Object.defineProperty;
   Scheduler.prototype.add = function(engine) {var delay = arguments[1];if(delay === void 0)delay = 0;
     if (engine.scheduler === null) {
       this.__nextTime = this.__eventQueue.insert(engine, this.time + delay);
-
       engine.scheduler = this;
-
       this.__reschedule();
     }
   }
@@ -94,9 +93,7 @@ var Scheduler = (function(){var DP$0 = Object.defineProperty;
   Scheduler.prototype.remove = function(engine) {
     if (engine.scheduler === this) {
       this.__nextTime = this.__eventQueue.remove(engine);
-
       engine.scheduler = null;
-
       this.__reschedule();
     }
   }
@@ -108,7 +105,6 @@ var Scheduler = (function(){var DP$0 = Object.defineProperty;
   Scheduler.prototype.resync = function(engine) {
     if (engine.scheduler === this) {
       this.__nextTime = this.__eventQueue.move(engine, this.time);
-
       this.__reschedule();
     }
   }
@@ -120,7 +116,6 @@ var Scheduler = (function(){var DP$0 = Object.defineProperty;
   Scheduler.prototype.reschedule = function(engine, time) {
     if (engine.scheduler === this) {
       this.__nextTime = this.__eventQueue.move(engine, time, false);
-
       this.__reschedule();
     }
   }

@@ -14,7 +14,7 @@ class Scheduler {
   constructor() {
     this.__eventQueue = new EventQueue();
 
-    this.__eventTime = null;
+    this.__currentTime = null;
     this.__nextTime = Infinity;
     this.__timeout = null;
 
@@ -29,13 +29,13 @@ class Scheduler {
     this.__looping = true;
 
     while (this.__nextTime <= audioContext.currentTime + this.advance) {
-      this.__eventTime = this.__nextTime;
+      this.__currentTime = this.__nextTime;
       this.__nextTime = this.__eventQueue.advance(this.__nextTime, this.__nextTime);
     }
 
-    this.__eventTime = null;
+    this.__currentTime = null;
 
-    if (this.__nextTime !== = Infinity) {
+    if (this.__nextTime !== Infinity) {
       this.__timeout = setTimeout(() => {
         this.__tick();
       }, this.period * 1000);
@@ -56,7 +56,7 @@ class Scheduler {
    * Get global scheduler time
    */
   get time() {
-    return this.__eventTime || audioContext.currentTime + this.advance;
+    return this.__currentTime || audioContext.currentTime + this.advance;
   }
 
   /**
@@ -82,9 +82,7 @@ class Scheduler {
   add(engine, delay = 0) {
     if (engine.scheduler === null) {
       this.__nextTime = this.__eventQueue.insert(engine, this.time + delay);
-
       engine.scheduler = this;
-
       this.__reschedule();
     }
   }
@@ -95,9 +93,7 @@ class Scheduler {
   remove(engine) {
     if (engine.scheduler === this) {
       this.__nextTime = this.__eventQueue.remove(engine);
-
       engine.scheduler = null;
-
       this.__reschedule();
     }
   }
@@ -109,7 +105,6 @@ class Scheduler {
   resync(engine) {
     if (engine.scheduler === this) {
       this.__nextTime = this.__eventQueue.move(engine, this.time);
-
       this.__reschedule();
     }
   }
@@ -121,7 +116,6 @@ class Scheduler {
   reschedule(engine, time) {
     if (engine.scheduler === this) {
       this.__nextTime = this.__eventQueue.move(engine, time, false);
-
       this.__reschedule();
     }
   }
