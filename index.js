@@ -15,7 +15,7 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;
     this.__objects = [];
     this.__times = [];
 
-    this.__eventTime = null;
+    this.__currentTime = null;
     this.__timeout = null;
 
     this.period = 0.025;
@@ -24,13 +24,11 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;
     return this;
   }Object.defineProperties(SimpleScheduler.prototype, {time: {"get": time$get$0, "configurable": true, "enumerable": true}});DP$0(SimpleScheduler, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
-  /* Insert an event to the queue */
   SimpleScheduler.prototype.__insertEvent = function(object, time) {
     this.__objects.push(object);
     this.__times.push(time);
   }
 
-  /* move an event */
   SimpleScheduler.prototype.__moveEvent = function(object, time) {
     var index = this.__objects.indexOf(object);
 
@@ -44,8 +42,7 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;
     }
   }
 
-  /* Withdraw an event from the event list */
-  SimpleScheduler.prototype.__removeEvent = function(object) {
+  SimpleScheduler.prototype.__withdrawEvent = function(object) {
     var index = this.__objects.indexOf(object);
 
     if (index >= 0) {
@@ -64,35 +61,28 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;
     }
   }
 
-  // global setTimeout scheduling loop
   SimpleScheduler.prototype.__tick = function() {var this$0 = this;
     this.__looping = true;
 
-    for (var i = 0; i < this.__objects.length; i++) {
+    var i = 0;
+
+    while (i < this.__objects.length) {
       var object = this.__objects[i];
       var time = this.__times[i];
 
       while (time <= audioContext.currentTime + this.advance) {
-        this.__eventTime = time;
-
         var audioTime = Math.max(time, audioContext.currentTime);
-        var nextEventDelay = Math.max(object.executeEvent(time, audioTime), 0);
-
-        if (nextEventDelay !== Infinity) {
-          if (!this.reverse)
-            time += nextEventDelay;
-          else
-            time -= nextEventDelay;
-
-          this.__times[i] = time;
-        } else {
-          this.__removeEvent(object);
-          i--;
-        }
+        this.__currentTime = time;
+        time += Math.max(object.executeEvent(time, audioTime), 0);
       }
+
+      if (time !== Infinity)
+        this.__times[i++] = time;
+      else
+        this.__withdrawEvent(object);
     }
 
-    this.__eventTime = null;
+    this.__currentTime = null;
 
     if (this.__objects.length > 0) {
       this.__timeout = setTimeout(function()  {
@@ -105,7 +95,7 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;
    * Get global scheduler time
    */
   function time$get$0() {
-    return this.__eventTime || audioContext.currentTime + this.advance;
+    return this.__currentTime || audioContext.currentTime + this.advance;
   }
 
   /**
@@ -132,9 +122,7 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;
     if (engine.syncEvent && engine.executeEvent) {
       if (engine.scheduler === null) {
         this.__nextTime = this.__insertEvent(engine, this.time + delay);
-
         engine.scheduler = this;
-
         this.__reschedule();
       }
     }
@@ -145,10 +133,8 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;
    */
   SimpleScheduler.prototype.remove = function(engine) {
     if (engine.scheduler === this) {
-      this.__removeEvent(engine);
-
+      this.__withdrawEvent(engine);
       engine.scheduler = null;
-
       this.__reschedule();
     }
   }
@@ -161,7 +147,6 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;
     if (engine.scheduler === this) {
       var time = this.time;
       var nextEventTime = time + Math.max(engine.syncEvent(time), 0);
-
       this.__moveEvent(engine, nextEventTime);
       this.__reschedule();
     }
