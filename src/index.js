@@ -15,7 +15,7 @@ class SimpleScheduler {
     this.__objects = [];
     this.__times = [];
 
-    this.__eventTime = null;
+    this.__currentTime = null;
     this.__timeout = null;
 
     this.period = 0.025;
@@ -24,13 +24,11 @@ class SimpleScheduler {
     return this;
   }
 
-  /* Insert an event to the queue */
   __insertEvent(object, time) {
     this.__objects.push(object);
     this.__times.push(time);
   }
 
-  /* move an event */
   __moveEvent(object, time) {
     var index = this.__objects.indexOf(object);
 
@@ -44,8 +42,7 @@ class SimpleScheduler {
     }
   }
 
-  /* Withdraw an event from the event list */
-  __removeEvent(object) {
+  __withdrawEvent(object) {
     var index = this.__objects.indexOf(object);
 
     if (index >= 0) {
@@ -64,35 +61,28 @@ class SimpleScheduler {
     }
   }
 
-  // global setTimeout scheduling loop
   __tick() {
     this.__looping = true;
 
-    for (var i = 0; i < this.__objects.length; i++) {
+    var i = 0;
+
+    while (i < this.__objects.length) {
       var object = this.__objects[i];
       var time = this.__times[i];
 
       while (time <= audioContext.currentTime + this.advance) {
-        this.__eventTime = time;
-
         var audioTime = Math.max(time, audioContext.currentTime);
-        var nextEventDelay = Math.max(object.executeEvent(time, audioTime), 0);
-
-        if (nextEventDelay !== Infinity) {
-          if (!this.reverse)
-            time += nextEventDelay;
-          else
-            time -= nextEventDelay;
-
-          this.__times[i] = time;
-        } else {
-          this.__removeEvent(object);
-          i--;
-        }
+        this.__currentTime = time;
+        time += Math.max(object.executeEvent(time, audioTime), 0);
       }
+
+      if (time !== Infinity)
+        this.__times[i++] = time;
+      else
+        this.__withdrawEvent(object);
     }
 
-    this.__eventTime = null;
+    this.__currentTime = null;
 
     if (this.__objects.length > 0) {
       this.__timeout = setTimeout(() => {
@@ -105,7 +95,7 @@ class SimpleScheduler {
    * Get global scheduler time
    */
   get time() {
-    return this.__eventTime || audioContext.currentTime + this.advance;
+    return this.__currentTime || audioContext.currentTime + this.advance;
   }
 
   /**
@@ -132,9 +122,7 @@ class SimpleScheduler {
     if (engine.syncEvent && engine.executeEvent) {
       if (engine.scheduler === null) {
         this.__nextTime = this.__insertEvent(engine, this.time + delay);
-
         engine.scheduler = this;
-
         this.__reschedule();
       }
     }
@@ -145,10 +133,8 @@ class SimpleScheduler {
    */
   remove(engine) {
     if (engine.scheduler === this) {
-      this.__removeEvent(engine);
-
+      this.__withdrawEvent(engine);
       engine.scheduler = null;
-
       this.__reschedule();
     }
   }
@@ -161,7 +147,6 @@ class SimpleScheduler {
     if (engine.scheduler === this) {
       var time = this.time;
       var nextEventTime = time + Math.max(engine.syncEvent(time), 0);
-
       this.__moveEvent(engine, nextEventTime);
       this.__reschedule();
     }
