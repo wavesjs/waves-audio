@@ -14,6 +14,11 @@ Method | Description
 `resync(engine)` | Resynchronize an already scheduled event engine.
 `reschedule(engine, time)` | Reschedule an already scheduled event engine at teh given time.
 
+Attribute | Description
+--- | ---
+`period` | Scheduler period (i.e. period of the setTimeout calls).
+`advance` | Lookahead time for scheduling events in advance (must be > period).
+
 ### Example
 
 ```js

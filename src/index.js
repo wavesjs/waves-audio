@@ -18,34 +18,35 @@ class Scheduler {
     this.__nextTime = Infinity;
     this.__timeout = null;
 
-    this.schedulingPeriod = 0.025;
-    this.scheduleAheadTime = 0.1; // how far ahead to schedule events (> schedulingPeriod)
+    this.period = 0.025;
+    this.advance = 0.1; // how far ahead to schedule events (> period)
 
     return this;
   }
 
- // global setTimeout scheduling loop
+  // global setTimeout scheduling loop
   __tick() {
     this.__looping = true;
 
-    while (this.__nextTime <= audioContext.currentTime + this.scheduleAheadTime) {
+    while (this.__nextTime <= audioContext.currentTime + this.advance) {
       this.__eventTime = this.__nextTime;
       this.__nextTime = this.__eventQueue.advance(this.__nextTime, this.__nextTime);
     }
 
     this.__eventTime = null;
 
-    this.__timeout = setTimeout(() => {
-      this.__tick();
-    }, this.schedulingPeriod * 1000);
+    if (this.__nextTime !== = Infinity) {
+      this.__timeout = setTimeout(() => {
+        this.__tick();
+      }, this.period * 1000);
+    }
   }
 
   __reschedule(time) {
     if (this.__nextTime !== Infinity) {
       if (!this.__timeout)
         this.__tick();
-    }
-    else if (this.__timeout) {
+    } else if (this.__timeout) {
       clearTimeout(this.__timeout);
       this.__timeout = null;
     }
@@ -55,7 +56,7 @@ class Scheduler {
    * Get global scheduler time
    */
   get time() {
-    return this.__eventTime || audioContext.currentTime + this.scheduleAheadTime;
+    return this.__eventTime || audioContext.currentTime + this.advance;
   }
 
   /**
@@ -69,7 +70,7 @@ class Scheduler {
       }
     };
 
-    this.__nextTime  = this.__eventQueue.insert(event, this.time + delay, false);
+    this.__nextTime = this.__eventQueue.insert(event, this.time + delay, false);
     this.__reschedule();
 
     return event;

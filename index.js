@@ -18,8 +18,8 @@ var Scheduler = (function(){var DP$0 = Object.defineProperty;
     this.__nextTime = Infinity;
     this.__timeout = null;
 
-    this.schedulingPeriod = 0.025;
-    this.scheduleAheadTime = 0.1; // how far ahead to schedule events (> schedulingPeriod)
+    this.period = 0.025;
+    this.advance = 0.1; // how far ahead to schedule events (must be > period)
 
     return this;
   }Object.defineProperties(Scheduler.prototype, {time: {"get": time$get$0, "configurable": true, "enumerable": true}});DP$0(Scheduler, "prototype", {"configurable": false, "enumerable": false, "writable": false});
