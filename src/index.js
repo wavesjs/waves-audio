@@ -170,9 +170,6 @@ class SegmentEngine extends EventEngine {
           release *= factor;
         }
 
-        if (grainTime < audioContext.currentTime)
-          grainTime = audioContext.currentTime;
-
         var attackEndTime = grainTime + attack;
         var grainEndTime = grainTime + grainDuration;
         var releaseStartTime = grainEndTime - release;
@@ -204,4 +201,5 @@ class SegmentEngine extends EventEngine {
     return grainPeriod;
   }
 }
+
 module.exports = SegmentEngine;

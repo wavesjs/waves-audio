@@ -170,9 +170,6 @@ var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXI
           release *= factor;
         }
 
-        if (grainTime < audioContext.currentTime)
-          grainTime = audioContext.currentTime;
-
         var attackEndTime = grainTime + attack;
         var grainEndTime = grainTime + grainDuration;
         var releaseStartTime = grainEndTime - release;
@@ -204,4 +201,5 @@ var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXI
     return grainPeriod;
   }
 ;return SegmentEngine;})(EventEngine);
+
 module.exports = SegmentEngine;
