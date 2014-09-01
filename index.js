@@ -12,7 +12,7 @@ var EventEngine = require("event-engine");
 function arrayRemove(array, value) {
   var index = array.indexOf(value);
 
-  if (index === 0) {
+  if (index >= 0) {
     array.splice(index, 1);
     return true;
   }
@@ -207,12 +207,16 @@ var Transport = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
    */
   Transport.prototype.add = function(engine) {
     if (engine.transport === null) {
+      engine.transport = this;
+
       this.__sync(this.time);
 
       if (engine.syncEvent && engine.executeEvent) {
         // add an event engine
 
         if (engine.scheduler === null) {
+          engine.scheduler = this;
+
           if (engine.alignToTransportPosition) {
             if (this.__speed !== 0)
               this.__nextEventPosition = this.__positionEvents.insert(engine, this.__position);
@@ -223,22 +227,20 @@ var Transport = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
             this.__timeEngines.push(engine);
           }
 
-          engine.scheduler = this;
-
           if (this.__speed !== 0)
             this.__reschedule();
         }
       } else {
         // add a non-event engine that has a speed property and/or a seek method
 
-        if (engine.speed)
+        if (Object.getOwnPropertyDescriptor(Object.getPrototypeOf(engine), "speed")) {
           this.__speedListeners.push(engine);
+          engine.speed = this.__speed;
+        }
 
-        if (engine.seek)
+        if (typeof engine.seek === "function")
           this.__seekListeners.push(engine);
       }
-
-      engine.transport = this;
     }
   }
 
@@ -247,12 +249,16 @@ var Transport = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
    */
   Transport.prototype.remove = function(engine) {
     if (engine.transport === this) {
+      engine.transport = null;
+      
       this.__sync(this.time);
 
       if (engine.syncEvent && engine.executeEvent) {
         // remove an event engine
 
         if (engine.scheduler === this) {
+          engine.scheduler = null;
+
           if (engine.alignToTransportPosition) {
             this.__nextEventPosition = this.__positionEvents.remove(engine);
             arrayRemove(this.__positionEngines, engine);
@@ -261,22 +267,20 @@ var Transport = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
             arrayRemove(this.__timeEngines, engine);
           }
 
-          engine.scheduler = null;
-
           if (this.__speed !== 0)
             this.__reschedule();
         }
       } else {
         // remove a non-event engine that has a speed property and/or a seek method
 
-        if (engine.speed)
+        if (Object.getOwnPropertyDescriptor(Object.getPrototypeOf(engine), "speed")) {
+          engine.speed = 0;
           arrayRemove(this.__speedListeners, engine);
+        }
 
-        if (engine.seek)
+        if (typeof engine.seek === "function")
           arrayRemove(this.__seekListeners, engine);
       }
-
-      engine.transport = null;
     }
   }
 
@@ -348,16 +352,16 @@ var Transport = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
    * Set playing speed (high level API)
    */
   function playingSpeed$set$0(value) {
-    if (value < 0) {
-      if (value < -16)
-        value = -16
-      else if (value > -0.0625)
-        value = -0.0625;
-    } else if (value > 0) {
+    if (value >= 0) {
       if (value < 0.0625)
         value = 0.0625;
       else if (value > 16)
         value = 16;
+    } else {
+      if (value < -16)
+        value = -16
+      else if (value > -0.0625)
+        value = -0.0625;
     }
 
     this.__playingSpeed = value;
