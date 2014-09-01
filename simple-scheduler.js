@@ -117,13 +117,31 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;
   }
 
   /**
+   * Add a repeated callback to the global scheduler
+   */
+  SimpleScheduler.prototype.repeat = function(callback) {var period = arguments[1];if(period === void 0)period = 1;var delay = arguments[2];if(delay === void 0)delay = 0;
+    var object = {
+      period: period,
+      executeEvent: function(time, audioTime) {
+        callback(time, audioTime);
+        return this.period;
+      }
+    };
+
+    this.__insertEvent(object, this.time + delay);
+    this.__reschedule();
+
+    return object;
+  }
+
+  /**
    * Add event engine to the global scheduler
    */
   SimpleScheduler.prototype.add = function(engine) {var delay = arguments[1];if(delay === void 0)delay = 0;
     if (engine.syncEvent && engine.executeEvent) {
       if (engine.scheduler === null) {
-        this.__nextTime = this.__insertEvent(engine, this.time + delay);
         engine.scheduler = this;
+        this.__nextTime = this.__insertEvent(engine, this.time + delay);
         this.__reschedule();
       }
     }
@@ -134,8 +152,8 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;
    */
   SimpleScheduler.prototype.remove = function(engine) {
     if (engine.scheduler === this) {
-      this.__withdrawEvent(engine);
       engine.scheduler = null;
+      this.__withdrawEvent(engine);
       this.__reschedule();
     }
   }

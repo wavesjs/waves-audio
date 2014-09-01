@@ -116,13 +116,31 @@ class SimpleScheduler {
   }
 
   /**
+   * Add a repeated callback to the global scheduler
+   */
+  repeat(callback, period = 1, delay = 0) {
+    var object = {
+      period: period,
+      executeEvent: function(time, audioTime) {
+        callback(time, audioTime);
+        return this.period;
+      }
+    };
+
+    this.__insertEvent(object, this.time + delay);
+    this.__reschedule();
+
+    return object;
+  }
+
+  /**
    * Add event engine to the global scheduler
    */
   add(engine, delay = 0) {
     if (engine.syncEvent && engine.executeEvent) {
       if (engine.scheduler === null) {
-        this.__nextTime = this.__insertEvent(engine, this.time + delay);
         engine.scheduler = this;
+        this.__nextTime = this.__insertEvent(engine, this.time + delay);
         this.__reschedule();
       }
     }
@@ -133,8 +151,8 @@ class SimpleScheduler {
    */
   remove(engine) {
     if (engine.scheduler === this) {
-      this.__withdrawEvent(engine);
       engine.scheduler = null;
+      this.__withdrawEvent(engine);
       this.__reschedule();
     }
   }
