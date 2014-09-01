@@ -107,9 +107,6 @@ var GranularEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIX
           release *= factor;
         }
 
-        if (grainTime < audioContext.currentTime)
-          grainTime = audioContext.currentTime;
-
         var attackEndTime = grainTime + attack;
         var grainEndTime = grainTime + grainDuration;
         var releaseStartTime = grainEndTime - release;
@@ -139,4 +136,5 @@ var GranularEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIX
     return grainPeriod;
   }
 ;return GranularEngine;})(EventEngine);
+
 module.exports = GranularEngine;

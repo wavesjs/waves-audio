@@ -107,9 +107,6 @@ class GranularEngine extends EventEngine {
           release *= factor;
         }
 
-        if (grainTime < audioContext.currentTime)
-          grainTime = audioContext.currentTime;
-
         var attackEndTime = grainTime + attack;
         var grainEndTime = grainTime + grainDuration;
         var releaseStartTime = grainEndTime - release;
@@ -139,4 +136,5 @@ class GranularEngine extends EventEngine {
     return grainPeriod;
   }
 }
+
 module.exports = GranularEngine;
