@@ -8,7 +8,8 @@ The scheduler is a global singleton that allows for scheduling event engines (se
 
 Method | Description
 --- | ---
-`callback(callback, delay = 0)` | Schedule an arbitrary callback called with (time, audioTime).
+`callback(callback, delay = 0)` | Schedule an arbitrary callback function called with (time, audioTime).
+`repeat(callback, period = 0, delay = 0)` | Schedule an arbitrary callback periodically.
 `add(engine, delay = 0)` | Add an event engine to the scheduler with an optional delay.
 `remove(engine)` | Remove an event engine from the scheduler.
 `resync(engine)` | Resynchronize an already scheduled event engine.

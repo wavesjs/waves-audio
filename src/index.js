@@ -60,20 +60,38 @@ class Scheduler {
   }
 
   /**
-   * Add a callback to the global scheduler at given time
+   * Add a callback to the global scheduler
    */
   callback(callback, delay = 0) {
-    var event = {
+    var object = {
       executeEvent: function(time, audioTime) {
         callback(time, audioTime);
         return Infinity;
       }
     };
 
-    this.__nextTime = this.__eventQueue.insert(event, this.time + delay, false);
+    this.__nextTime = this.__eventQueue.insert(object, this.time + delay, false);
     this.__reschedule();
 
-    return event;
+    return object;
+  }
+
+  /**
+   * Add a repeated callback to the global scheduler
+   */
+  repeat(callback, period = 1, delay = 0) {
+    var object = {
+      period: period,
+      executeEvent: function(time, audioTime) {
+        callback(time, audioTime);
+        return this.period;
+      }
+    };
+
+    this.__nextTime = this.__eventQueue.insert(object, this.time + delay, false);
+    this.__reschedule();
+
+    return object;
   }
 
   /**
@@ -81,8 +99,8 @@ class Scheduler {
    */
   add(engine, delay = 0) {
     if (engine.scheduler === null) {
-      this.__nextTime = this.__eventQueue.insert(engine, this.time + delay);
       engine.scheduler = this;
+      this.__nextTime = this.__eventQueue.insert(engine, this.time + delay);
       this.__reschedule();
     }
   }
@@ -92,8 +110,8 @@ class Scheduler {
    */
   remove(engine) {
     if (engine.scheduler === this) {
-      this.__nextTime = this.__eventQueue.remove(engine);
       engine.scheduler = null;
+      this.__nextTime = this.__eventQueue.remove(engine);
       this.__reschedule();
     }
   }
