@@ -21,8 +21,6 @@ var Scheduler = (function(){var DP$0 = Object.defineProperty;
 
     this.period = 0.025;
     this.advance = 0.1; // how far ahead to schedule events (> period)
-
-    return this;
   }Object.defineProperties(Scheduler.prototype, {time: {"get": time$get$0, "configurable": true, "enumerable": true}});DP$0(Scheduler, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
   // global setTimeout scheduling loop

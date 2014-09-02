@@ -20,8 +20,6 @@ class Scheduler {
 
     this.period = 0.025;
     this.advance = 0.1; // how far ahead to schedule events (> period)
-
-    return this;
   }
 
   // global setTimeout scheduling loop
