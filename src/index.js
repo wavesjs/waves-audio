@@ -19,8 +19,6 @@ class SimpleScheduler {
 
     this.period = 0.025;
     this.advance = 0.1; // how far ahead to schedule events (> period)
-
-    return this;
   }
 
   __insertEvent(object, time) {
@@ -61,8 +59,6 @@ class SimpleScheduler {
   }
 
   __tick() {
-    this.__looping = true;
-
     var i = 0;
 
     while (i < this.__objects.length) {
@@ -139,7 +135,7 @@ class SimpleScheduler {
     if (engine.syncEvent && engine.executeEvent) {
       if (engine.scheduler === null) {
         engine.scheduler = this;
-        this.__nextTime = this.__insertEvent(engine, this.time + delay);
+        this.__insertEvent(engine, this.time + delay);
         this.__reschedule();
       }
     }

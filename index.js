@@ -7,7 +7,6 @@
 'use strict';
 
 var audioContext = require("audio-context");
-var EventQueue = require("event-queue");
 
 var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;
 
@@ -20,8 +19,6 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;
 
     this.period = 0.025;
     this.advance = 0.1; // how far ahead to schedule events (> period)
-
-    return this;
   }Object.defineProperties(SimpleScheduler.prototype, {time: {"get": time$get$0, "configurable": true, "enumerable": true}});DP$0(SimpleScheduler, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
   SimpleScheduler.prototype.__insertEvent = function(object, time) {
@@ -62,8 +59,6 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;
   }
 
   SimpleScheduler.prototype.__tick = function() {var this$0 = this;
-    this.__looping = true;
-
     var i = 0;
 
     while (i < this.__objects.length) {
@@ -140,7 +135,7 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;
     if (engine.syncEvent && engine.executeEvent) {
       if (engine.scheduler === null) {
         engine.scheduler = this;
-        this.__nextTime = this.__insertEvent(engine, this.time + delay);
+        this.__insertEvent(engine, this.time + delay);
         this.__reschedule();
       }
     }
