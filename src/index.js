@@ -26,8 +26,6 @@ class Scheduler {
 
   // global setTimeout scheduling loop
   __tick() {
-    this.__looping = true;
-
     while (this.__nextTime <= audioContext.currentTime + this.advance) {
       this.__currentTime = this.__nextTime;
       this.__nextTime = this.__eventQueue.advance(this.__nextTime, this.__nextTime);

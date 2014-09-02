@@ -27,8 +27,6 @@ var Scheduler = (function(){var DP$0 = Object.defineProperty;
 
   // global setTimeout scheduling loop
   Scheduler.prototype.__tick = function() {var this$0 = this;
-    this.__looping = true;
-
     while (this.__nextTime <= audioContext.currentTime + this.advance) {
       this.__currentTime = this.__nextTime;
       this.__nextTime = this.__eventQueue.advance(this.__nextTime, this.__nextTime);
