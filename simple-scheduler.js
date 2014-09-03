@@ -3,13 +3,12 @@
 /**
  * @fileoverview WAVE audio event scheduler singleton based on audio time
  * @author Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
- * @version 5.1.0
  */
 'use strict';
 
 var audioContext = _dereq_("audio-context");
 
-var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;
+var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};var $proto$0={};
 
   function SimpleScheduler() {
     this.__objects = [];
@@ -31,12 +30,12 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;
     this.lookahead = 0.1;
   }Object.defineProperties(SimpleScheduler.prototype, {time: {"get": time$get$0, "configurable": true, "enumerable": true}});DP$0(SimpleScheduler, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
-  SimpleScheduler.prototype.__insertEvent = function(object, time) {
+  $proto$0.__insertEvent = function(object, time) {
     this.__objects.push(object);
     this.__times.push(time);
-  }
+  };
 
-  SimpleScheduler.prototype.__moveEvent = function(object, time) {
+  $proto$0.__moveEvent = function(object, time) {
     var index = this.__objects.indexOf(object);
 
     if (index >= 0) {
@@ -47,18 +46,18 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;
         this.__times.splice(index, 1);
       }
     }
-  }
+  };
 
-  SimpleScheduler.prototype.__withdrawEvent = function(object) {
+  $proto$0.__withdrawEvent = function(object) {
     var index = this.__objects.indexOf(object);
 
     if (index >= 0) {
       this.__objects.splice(index, 1);
       this.__times.splice(index, 1);
     }
-  }
+  };
 
-  SimpleScheduler.prototype.__reschedule = function() {
+  $proto$0.__reschedule = function() {
     if (this.__objects.length > 0) {
       if (!this.__timeout)
         this.__tick();
@@ -66,9 +65,9 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;
       clearTimeout(this.__timeout);
       this.__timeout = null;
     }
-  }
+  };
 
-  SimpleScheduler.prototype.__tick = function() {var this$0 = this;
+  $proto$0.__tick = function() {var this$0 = this;
     var i = 0;
 
     while (i < this.__objects.length) {
@@ -94,7 +93,7 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;
         this$0.__tick();
       }, this.period * 1000);
     }
-  }
+  };
 
   /**
    * Get scheduler time
@@ -111,7 +110,7 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;
    * @param {Number} delay of first callback
    * @return {Object} scheduled object that can be used to call remove and reschedule
    */
-  SimpleScheduler.prototype.callback = function(callback) {var delay = arguments[1];if(delay === void 0)delay = 0;
+  $proto$0.callback = function(callback) {var delay = arguments[1];if(delay === void 0)delay = 0;
     var object = {
       executeEvent: function(time, audioTime) {
         callback(time, audioTime);
@@ -123,7 +122,7 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;
     this.__reschedule();
 
     return object;
-  }
+  };
 
   /**
    * Add a periodically repeated callback to the scheduler
@@ -132,7 +131,7 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;
    * @param {Number} delay of first callback
    * @return {Object} scheduled object that can be used to call remove and reschedule
    */
-  SimpleScheduler.prototype.repeat = function(callback) {var period = arguments[1];if(period === void 0)period = 1;var delay = arguments[2];if(delay === void 0)delay = 0;
+  $proto$0.repeat = function(callback) {var period = arguments[1];if(period === void 0)period = 1;var delay = arguments[2];if(delay === void 0)delay = 0;
     var object = {
       period: period,
       executeEvent: function(time, audioTime) {
@@ -145,14 +144,14 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;
     this.__reschedule();
 
     return object;
-  }
+  };
 
   /**
    * Add an event engine to the scheduler
    * @param {object} engine event engine to be added to the scheduler
    * @param {Number} delay scheduling delay time
    */
-  SimpleScheduler.prototype.add = function(engine) {var delay = arguments[1];if(delay === void 0)delay = 0;
+  $proto$0.add = function(engine) {var delay = arguments[1];if(delay === void 0)delay = 0;
     if (engine.scheduler !== null)
       throw "object has already been added to a scheduler";
 
@@ -165,26 +164,26 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;
     engine.scheduler = this;
     this.__insertEvent(engine, this.time + delay);
     this.__reschedule();
-  }
+  };
 
   /**
    * Remove a scheduled event engine or callback from the scheduler
    * @param {Object} engine event engine or callback to be removed from the scheduler
    */
-  SimpleScheduler.prototype.remove = function(engine) {
+  $proto$0.remove = function(engine) {
     if (engine.scheduler !== this)
       throw "object has not been added to this scheduler";
 
     engine.scheduler = null;
     this.__withdrawEvent(engine);
     this.__reschedule();
-  }
+  };
 
   /**
    * Resychronize a scheduled event engine
    * @param {Object} engine event engine to be resynchronized
    */
-  SimpleScheduler.prototype.resync = function(engine) {
+  $proto$0.resync = function(engine) {
     if (engine.scheduler !== this)
       throw "object has not been added to this scheduler";
 
@@ -195,27 +194,27 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;
     var nextEventTime = time + Math.max(engine.syncEvent(time), 0);
     this.__moveEvent(engine, nextEventTime);
     this.__reschedule();
-  }
+  };
 
   /**
    * Reschedule a scheduled event engine or callback
    * @param {Object} engine event engine or callback to be rescheduled
    * @param {Number} time time when to reschedule
    */
-  SimpleScheduler.prototype.reschedule = function(engine, time) {
+  $proto$0.reschedule = function(engine, time) {
     if (engine.scheduler !== this)
       throw "object has not been added to this scheduler";
 
     this.__moveEvent(engine, time);
     this.__reschedule();
-  }
-;return SimpleScheduler;})();
+  };
+MIXIN$0(SimpleScheduler.prototype,$proto$0);$proto$0=void 0;return SimpleScheduler;})();
 
 module.exports = new SimpleScheduler; // export scheduler singleton
 },{"audio-context":2}],2:[function(_dereq_,module,exports){
 /* Generated by es6-transpiler v 0.7.14-2 */
 // instantiates an audio context in the global scope if not there already
-var context = window.audioContext || new AudioContext();
+var context = window.audioContext || new AudioContext() || new webkitAudioContext();
 window.audioContext = context;
 module.exports = context;
 },{}]},{},[1])
