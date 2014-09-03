@@ -1,6 +1,6 @@
 /* written in ECMAscript 6 */
 /**
- * @fileoverview WAVE audio global event scheduler based on audio time
+ * @fileoverview WAVE audio event scheduler singleton based on audio time
  * @author Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
  * @version 5.1.0
  */
@@ -17,8 +17,17 @@ class SimpleScheduler {
     this.__currentTime = null;
     this.__timeout = null;
 
+    /**
+     * scheduler (setTimeout) period
+     * @type {Number}
+     */
     this.period = 0.025;
-    this.advance = 0.1; // how far ahead to schedule events (> period)
+
+    /**
+     * scheduler lookahead time (> period)
+     * @type {Number}
+     */
+    this.lookahead = 0.1;
   }
 
   __insertEvent(object, time) {
@@ -65,7 +74,7 @@ class SimpleScheduler {
       var object = this.__objects[i];
       var time = this.__times[i];
 
-      while (time <= audioContext.currentTime + this.advance) {
+      while (time <= audioContext.currentTime + this.lookahead) {
         var audioTime = Math.max(time, audioContext.currentTime);
         this.__currentTime = time;
         time += Math.max(object.executeEvent(time, audioTime), 0);
@@ -87,14 +96,19 @@ class SimpleScheduler {
   }
 
   /**
-   * Get global scheduler time
+   * Get scheduler time
+   * @return {Number} current scheduler time including lookahead
    */
   get time() {
-    return this.__currentTime || audioContext.currentTime + this.advance;
+    return this.__currentTime || audioContext.currentTime + this.lookahead;
   }
 
   /**
-   * Add a callback to the global scheduler at given time
+   * Add a callback to the scheduler
+   * @param {Function} callback function(time, audioTime) to be called
+   * @param {Number} period callback period
+   * @param {Number} delay of first callback
+   * @return {Object} scheduled object that can be used to call remove and reschedule
    */
   callback(callback, delay = 0) {
     var object = {
@@ -111,7 +125,11 @@ class SimpleScheduler {
   }
 
   /**
-   * Add a repeated callback to the global scheduler
+   * Add a periodically repeated callback to the scheduler
+   * @param {Function} callback function(time, audioTime) to be called periodically
+   * @param {Number} period callback period
+   * @param {Number} delay of first callback
+   * @return {Object} scheduled object that can be used to call remove and reschedule
    */
   repeat(callback, period = 1, delay = 0) {
     var object = {
@@ -129,52 +147,67 @@ class SimpleScheduler {
   }
 
   /**
-   * Add event engine to the global scheduler
+   * Add an event engine to the scheduler
+   * @param {object} engine event engine to be added to the scheduler
+   * @param {Number} delay scheduling delay time
    */
   add(engine, delay = 0) {
-    if (engine.syncEvent && engine.executeEvent) {
-      if (engine.scheduler === null) {
-        engine.scheduler = this;
-        this.__insertEvent(engine, this.time + delay);
-        this.__reschedule();
-      }
-    }
+    if (engine.scheduler !== null)
+      throw "object has already been added to a scheduler";
+
+    if (!engine.syncEvent)
+      throw "object does not have a syncEvent method";
+
+    if (!engine.executeEvent)
+      throw "object does not have a executeEvent method";
+
+    engine.scheduler = this;
+    this.__insertEvent(engine, this.time + delay);
+    this.__reschedule();
   }
 
   /**
-   * Remove event (engine) from the global scheduler
+   * Remove a scheduled event engine or callback from the scheduler
+   * @param {Object} engine event engine or callback to be removed from the scheduler
    */
   remove(engine) {
-    if (engine.scheduler === this) {
-      engine.scheduler = null;
-      this.__withdrawEvent(engine);
-      this.__reschedule();
-    }
+    if (engine.scheduler !== this)
+      throw "object has not been added to this scheduler";
+
+    engine.scheduler = null;
+    this.__withdrawEvent(engine);
+    this.__reschedule();
   }
 
   /**
-   * Resychronize event engine
-   * (called by event engine)
+   * Resychronize a scheduled event engine
+   * @param {Object} engine event engine to be resynchronized
    */
   resync(engine) {
-    if (engine.scheduler === this) {
-      var time = this.time;
-      var nextEventTime = time + Math.max(engine.syncEvent(time), 0);
-      this.__moveEvent(engine, nextEventTime);
-      this.__reschedule();
-    }
+    if (engine.scheduler !== this)
+      throw "object has not been added to this scheduler";
+
+    if (!engine.syncEvent)
+      throw "object does not have a syncEvent method";
+
+    var time = this.time;
+    var nextEventTime = time + Math.max(engine.syncEvent(time), 0);
+    this.__moveEvent(engine, nextEventTime);
+    this.__reschedule();
   }
 
   /**
-   * Reschedule event engine
-   * (called by event engine)
+   * Reschedule a scheduled event engine or callback
+   * @param {Object} engine event engine or callback to be rescheduled
+   * @param {Number} time time when to reschedule
    */
   reschedule(engine, time) {
-    if (engine.scheduler === this) {
-      this.__moveEvent(engine, time);
-      this.__reschedule();
-    }
+    if (engine.scheduler !== this)
+      throw "object has not been added to this scheduler";
+
+    this.__moveEvent(engine, time);
+    this.__reschedule();
   }
 }
 
-module.exports = new SimpleScheduler; // export global scheduler singleton
+module.exports = new SimpleScheduler; // export scheduler singleton
