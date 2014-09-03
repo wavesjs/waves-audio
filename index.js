@@ -178,7 +178,7 @@ var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXI
 
   /**
    * Trigger a segment
-   * @param {audioTime} segment synthesis audio time
+   * @param {Number} audioTime segment synthesis audio time
    * @return {Number} period to next segment
    *
    * This function can be called at any time (whether the engine is scheduled or not)

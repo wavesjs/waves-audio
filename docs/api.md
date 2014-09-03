@@ -102,13 +102,13 @@ Get gain
 
 * **Number** current gain
 
-## trigger(segment)
+## trigger(audioTime)
 
 Trigger a segment
 
 ### Params: 
 
-* **audioTime** *segment* synthesis audio time
+* **Number** *audioTime* segment synthesis audio time
 
 ### Return:
 
