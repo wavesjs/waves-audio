@@ -227,7 +227,7 @@ var Transport = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
    */
   $proto$0.add = function(engine) {
     if (engine.transport || engine.scheduler)
-      throw "object has already been added to a transport";
+      throw new Error("object has already been added to a transport");
 
     engine.transport = this;
     engine.scheduler = this;
@@ -253,7 +253,7 @@ var Transport = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
       this.__speedAndSeekListeners.push(engine);
       engine.speed = this.__speed;
     } else {
-      throw "cannot add an object to transport that is not an EventEngine nor has a speed attribute and seek method";
+      throw new Error("cannot add an object to transport that is not an EventEngine nor has a speed attribute and seek method");
     }
   };
 
@@ -262,7 +262,7 @@ var Transport = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
    */
   $proto$0.remove = function(engine) {
     if (engine.transport !== this)
-      throw "object has not been added to this transport";
+      throw new Error("object has not been added to this transport");
 
     engine.transport = null;
     engine.scheduler = null;
@@ -293,7 +293,7 @@ var Transport = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
    */
   $proto$0.resync = function(engine) {
     if (engine.transport !== this)
-      throw "object has not been added to this transport";
+      throw new Error("object has not been added to this transport");
 
     this.__sync(this.time);
 
@@ -314,7 +314,7 @@ var Transport = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
    */
   $proto$0.reschedule = function(engine, time) {
     if (engine.transport !== this)
-      throw "object has not been added to this transport";
+      throw new Error("object has not been added to this transport");
 
     this.__sync(this.time);
 

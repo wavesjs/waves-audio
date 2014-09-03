@@ -226,7 +226,7 @@ class Transport extends EventEngine {
    */
   add(engine) {
     if (engine.transport || engine.scheduler)
-      throw "object has already been added to a transport";
+      throw new Error("object has already been added to a transport");
 
     engine.transport = this;
     engine.scheduler = this;
@@ -252,7 +252,7 @@ class Transport extends EventEngine {
       this.__speedAndSeekListeners.push(engine);
       engine.speed = this.__speed;
     } else {
-      throw "cannot add an object to transport that is not an EventEngine nor has a speed attribute and seek method";
+      throw new Error("cannot add an object to transport that is not an EventEngine nor has a speed attribute and seek method");
     }
   }
 
@@ -261,7 +261,7 @@ class Transport extends EventEngine {
    */
   remove(engine) {
     if (engine.transport !== this)
-      throw "object has not been added to this transport";
+      throw new Error("object has not been added to this transport");
 
     engine.transport = null;
     engine.scheduler = null;
@@ -292,7 +292,7 @@ class Transport extends EventEngine {
    */
   resync(engine) {
     if (engine.transport !== this)
-      throw "object has not been added to this transport";
+      throw new Error("object has not been added to this transport");
 
     this.__sync(this.time);
 
@@ -313,7 +313,7 @@ class Transport extends EventEngine {
    */
   reschedule(engine, time) {
     if (engine.transport !== this)
-      throw "object has not been added to this transport";
+      throw new Error("object has not been added to this transport");
 
     this.__sync(this.time);
 
