@@ -86,13 +86,13 @@ Get gain
 
 * **Number** current gain
 
-## trigger(grain)
+## trigger(audioTime)
 
 Trigger a grain
 
 ### Params: 
 
-* **audioTime** *grain* synthesis audio time
+* **Number** *audioTime* grain synthesis audio time
 
 ### Return:
 

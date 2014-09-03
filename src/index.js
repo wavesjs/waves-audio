@@ -143,7 +143,7 @@ class GranularEngine extends EventEngine {
 
   /**
    * Trigger a grain
-   * @param {audioTime} grain synthesis audio time
+   * @param {Number} audioTime grain synthesis audio time
    * @return {Number} period to next grain
    *
    * This function can be called at any time (whether the engine is scheduled or not)
