@@ -12,7 +12,16 @@ class AudioPlayer {
   constructor(buffer = null) {
     this.transport = null; // set when added to transporter
 
+    /**
+     * Audio buffer
+     * @type {AudioBuffer}
+     */
     this.buffer = buffer;
+
+    /**
+     * Fade time for chaining segments (e.g. in start, stop, and seek)
+     * @type {AudioBuffer}
+     */
     this.fadeTime = 0.005;
 
     this.__time = 0;
@@ -25,8 +34,7 @@ class AudioPlayer {
 
     this.__playingSpeed = 1;
 
-    this.__gainNode = audioContext.createGain();
-    this.outputNode = this.__gainNode;
+    this.outputNode = this.__gainNode = audioContext.createGain();
   }
 
   __sync() {
@@ -80,6 +88,10 @@ class AudioPlayer {
     }
   }
 
+  /**
+   * Set speed
+   * @param {Number} speed speed (a speed of 0 corrsponds to stop or pause)
+   */
   set speed(speed) {
     if (speed !== this.__speed) {
       var time = this.__sync();
@@ -88,20 +100,28 @@ class AudioPlayer {
         this.__start(speed);
       else if (speed === 0)
         this.__stop();
-      else if(this.__speed * speed < 0) {
+      else if (this.__speed * speed < 0) {
         this.__stop();
-        this.__start(speed);        
-      } else if(this.__bufferSource)
+        this.__start(speed);
+      } else if (this.__bufferSource)
         this.__bufferSource.playbackRate.setValueAtTime(speed, time);
 
       this.__speed = speed;
     }
   }
 
+  /**
+   * Get current speed
+   * @return {Number} current speed
+   */
   get speed() {
     return this.__speed;
   }
 
+  /**
+   * Set (jump to) transport position
+   * @param {Number} position target position
+   */
   seek(position) {
     if (position !== this.__position) {
       this.__sync();
@@ -112,6 +132,10 @@ class AudioPlayer {
     }
   }
 
+  /**
+   * Set whether the audio buffer is considered as cyclic
+   * @param {Bool} cyclic whether the audio buffer is considered as cyclic
+   */
   set cyclic(cyclic) {
     if (cyclic !== this.__cyclic) {
       this.__sync();
@@ -122,10 +146,18 @@ class AudioPlayer {
     }
   }
 
+  /**
+   * Get whether the audio buffer is considered as cyclic
+   * @return {Bool} whether the audio buffer is considered as cyclic
+   */
   get cyclic() {
     return this.__cyclic;
   }
 
+  /**
+   * Set gain
+   * @param {Number} value linear gain factor
+   */
   set gain(value) {
     var time = this.__sync();
 
@@ -134,12 +166,18 @@ class AudioPlayer {
     this.__gainNode.linearRampToValueAtTime(0, time + this.fadeTime);
   }
 
+  /**
+   * Get gain
+   * @return {Number} current gain
+   */
   get gain() {
     return this.__gainNode.gain.value;
   }
 
   /**
-   * Start playing (high level API)
+   * Start playing (high level player API)
+   * @param {Number} seek start position
+   * @param {Number} speed playing speed
    */
   startPlaying(seek = null, speed = null) {
     if (seek)
@@ -152,14 +190,14 @@ class AudioPlayer {
   }
 
   /**
-   * Pause playing (high level API)
+   * Pause playing (high level player API)
    */
   pausePlaying() {
     this.speed = 0;
   }
 
   /**
-   * Stop playing (high level API)
+   * Stop playing (high level player API)
    */
   stopPlaying() {
     this.speed = 0;
@@ -167,29 +205,31 @@ class AudioPlayer {
   }
 
   /**
-   * Set playing speed (high level API)
+   * Set playing speed (high level player API)
+   * @param {Number} speed playing speed (non-zero speed between -16 and -1/16 or between 1/16 and 16)
    */
-  set playingSpeed(value) {
-    if (value >= 0) {
-      if (value < 0.0625)
-        value = 0.0625;
-      else if (value > 16)
-        value = 16;
+  set playingSpeed(speed) {
+    if (speed >= 0) {
+      if (speed < 0.0625)
+        speed = 0.0625;
+      else if (speed > 16)
+        speed = 16;
     } else {
-      if (value < -16)
-        value = -16
-      else if (value > -0.0625)
-        value = -0.0625;
+      if (speed < -16)
+        speed = -16
+      else if (speed > -0.0625)
+        speed = -0.0625;
     }
 
-    this.__playingSpeed = value;
+    this.__playingSpeed = speed;
 
     if (this.__speed !== 0)
-      this.speed = value;
+      this.speed = speed;
   }
 
   /**
-   * Get playing speed (high level API)
+   * Get playing speed (high level player API)
+   * @return current playing speed
    */
   get playingSpeed() {
     return this.__playingSpeed;
@@ -199,8 +239,8 @@ class AudioPlayer {
     this.__gainNode.connect(target);
   }
 
-  disconnect(output) {
-    this.__gainNode.disconnect(output);
+  disconnect(connection) {
+    this.__gainNode.disconnect(connection);
   }
 }
 
