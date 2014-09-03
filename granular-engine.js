@@ -9,50 +9,149 @@
 var audioContext = _dereq_("audio-context");
 var EventEngine = _dereq_("event-engine");
 
-var GranularEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};MIXIN$0(GranularEngine, super$0);
+var GranularEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};MIXIN$0(GranularEngine, super$0);var $proto$0={};
 
   function GranularEngine() {var buffer = arguments[0];if(buffer === void 0)buffer = null;
     super$0.call(this, false); // by default events don't sync to transport position
 
-    this.buffer = buffer; // audio buffer
-    this.periodAbs = 0.01; // absolute period
-    this.periodRel = 0; // period relative to duration
-    this.periodVar = 0; // period variation relative to grain period
-    this.position = 0; // grain position (onset time) in sec
-    this.positionVar = 0.003; // grain position variation in sec
+    /**
+     * Audio buffer
+     * @type {AudioBuffer}
+     */
+    this.buffer = buffer;
+
+    /**
+     * Absolute grain period in sec
+     * @type {Number}
+     */
+    this.periodAbs = 0.01;
+
+    /**
+     * Grain period relative to absolute duration
+     * @type {Number}
+     */
+    this.periodRel = 0;
+
+    /**
+     * Amout of random grain period variation relative to grain period
+     * @type {Number}
+     */
+    this.periodVar = 0;
+
+    /**
+     * Grain position (onset time in audio buffer) in sec
+     * @type {Number}
+     */
+    this.position = 0;
+
+    /**
+     * Amout of random grain position variation in sec
+     * @type {Number}
+     */
+    this.positionVar = 0.003;
+
+    /**
+     * Absolute grain duration in sec
+     * @type {Number}
+     */
     this.durationAbs = 0.1; // absolute grain duration
-    this.durationRel = 0; // duration relative to absolute period
-    this.attackAbs = 0; // absolute attack time
-    this.attackRel = 0.5; // attack time relative to duration
-    this.releaseAbs = 0; // absolute release time
-    this.releaseRel = 0.5; // release time relative to duration
-    this.resampling = 0; // resampling in cent
-    this.resamplingVar = 0; // resampling variation in cent
-    this.centered = true; // whether grain position refers to teh center of teh grain (or the beginning)
+
+    /**
+     * Grain duration relative to grain period (overlap)
+     * @type {Number}
+     */
+    this.durationRel = 0;
+
+    /**
+     * Absolute attack time in sec
+     * @type {Number}
+     */
+    this.attackAbs = 0;
+
+    /**
+     * Attack time relative to grain duration
+     * @type {Number}
+     */
+    this.attackRel = 0.5;
+
+    /**
+     * Absolute release time in sec
+     * @type {Number}
+     */
+    this.releaseAbs = 0;
+
+    /**
+     * Release time relative to grain duration
+     * @type {Number}
+     */
+    this.releaseRel = 0.5;
+
+    /**
+     * Grain resampling in cent
+     * @type {Number}
+     */
+    this.resampling = 0;
+
+    /**
+     * Amout of random resampling variation in cent
+     * @type {Number}
+     */
+    this.resamplingVar = 0;
+
+    /**
+     * Whether the grain position refers to the center of the grain (or the beginning)
+     * @type {Bool}
+     */    
+    this.centered = true;
+
+    /**
+     * Whether the audio buffer and grain position are considered as cyclic
+     * @type {Bool}
+     */    
+    this.cyclic = true;
 
     this.__phase = 0;
     this.__aligned = true;
 
-    this.__gainNode = audioContext.createGain();
-
-    this.outputNode = this.__gainNode;
+    this.outputNode = this.__gainNode = audioContext.createGain();
   }GranularEngine.prototype = Object.create(super$0.prototype, {"constructor": {"value": GranularEngine, "configurable": true, "writable": true}, gain: {"get": gain$get$0, "set": gain$set$0, "configurable": true, "enumerable": true} });DP$0(GranularEngine, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
-  // EventEngine executeEvent
-  GranularEngine.prototype.executeEvent = function(time, audioTime) {
-    return this.trigger(audioTime);
-  }
+  // EventEngine syncEvent
+  $proto$0.syncEvent = function(time) {
+    return 0;
+  };
 
+  // EventEngine executeEvent
+  $proto$0.executeEvent = function(time, audioTime) {
+    return this.trigger(audioTime);
+  };
+
+  /**
+   * Set gain
+   * @param {Number} value linear gain factor
+   */
   function gain$set$0(value) {
     this.__gainNode.gain.value = value;
   }
 
+  /**
+   * Get gain
+   * @return {Number} current gain
+   */
   function gain$get$0() {
     return this.__gainNode.gain.value;
   }
 
-  GranularEngine.prototype.trigger = function(time) {
-    var grainTime = time || audioContext.currentTime;
+  /**
+   * Trigger a grain
+   * @param {audioTime} grain synthesis audio time
+   * @return {Number} period to next grain
+   *
+   * This function can be called at any time (whether the engine is scheduled or not)
+   * to generate a single grain according to the current grain parameters.
+   */
+  $proto$0.trigger = function(audioTime) {
+    var grainTime = audioTime || audioContext.currentTime;
     var grainPeriod = this.periodAbs;
     var grainPosition = this.position;
     var grainDuration = this.durationAbs;
@@ -135,8 +234,8 @@ var GranularEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIX
     }
 
     return grainPeriod;
-  }
-;return GranularEngine;})(EventEngine);
+  };
+MIXIN$0(GranularEngine.prototype,$proto$0);$proto$0=void 0;return GranularEngine;})(EventEngine);
 
 module.exports = GranularEngine;
 },{"audio-context":2,"event-engine":3}],2:[function(_dereq_,module,exports){
@@ -170,7 +269,7 @@ var EventEngine = (function(){var DP$0 = Object.defineProperty;
    * @return {float} next event time
    */
   EventEngine.prototype.syncEvent = function(time) {
-    return 0;
+    return Infinity;
   }
 
   /**
