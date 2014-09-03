@@ -114,13 +114,13 @@ class Scheduler {
    */
   add(engine, delay = 0) {
     if (engine.scheduler !== null)
-      throw "object has already been added to a scheduler";
+      throw new Error("object has already been added to a scheduler");
 
     if (!engine.syncEvent)
-      throw "object does not have a syncEvent method";
+      throw new Error("object does not have a syncEvent method");
 
     if (!engine.executeEvent)
-      throw "object does not have a executeEvent method";
+      throw new Error("object does not have a executeEvent method");
 
     engine.scheduler = this;
     this.__nextTime = this.__eventQueue.insert(engine, this.time + delay);
@@ -133,7 +133,7 @@ class Scheduler {
    */
   remove(engine) {
     if (engine.scheduler !== this)
-      throw "object has not been added to this scheduler";
+      throw new Error("object has not been added to this scheduler");
 
     engine.scheduler = null;
     this.__nextTime = this.__eventQueue.remove(engine);
@@ -146,10 +146,10 @@ class Scheduler {
    */
   resync(engine) {
     if (engine.scheduler !== this)
-      throw "object has not been added to this scheduler";
+      throw new Error("object has not been added to this scheduler");
 
     if (!engine.syncEvent)
-      throw "object does not have a syncEvent method";
+      throw new Error("object does not have a syncEvent method");
 
     this.__nextTime = this.__eventQueue.move(engine, this.time);
     this.__reschedule();
@@ -162,7 +162,7 @@ class Scheduler {
    */
   reschedule(engine, time) {
     if (engine.scheduler !== this)
-      throw "object has not been added to this scheduler";
+      throw new Error("object has not been added to this scheduler");
 
     this.__nextTime = this.__eventQueue.move(engine, time, false);
     this.__reschedule();
