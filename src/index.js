@@ -2,7 +2,6 @@
 /**
  * @fileoverview WAVE audio event scheduler singleton based on audio time
  * @author Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
- * @version 5.1.0
  */
 'use strict';
 

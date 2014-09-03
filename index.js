@@ -2,14 +2,13 @@
 /**
  * @fileoverview WAVE audio event scheduler singleton based on audio time
  * @author Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
- * @version 5.1.0
  */
 'use strict';
 
 var audioContext = require("audio-context");
 var EventQueue = require("event-queue");
 
-var Scheduler = (function(){var DP$0 = Object.defineProperty;
+var Scheduler = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};var $proto$0={};
 
   function Scheduler() {
     this.__eventQueue = new EventQueue();
@@ -32,7 +31,7 @@ var Scheduler = (function(){var DP$0 = Object.defineProperty;
   }Object.defineProperties(Scheduler.prototype, {time: {"get": time$get$0, "configurable": true, "enumerable": true}});DP$0(Scheduler, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
   // global setTimeout scheduling loop
-  Scheduler.prototype.__tick = function() {var this$0 = this;
+  $proto$0.__tick = function() {var this$0 = this;
     while (this.__nextTime <= audioContext.currentTime + this.lookahead) {
       this.__currentTime = this.__nextTime;
       this.__nextTime = this.__eventQueue.advance(this.__nextTime, this.__nextTime);
@@ -45,9 +44,9 @@ var Scheduler = (function(){var DP$0 = Object.defineProperty;
         this$0.__tick();
       }, this.period * 1000);
     }
-  }
+  };
 
-  Scheduler.prototype.__reschedule = function(time) {
+  $proto$0.__reschedule = function(time) {
     if (this.__nextTime !== Infinity) {
       if (!this.__timeout)
         this.__tick();
@@ -55,7 +54,7 @@ var Scheduler = (function(){var DP$0 = Object.defineProperty;
       clearTimeout(this.__timeout);
       this.__timeout = null;
     }
-  }
+  };
 
   /**
    * Get scheduler time
@@ -72,7 +71,7 @@ var Scheduler = (function(){var DP$0 = Object.defineProperty;
    * @param {Number} delay of first callback
    * @return {Object} scheduled object that can be used to call remove and reschedule
    */
-  Scheduler.prototype.callback = function(callback) {var delay = arguments[1];if(delay === void 0)delay = 0;
+  $proto$0.callback = function(callback) {var delay = arguments[1];if(delay === void 0)delay = 0;
     var object = {
       executeEvent: function(time, audioTime) {
         callback(time, audioTime);
@@ -84,7 +83,7 @@ var Scheduler = (function(){var DP$0 = Object.defineProperty;
     this.__reschedule();
 
     return object;
-  }
+  };
 
   /**
    * Add a periodically repeated callback to the scheduler
@@ -93,7 +92,7 @@ var Scheduler = (function(){var DP$0 = Object.defineProperty;
    * @param {Number} delay of first callback
    * @return {Object} scheduled object that can be used to call remove and reschedule
    */
-  Scheduler.prototype.repeat = function(callback) {var period = arguments[1];if(period === void 0)period = 1;var delay = arguments[2];if(delay === void 0)delay = 0;
+  $proto$0.repeat = function(callback) {var period = arguments[1];if(period === void 0)period = 1;var delay = arguments[2];if(delay === void 0)delay = 0;
     var object = {
       period: period,
       executeEvent: function(time, audioTime) {
@@ -106,14 +105,14 @@ var Scheduler = (function(){var DP$0 = Object.defineProperty;
     this.__reschedule();
 
     return object;
-  }
+  };
 
   /**
    * Add an event engine to the scheduler
    * @param {Object} engine event engine to be added to the scheduler
    * @param {Number} delay scheduling delay time
    */
-  Scheduler.prototype.add = function(engine) {var delay = arguments[1];if(delay === void 0)delay = 0;
+  $proto$0.add = function(engine) {var delay = arguments[1];if(delay === void 0)delay = 0;
     if (engine.scheduler !== null)
       throw "object has already been added to a scheduler";
 
@@ -126,26 +125,26 @@ var Scheduler = (function(){var DP$0 = Object.defineProperty;
     engine.scheduler = this;
     this.__nextTime = this.__eventQueue.insert(engine, this.time + delay);
     this.__reschedule();
-  }
+  };
 
   /**
    * Remove event engine from the scheduler
    * @param {Object} engine event engine or callback to be removed from the scheduler
    */
-  Scheduler.prototype.remove = function(engine) {
+  $proto$0.remove = function(engine) {
     if (engine.scheduler !== this)
       throw "object has not been added to this scheduler";
 
     engine.scheduler = null;
     this.__nextTime = this.__eventQueue.remove(engine);
     this.__reschedule();
-  }
+  };
 
   /**
    * Resychronize a scheduled event engine
    * @param {Object} engine event engine to be resynchronized
    */
-  Scheduler.prototype.resync = function(engine) {
+  $proto$0.resync = function(engine) {
     if (engine.scheduler !== this)
       throw "object has not been added to this scheduler";
 
@@ -154,20 +153,20 @@ var Scheduler = (function(){var DP$0 = Object.defineProperty;
 
     this.__nextTime = this.__eventQueue.move(engine, this.time);
     this.__reschedule();
-  }
+  };
 
   /**
    * Reschedule a scheduled event engine or callback
    * @param {Object} engine event engine or callback to be rescheduled
    * @param {Number} time time when to reschedule
    */
-  Scheduler.prototype.reschedule = function(engine, time) {
+  $proto$0.reschedule = function(engine, time) {
     if (engine.scheduler !== this)
       throw "object has not been added to this scheduler";
 
     this.__nextTime = this.__eventQueue.move(engine, time, false);
     this.__reschedule();
-  }
-;return Scheduler;})();
+  };
+MIXIN$0(Scheduler.prototype,$proto$0);$proto$0=void 0;return Scheduler;})();
 
 module.exports = new Scheduler; // export scheduler singleton
