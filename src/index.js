@@ -9,19 +9,37 @@ var audioContext = require("audio-context");
 var EventEngine = require("event-engine");
 
 class Metronome extends EventEngine {
-  constructor(period = 1, frequency = 600, attack = 0.002, release = 0.098) {
-    super();
+  constructor(period = 1) {
+    super(true);
 
-    this.period = period; // in sec
-    this.frequency = frequency;
-    this.attack = attack;
-    this.release = release;
+    /**
+     * Metronome period in sec
+     * @type {Number}
+     */
+    this.period = period;
+
+    /**
+     * Metronome click frequency
+     * @type {Number}
+     */
+    this.clickFreq = 600;
+
+    /**
+     * Metronome click attack time
+     * @type {Number}
+     */
+    this.clickAttack = 0.002;
+
+    /**
+     * Metronome click release time
+     * @type {Number}
+     */
+    this.clickRelease = 0.098;
 
     this.__phase = 0;
     this.__aligned = true;
 
-    this.__gainNode = audioContext.createGain();
-    this.outputNode = this.__gainNode;
+    this.outputNode = this.__gainNode = audioContext.createGain();
   }
 
   // EventEngine syncEvent
@@ -45,54 +63,84 @@ class Metronome extends EventEngine {
     return this.period;
   }
 
+  /**
+   * Trigger metronome click
+   * @param {Number} audioTime metronome click synthesis audio time
+   */
   trigger(audioTime) {
-    var attack = this.attack;
-    var release = this.release;
+    var clickAttack = this.clickAttack;
+    var clickRelease = this.clickRelease;
     var period = this.period;
 
-    if (period < this.attack + this.release) {
-      var scale = period / (this.attack + this.release);
-      attack *= scale;
-      release *= scale;
+    if (period < (clickAttack + clickRelease)) {
+      var scale = period / (clickAttack + clickRelease);
+      clickAttack *= scale;
+      clickRelease *= scale;
     }
 
     this.__envNode = audioContext.createGain();
     this.__envNode.gain.value = 0.0;
     this.__envNode.gain.setValueAtTime(0, audioTime);
-    this.__envNode.gain.linearRampToValueAtTime(1.0, audioTime + attack);
-    this.__envNode.gain.exponentialRampToValueAtTime(0.0000001, audioTime + attack + release);
+    this.__envNode.gain.linearRampToValueAtTime(1.0, audioTime + clickAttack);
+    this.__envNode.gain.exponentialRampToValueAtTime(0.0000001, audioTime + clickAttack + clickRelease);
     this.__envNode.gain.setValueAtTime(0, audioTime);
     this.__envNode.connect(this.__gainNode);
 
     this.__osc = audioContext.createOscillator();
-    this.__osc.frequency.value = this.frequency;
+    this.__osc.frequency.value = this.clickFreq;
     this.__osc.start(0);
-    this.__osc.stop(audioTime + attack + release);
+    this.__osc.stop(audioTime + clickAttack + clickRelease);
     this.__osc.connect(this.__envNode);
   }
 
+  /**
+   * Set gain
+   * @param {Number} value linear gain factor
+   */
   set gain(value) {
     this.__gainNode.gain.value = value;
   }
 
+  /**
+   * Get gain
+   * @return {Number} current gain
+   */
   get gain() {
     return this.__gainNode.gain.value;
   }
 
+  /**
+   * Set metronome phase
+   * @param {Number} phase metronome phase (0...1)
+   */
   set phase(phase) {
-    this.__phase = phase;
+    this.__phase = phase - Math.floor(phase);
     this.resyncEngine();
   }
 
+  /**
+   * Get metronome phase
+   * @return {Number} current metronome phase
+   */
   get phase() {
     return this.__phase;
   }
 
+  /**
+   * Set whether metronome clicks are aligned to the absolute scheduling time
+   * @param {Bool} aligned whether metronome is aligned to absolute time
+   *
+   * Aligning the metronome to the absolute scheduling time allows for synchronizing the phases of multiple metronomes.
+   */
   set aligned(aligned) {
     this.__aligned = aligned;
     this.resyncEngine();
   }
 
+  /**
+   * Get whether metronome clicks are aligned to the absolute scheduling time
+   * @return {Bool} whether metronome is aligned to absolute time
+   */
   get aligned() {
     return this.__aligned;
   }
