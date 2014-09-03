@@ -153,13 +153,13 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 =
    */
   $proto$0.add = function(engine) {var delay = arguments[1];if(delay === void 0)delay = 0;
     if (engine.scheduler !== null)
-      throw "object has already been added to a scheduler";
+      throw new Error("object has already been added to a scheduler");
 
     if (!engine.syncEvent)
-      throw "object does not have a syncEvent method";
+      throw new Error("object does not have a syncEvent method");
 
     if (!engine.executeEvent)
-      throw "object does not have a executeEvent method";
+      throw new Error("object does not have a executeEvent method");
 
     engine.scheduler = this;
     this.__insertEvent(engine, this.time + delay);
@@ -172,7 +172,7 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 =
    */
   $proto$0.remove = function(engine) {
     if (engine.scheduler !== this)
-      throw "object has not been added to this scheduler";
+      throw new Error("object has not been added to this scheduler");
 
     engine.scheduler = null;
     this.__withdrawEvent(engine);
@@ -185,10 +185,10 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 =
    */
   $proto$0.resync = function(engine) {
     if (engine.scheduler !== this)
-      throw "object has not been added to this scheduler";
+      throw new Error("object has not been added to this scheduler");
 
     if (!engine.syncEvent)
-      throw "object does not have a syncEvent method";
+      throw new Error("object does not have a syncEvent method");
 
     var time = this.time;
     var nextEventTime = time + Math.max(engine.syncEvent(time), 0);
@@ -203,7 +203,7 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 =
    */
   $proto$0.reschedule = function(engine, time) {
     if (engine.scheduler !== this)
-      throw "object has not been added to this scheduler";
+      throw new Error("object has not been added to this scheduler");
 
     this.__moveEvent(engine, time);
     this.__reschedule();
