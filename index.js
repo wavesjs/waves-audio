@@ -8,40 +8,139 @@
 var audioContext = require("audio-context");
 var EventEngine = require("event-engine");
 
-var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};MIXIN$0(SegmentEngine, super$0);
+var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};MIXIN$0(SegmentEngine, super$0);var $proto$0={};
 
   function SegmentEngine() {var buffer = arguments[0];if(buffer === void 0)buffer = null;
     super$0.call(this, false); // by default events don't sync to transport position
 
-    this.buffer = buffer; // audio buffer
-    this.periodAbs = 0.1; // absolute period
-    this.periodRel = 0; // period relative to inter-segment distance
-    this.periodVar = 0; // period variation relative to grain period
-    this.positionArray = [0.0]; // segment positions
-    this.positionVar = 0; // position variation in sec
-    this.durationArray = [0.0]; // segment durations
-    this.durationAbs = 0; // absolute grain duration
-    this.durationRel = 1; // duration relative to segment duration of inter-segment distance
-    this.offsetArray = [0.0]; // segment offsets
-    this.offsetAbs = 0.005; // absolute offset
-    this.offsetRel = 0; // offset relative to duration
-    this.attackAbs = 0.005; // absolute attack time
-    this.attackRel = 0; // attack time relative to duration
-    this.releaseAbs = 0.005; // absolute release time
-    this.releaseRel = 0; // release time relative to duration
-    this.resampling = 0; // resampling in cent
-    this.resamplingVar = 0; // resampling variation in cent
+    /**
+     * Audio buffer
+     * @type {AudioBuffer}
+     */
+    this.buffer = buffer;
 
-    this.markerIndex = 0;
+    /**
+     * Absolute segment period in sec
+     * @type {Number}
+     */
+    this.periodAbs = 0.1;
+
+    /**
+     * Segment period relative to absolute duration
+     * @type {Number}
+     */
+    this.periodRel = 0;
+
+    /**
+     * Amout of random segment period variation relative to segment period
+     * @type {Number}
+     */
+    this.periodVar = 0;
+
+    /**
+     * Array of segment positions (onset times in audio buffer) in sec
+     * @type {Number}
+     */
+    this.positionArray = [0.0];
+
+    /**
+     * Amout of random segment position variation in sec
+     * @type {Number}
+     */
+    this.positionVar = 0;
+
+    /**
+     * Array of segment durations in sec
+     * @type {Number}
+     */
+    this.durationArray = [0.0];
+
+    /**
+     * Absolute segment duration in sec
+     * @type {Number}
+     */
+    this.durationAbs = 0;
+
+    /**
+     * Segment duration relative to given segment duration or inter-segment positions
+     * @type {Number}
+     */
+    this.durationRel = 1;
+
+    /**
+     * Array of segment offsets in sec
+     * @type {Number}
+     *
+     * offset > 0: the segment's reference position is after the given segment position
+     * offset < 0: the given segment position is the segment's reference position and the duration has to be corrected by the offset
+     */
+    this.offsetArray = [0.0];
+
+    /**
+     * Absolute segment offset in sec
+     * @type {Number}
+     */
+    this.offsetAbs = -0.005;
+
+    /**
+     * Segment offset relative to segment duration
+     * @type {Number}
+     */
+    this.offsetRel = 0;
+
+    /**
+     * Absolute attack time in sec
+     * @type {Number}
+     */
+    this.attackAbs = 0.005;
+
+    /**
+     * Attack time relative to segment duration
+     * @type {Number}
+     */
+    this.attackRel = 0;
+
+    /**
+     * Absolute release time in sec
+     * @type {Number}
+     */
+    this.releaseAbs = 0.005;
+
+    /**
+     * Release time relative to segment duration
+     * @type {Number}
+     */
+    this.releaseRel = 0;
+
+    /**
+     * Segment resampling in cent
+     * @type {Number}
+     */
+    this.resampling = 0;
+
+    /**
+     * Amout of random resampling variation in cent
+     * @type {Number}
+     */
+    this.resamplingVar = 0;
+
+    /**
+     * Index of 
+     * @type {Number}
+     */
+    this.segmentIndex = 0;
+
+    /**
+     * Whether the audio buffer and segment indices are considered as cyclic
+     * @type {Bool}
+     */    
     this.cyclic = false;
 
-    this.__gainNode = audioContext.createGain();
-
-    this.outputNode = this.__gainNode;
+    this.outputNode = this.__gainNode = audioContext.createGain();
   }SegmentEngine.prototype = Object.create(super$0.prototype, {"constructor": {"value": SegmentEngine, "configurable": true, "writable": true}, gain: {"get": gain$get$0, "set": gain$set$0, "configurable": true, "enumerable": true} });DP$0(SegmentEngine, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
   // EventEngine syncEvent
-  SegmentEngine.prototype.syncEvent = function(time) {
+  $proto$0.syncEvent = function(time) {
     var delay = 0;
 
     if (this.__aligned || this.transport) { // is always aligned in transport
@@ -54,45 +153,61 @@ var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXI
     }
 
     return delay;
-  }
+  };
 
   // EventEngine executeEvent
-  SegmentEngine.prototype.executeEvent = function(time, audioTime) {
+  $proto$0.executeEvent = function(time, audioTime) {
     return this.trigger(audioTime);
-  }
+  };
 
+  /**
+   * Set gain
+   * @param {Number} value linear gain factor
+   */
   function gain$set$0(value) {
     this.__gainNode.gain.value = value;
   }
 
+  /**
+   * Get gain
+   * @return {Number} current gain
+   */
   function gain$get$0() {
     return this.__gainNode.gain.value;
   }
 
-  SegmentEngine.prototype.trigger = function(time) {
-    var grainTime = time || audioContext.currentTime;
-    var grainPeriod = this.periodAbs;
-    var markerIndex = this.markerIndex;
+  /**
+   * Trigger a segment
+   * @param {audioTime} segment synthesis audio time
+   * @return {Number} period to next segment
+   *
+   * This function can be called at any time (whether the engine is scheduled or not)
+   * to generate a single segment according to the current segment parameters.
+   */
+  $proto$0.trigger = function(audioTime) {
+    var segmentTime = audioTime || audioContext.currentTime;
+    var segmentPeriod = this.periodAbs;
+    var segmentIndex = this.segmentIndex;
 
     if (this.buffer) {
-      var grainPosition = 0.0;
-      var grainDuration = 0.0;
-      var grainOffset = 0.0;
+      var segmentPosition = 0.0;
+      var segmentDuration = 0.0;
+      var segmentOffset = 0.0;
       var resamplingRate = 1.0;
 
-      if(this.cyclic)
-        markerIndex = markerIndex % this.positionArray.length;
+      if (this.cyclic)
+        segmentIndex = segmentIndex % this.positionArray.length;
       else
-        markerIndex = Math.max(0, Math.min(markerIndex, this.positionArray.length - 1));
+        segmentIndex = Math.max(0, Math.min(segmentIndex, this.positionArray.length - 1));
 
       if (this.positionArray)
-        grainPosition = this.positionArray[markerIndex] || 0;
+        segmentPosition = this.positionArray[segmentIndex] || 0;
 
       if (this.durationArray)
-        grainDuration = this.durationArray[markerIndex] || 0;
+        segmentDuration = this.durationArray[segmentIndex] || 0;
 
       if (this.offsetArray)
-        grainOffset = this.offsetArray[markerIndex] || 0;
+        segmentOffset = this.offsetArray[segmentIndex] || 0;
 
       // calculate resampling
       if (this.resampling !== 0 || this.resamplingVar > 0) {
@@ -101,15 +216,15 @@ var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXI
       }
 
       // calculate inter marker distance
-      if (grainDuration === 0 || this.periodRel > 0) {
-        var nextPosition = this.positionArray[markerIndex + 1] || this.buffer.duration;
-        var nextOffset = this.offsetArray[markerIndex + 1] || 0;
-        var interMarker = nextPosition - grainPosition;
+      if (segmentDuration === 0 || this.periodRel > 0) {
+        var nextPosition = this.positionArray[segmentIndex + 1] || this.buffer.duration;
+        var nextOffset = this.offsetArray[segmentIndex + 1] || 0;
+        var interMarker = nextPosition - segmentPosition;
 
         // correct inter marker distance by offsets
-        //   offset > 0: the grain's reference position is after the given segment position
-        if (grainOffset > 0)
-          interMarker -= grainOffset;
+        //   offset > 0: the segment's reference position is after the given segment position
+        if (segmentOffset > 0)
+          interMarker -= segmentOffset;
 
         if (nextOffset > 0)
           interMarker += nextOffset;
@@ -118,71 +233,71 @@ var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXI
           interMarker = 0;
 
         // use inter marker distance instead of segment duration 
-        if (grainDuration === 0)
-          grainDuration = interMarker;
+        if (segmentDuration === 0)
+          segmentDuration = interMarker;
 
         // calculate period relative to inter marker distance
-        grainPeriod += this.periodRel * interMarker;
+        segmentPeriod += this.periodRel * interMarker;
       }
 
-      // add relative and absolute grain duration
-      grainDuration *= this.durationRel;
-      grainDuration += this.durationAbs;
+      // add relative and absolute segment duration
+      segmentDuration *= this.durationRel;
+      segmentDuration += this.durationAbs;
 
-      // add relative and absolute grain offset
-      grainOffset *= this.offsetRel;
-      grainOffset += this.offsetAbs;
+      // add relative and absolute segment offset
+      segmentOffset *= this.offsetRel;
+      segmentOffset += this.offsetAbs;
 
-      // apply grain offset
-      //   offset > 0: the grain's reference position is after the given segment position
-      //   offset < 0: the given segment position is the grains reference position and the duration has to be corrected by the offset
-      if (grainOffset < 0) {
-        grainDuration -= grainOffset;
-        grainPosition += grainOffset;
-        grainTime += (grainOffset / resamplingRate);
+      // apply segment offset
+      //   offset > 0: the segment's reference position is after the given segment position
+      //   offset < 0: the given segment position is the segment's reference position and the duration has to be corrected by the offset
+      if (segmentOffset < 0) {
+        segmentDuration -= segmentOffset;
+        segmentPosition += segmentOffset;
+        segmentTime += (segmentOffset / resamplingRate);
       } else {
-        grainTime -= (grainOffset / resamplingRate);
+        segmentTime -= (segmentOffset / resamplingRate);
       }
 
-      // randomize grain position
+      // randomize segment position
       if (this.positionVar > 0)
-        grainPosition += 2.0 * (Math.random() - 0.5) * this.positionVar;
+        segmentPosition += 2.0 * (Math.random() - 0.5) * this.positionVar;
 
-      // shorten duration of grains over the edges of the buffer
-      if (grainPosition < 0) {
-        grainDuration += grainPosition;
-        grainPosition = 0;
+      // shorten duration of segments over the edges of the buffer
+      if (segmentPosition < 0) {
+        segmentDuration += segmentPosition;
+        segmentPosition = 0;
       }
 
-      if (grainPosition + grainDuration > this.buffer.duration)
-        grainDuration = this.buffer.duration - grainPosition;
+      if (segmentPosition + segmentDuration > this.buffer.duration)
+        segmentDuration = this.buffer.duration - segmentPosition;
 
-      // make grain
-      if (this.gain > 0 && grainDuration > 0) {
-        // make grain envelope
+      // make segment
+      if (this.gain > 0 && segmentDuration > 0) {
+        // make segment envelope
         var envelopeNode = audioContext.createGain();
-        var attack = this.attackAbs + this.attackRel * grainDuration;
-        var release = this.releaseAbs + this.releaseRel * grainDuration;
+        var attack = this.attackAbs + this.attackRel * segmentDuration;
+        var release = this.releaseAbs + this.releaseRel * segmentDuration;
 
-        if (attack + release > grainDuration) {
-          var factor = grainDuration / (attack + release);
+        if (attack + release > segmentDuration) {
+          var factor = segmentDuration / (attack + release);
           attack *= factor;
           release *= factor;
         }
 
-        var attackEndTime = grainTime + attack;
-        var grainEndTime = grainTime + grainDuration;
-        var releaseStartTime = grainEndTime - release;
+        var attackEndTime = segmentTime + attack;
+        var segmentEndTime = segmentTime + segmentDuration;
+        var releaseStartTime = segmentEndTime - release;
 
         envelopeNode.gain.value = this.gain;
 
-        envelopeNode.gain.setValueAtTime(0.0, grainTime);
+        envelopeNode.gain.setValueAtTime(0.0, segmentTime);
         envelopeNode.gain.linearRampToValueAtTime(this.gain, attackEndTime);
 
         if (releaseStartTime > attackEndTime)
           envelopeNode.gain.setValueAtTime(this.gain, releaseStartTime);
 
-        envelopeNode.gain.linearRampToValueAtTime(0.0, grainEndTime);
+        envelopeNode.gain.linearRampToValueAtTime(0.0, segmentEndTime);
         envelopeNode.connect(this.__gainNode);
 
         // make source
@@ -193,13 +308,13 @@ var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXI
         source.connect(envelopeNode);
         envelopeNode.connect(this.__gainNode);
 
-        source.start(grainTime, grainPosition);
-        source.stop(grainTime + grainDuration / resamplingRate);
+        source.start(segmentTime, segmentPosition);
+        source.stop(segmentTime + segmentDuration / resamplingRate);
       }
     }
 
-    return grainPeriod;
-  }
-;return SegmentEngine;})(EventEngine);
+    return segmentPeriod;
+  };
+MIXIN$0(SegmentEngine.prototype,$proto$0);$proto$0=void 0;return SegmentEngine;})(EventEngine);
 
 module.exports = SegmentEngine;
