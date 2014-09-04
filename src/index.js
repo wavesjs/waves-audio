@@ -6,12 +6,12 @@
 "use strict";
 
 var audioContext = require("audio-context");
-var EventEngine = require("event-engine");
+var TimeEngine = require("time-engine");
 
-class SegmentEngine extends EventEngine {
+class SegmentEngine extends TimeEngine {
 
   constructor(buffer = null) {
-    super(false); // by default events don't sync to transport position
+    super(false); // by default segments don't sync to transport position
 
     /**
      * Audio buffer
@@ -145,8 +145,8 @@ class SegmentEngine extends EventEngine {
     this.outputNode = this.__gainNode = audioContext.createGain();
   }
 
-  // EventEngine syncEvent
-  syncEvent(time) {
+  // TimeEngine syncNext
+  syncNext(time) {
     var delay = 0;
 
     if (this.__aligned || this.transport) { // is always aligned in transport
@@ -161,8 +161,8 @@ class SegmentEngine extends EventEngine {
     return delay;
   }
 
-  // EventEngine executeEvent
-  executeEvent(time, audioTime) {
+  // TimeEngine executeNext
+  executeNext(time, audioTime) {
     return this.trigger(audioTime);
   }
 

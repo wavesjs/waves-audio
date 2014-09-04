@@ -6,12 +6,12 @@
 "use strict";
 
 var audioContext = require("audio-context");
-var EventEngine = require("event-engine");
+var TimeEngine = require("time-engine");
 
 var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};MIXIN$0(SegmentEngine, super$0);var $proto$0={};
 
   function SegmentEngine() {var buffer = arguments[0];if(buffer === void 0)buffer = null;
-    super$0.call(this, false); // by default events don't sync to transport position
+    super$0.call(this, false); // by default segments don't sync to transport position
 
     /**
      * Audio buffer
@@ -145,8 +145,8 @@ var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXI
     this.outputNode = this.__gainNode = audioContext.createGain();
   }SegmentEngine.prototype = Object.create(super$0.prototype, {"constructor": {"value": SegmentEngine, "configurable": true, "writable": true}, gain: {"get": gain$get$0, "set": gain$set$0, "configurable": true, "enumerable": true} });DP$0(SegmentEngine, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
-  // EventEngine syncEvent
-  $proto$0.syncEvent = function(time) {
+  // TimeEngine syncNext
+  $proto$0.syncNext = function(time) {
     var delay = 0;
 
     if (this.__aligned || this.transport) { // is always aligned in transport
@@ -161,8 +161,8 @@ var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXI
     return delay;
   };
 
-  // EventEngine executeEvent
-  $proto$0.executeEvent = function(time, audioTime) {
+  // TimeEngine executeNext
+  $proto$0.executeNext = function(time, audioTime) {
     return this.trigger(audioTime);
   };
 
@@ -339,6 +339,6 @@ var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXI
 
     return segmentPeriod;
   };
-MIXIN$0(SegmentEngine.prototype,$proto$0);$proto$0=void 0;return SegmentEngine;})(EventEngine);
+MIXIN$0(SegmentEngine.prototype,$proto$0);$proto$0=void 0;return SegmentEngine;})(TimeEngine);
 
 module.exports = SegmentEngine;
