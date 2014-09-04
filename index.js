@@ -10,7 +10,7 @@ var EventEngine = require("event-engine");
 
 var GranularEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};MIXIN$0(GranularEngine, super$0);var $proto$0={};
 
-  function GranularEngine() {var buffer = arguments[0];if(buffer === void 0)buffer = null;
+  function GranularEngine() {var buffer = arguments[0];if(buffer === void 0)buffer = null;var bufferExt = arguments[1];if(bufferExt === void 0)bufferExt = 0;
     super$0.call(this, false); // by default events don't sync to transport position
 
     /**
@@ -100,14 +100,14 @@ var GranularEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIX
     /**
      * Whether the grain position refers to the center of the grain (or the beginning)
      * @type {Bool}
-     */    
+     */
     this.centered = true;
 
     /**
      * Whether the audio buffer and grain position are considered as cyclic
      * @type {Bool}
-     */    
-    this.cyclic = true;
+     */
+    this.cyclic = false;
 
     this.__phase = 0;
     this.__aligned = true;
@@ -183,18 +183,33 @@ var GranularEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIX
       if (this.positionVar > 0)
         grainPosition += (2.0 * Math.random() - 1) * this.positionVar;
 
-      // shorten duration of grains over the edges of the buffer
-      if (grainPosition < 0) {
-        grainTime -= grainPosition;
-        grainDuration += grainPosition;
-        grainPosition = 0;
+      var bufferDuration = this.buffer.duration;
+
+      if (this.buffer.wrapAroundExtention)
+        bufferDuration -= this.buffer.wrapAroundExtention;
+
+      // wrap or clip grain position and duration into buffer duration
+      if (grainPosition < 0 || grainPosition >= bufferDuration) {
+        if (this.cyclic) {
+          var phase = grainPosition / bufferDuration;
+          grainPosition = (phase - Math.floor(phase)) * bufferDuration;
+
+          if (grainPosition + grainDuration > this.buffer.duration)
+            grainDuration = this.buffer.duration - grainPosition;
+        } else {
+          if (grainPosition < 0) {
+            grainTime -= grainPosition;
+            grainDuration += grainPosition;
+            grainPosition = 0;
+          }
+
+          if (grainPosition + grainDuration > bufferDuration)
+            grainDuration = bufferDuration - grainPosition;
+        }
       }
 
-      if (grainPosition + grainDuration > this.buffer.duration)
-        grainDuration = this.buffer.duration - grainPosition;
-
       // make grain
-      if (this.gain > 0 && grainDuration > 0) {
+      if (this.gain > 0 && grainDuration >= 0.001) {
         // make grain envelope
         var envelopeNode = audioContext.createGain();
         var attack = this.attackAbs + this.attackRel * grainDuration;
