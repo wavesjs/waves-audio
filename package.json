@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "audio-context": "git://github.com/Ircam-RnD/audio-context.git#master",
-    "event-queue": "git://github.com/Ircam-RnD/event-queue.git#master"
+    "time-engine-queue": "git://github.com/Ircam-RnD/time-engine-queue.git#master"
   },
   "devDependencies": {
     "module-boilerplate": "git://github.com/Ircam-RnD/module-boilerplate.git#master",
