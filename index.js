@@ -26,7 +26,7 @@ var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXI
     this.periodAbs = 0.1;
 
     /**
-     * Segment period relative to absolute duration
+     * Segment period relative to inter-segment distance
      * @type {Number}
      */
     this.periodRel = 0;
@@ -62,7 +62,7 @@ var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXI
     this.durationAbs = 0;
 
     /**
-     * Segment duration relative to given segment duration or inter-segment positions
+     * Segment duration relative to given segment duration or inter-segment distance
      * @type {Number}
      */
     this.durationRel = 1;
@@ -87,6 +87,12 @@ var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXI
      * @type {Number}
      */
     this.offsetRel = 0;
+
+    /**
+     * Time by which all segments are delayed (especially to realize segment offsets)
+     * @type {Number}
+     */
+    this.delay = 0.005;
 
     /**
      * Absolute attack time in sec
@@ -125,7 +131,7 @@ var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXI
     this.resamplingVar = 0;
 
     /**
-     * Index of 
+     * Index of
      * @type {Number}
      */
     this.segmentIndex = 0;
@@ -133,7 +139,7 @@ var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXI
     /**
      * Whether the audio buffer and segment indices are considered as cyclic
      * @type {Bool}
-     */    
+     */
     this.cyclic = false;
 
     this.outputNode = this.__gainNode = audioContext.createGain();
@@ -185,7 +191,7 @@ var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXI
    * to generate a single segment according to the current segment parameters.
    */
   $proto$0.trigger = function(audioTime) {
-    var segmentTime = audioTime || audioContext.currentTime;
+    var segmentTime = audioTime || audioContext.currentTime + this.delay;
     var segmentPeriod = this.periodAbs;
     var segmentIndex = this.segmentIndex;
 
@@ -194,6 +200,10 @@ var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXI
       var segmentDuration = 0.0;
       var segmentOffset = 0.0;
       var resamplingRate = 1.0;
+      var bufferDuration = this.buffer.duration;
+
+      if (this.buffer.wrapAroundExtension)
+        bufferDuration -= this.buffer.wrapAroundExtension;
 
       if (this.cyclic)
         segmentIndex = segmentIndex % this.positionArray.length;
@@ -215,29 +225,43 @@ var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXI
         resamplingRate = Math.pow(2.0, (this.resampling + randomResampling) / 1200.0);
       }
 
-      // calculate inter marker distance
+      // calculate inter-segment distance
       if (segmentDuration === 0 || this.periodRel > 0) {
-        var nextPosition = this.positionArray[segmentIndex + 1] || this.buffer.duration;
-        var nextOffset = this.offsetArray[segmentIndex + 1] || 0;
-        var interMarker = nextPosition - segmentPosition;
+        var nextSegementIndex = segmentIndex + 1;
+        var nextPosition, nextOffset;
 
-        // correct inter marker distance by offsets
+        if (nextSegementIndex === this.positionArray.length) {
+          if (this.cyclic) {
+            nextPosition = this.positionArray[0] + bufferDuration;
+            nextOffset = this.offsetArray[0];
+          } else {
+            nextPosition = bufferDuration;
+            nextOffset = 0;
+          }
+        } else {
+          nextPosition = this.positionArray[nextSegementIndex];
+          nextOffset = this.offsetArray[nextSegementIndex];
+        }
+
+        var interSegmentDistance = nextPosition - segmentPosition;
+
+        // correct inter-segment distance by offsets
         //   offset > 0: the segment's reference position is after the given segment position
         if (segmentOffset > 0)
-          interMarker -= segmentOffset;
+          interSegmentDistance -= segmentOffset;
 
         if (nextOffset > 0)
-          interMarker += nextOffset;
+          interSegmentDistance += nextOffset;
 
-        if (interMarker < 0)
-          interMarker = 0;
+        if (interSegmentDistance < 0)
+          interSegmentDistance = 0;
 
-        // use inter marker distance instead of segment duration 
+        // use inter-segment distance instead of segment duration 
         if (segmentDuration === 0)
-          segmentDuration = interMarker;
+          segmentDuration = interSegmentDistance;
 
         // calculate period relative to inter marker distance
-        segmentPeriod += this.periodRel * interMarker;
+        segmentPeriod += this.periodRel * interSegmentDistance;
       }
 
       // add relative and absolute segment duration

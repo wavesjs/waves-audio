@@ -16,7 +16,7 @@ Absolute segment period in sec
 
 ## periodRel
 
-Segment period relative to absolute duration
+Segment period relative to inter-segment distance
 
 ## periodVar
 
@@ -40,7 +40,7 @@ Absolute segment duration in sec
 
 ## durationRel
 
-Segment duration relative to given segment duration or inter-segment positions
+Segment duration relative to given segment duration or inter-segment distance
 
 ## offsetArray
 
@@ -53,6 +53,10 @@ Absolute segment offset in sec
 ## offsetRel
 
 Segment offset relative to segment duration
+
+## delay
+
+Time by which all segments are delayed (especially to realize segment offsets)
 
 ## attackAbs
 
@@ -80,7 +84,7 @@ Amout of random resampling variation in cent
 
 ## segmentIndex
 
-Index of 
+Index of
 
 ## cyclic
 
