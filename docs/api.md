@@ -6,37 +6,37 @@ written in ECMAscript 6
 
 Author: Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
 
-## __eventIndex()
+## __engineIndex()
 
-Get the index of an object in the event list
+Get the index of an engine in the engine list
 
-## __removeEvent()
+## __removeEngine()
 
-Withdraw an event from the event list
+Withdraw an engine from the engine list
 
 ## insert()
 
-Insert an event to the queue
+Insert an engine to the sequence
 
 ## insertAll()
 
-Insert an array of events to the queue
+Insert an array of engines to the sequence
 
 ## move()
 
-Move an event to another time in the queue
+Move an engine to another time in the sequence
 
 ## remove()
 
-Remove an event from the queue
+Remove an engine from the sequence
 
 ## clear()
 
-Clear queue
+Clear sequence
 
 ## execute()
 
-Execute next event and return time of next event
+Execute next engine and return time of next engine
 
 <!-- End ./src/index.js -->
 

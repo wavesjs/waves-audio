@@ -83,12 +83,12 @@ class TimeEngineQueue {
   /**
    * Insert an array of engines to the sequence
    */
-  insertAll(arrayOfObjects, time, sync = true) {
+  insertAll(arrayOfEngines, time, sync = true) {
     var nextEngineTime = time;
 
     // sync each engine and add to engine list (if time is not Infinity)
-    for (var i = 0; i < arrayOfObjects.length; i++) {
-      var engine = arrayOfObjects[i];
+    for (var i = 0; i < arrayOfEngines.length; i++) {
+      var engine = arrayOfEngines[i];
 
       if (sync)
         nextEngineTime = this.__syncEngine(engine, time);
