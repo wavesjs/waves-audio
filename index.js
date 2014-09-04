@@ -6,7 +6,7 @@
 "use strict";
 
 var audioContext = require("audio-context");
-var EventEngine = require("event-engine");
+var TimeEngine = require("time-engine");
 
 var Metronome = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};MIXIN$0(Metronome, super$0);var $proto$0={};
   function Metronome() {var period = arguments[0];if(period === void 0)period = 1;
@@ -42,8 +42,8 @@ var Metronome = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
     this.outputNode = this.__gainNode = audioContext.createGain();
   }Metronome.prototype = Object.create(super$0.prototype, {"constructor": {"value": Metronome, "configurable": true, "writable": true}, gain: {"get": gain$get$0, "set": gain$set$0, "configurable": true, "enumerable": true}, phase: {"get": phase$get$0, "set": phase$set$0, "configurable": true, "enumerable": true}, aligned: {"get": aligned$get$0, "set": aligned$set$0, "configurable": true, "enumerable": true} });DP$0(Metronome, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
-  // EventEngine syncEvent
-  $proto$0.syncEvent = function(time) {
+  // TimeEngine syncNext
+  $proto$0.syncNext = function(time) {
     var cycles = -this.__phase;
 
     if (this.__aligned || this.transport) // is always aligned in transport
@@ -57,8 +57,8 @@ var Metronome = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
     return delay;
   };
 
-  // EventEngine executeEvent
-  $proto$0.executeEvent = function(time, audioTime) {
+  // TimeEngine executeNext
+  $proto$0.executeNext = function(time, audioTime) {
     this.trigger(audioTime);
     return this.period;
   };
@@ -144,6 +144,6 @@ var Metronome = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
   function aligned$get$0() {
     return this.__aligned;
   }
-MIXIN$0(Metronome.prototype,$proto$0);$proto$0=void 0;return Metronome;})(EventEngine);
+MIXIN$0(Metronome.prototype,$proto$0);$proto$0=void 0;return Metronome;})(TimeEngine);
 
 module.exports = Metronome;

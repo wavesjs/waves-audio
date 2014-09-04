@@ -6,9 +6,9 @@
 "use strict";
 
 var audioContext = require("audio-context");
-var EventEngine = require("event-engine");
+var TimeEngine = require("time-engine");
 
-class Metronome extends EventEngine {
+class Metronome extends TimeEngine {
   constructor(period = 1) {
     super(true);
 
@@ -42,8 +42,8 @@ class Metronome extends EventEngine {
     this.outputNode = this.__gainNode = audioContext.createGain();
   }
 
-  // EventEngine syncEvent
-  syncEvent(time) {
+  // TimeEngine syncNext
+  syncNext(time) {
     var cycles = -this.__phase;
 
     if (this.__aligned || this.transport) // is always aligned in transport
@@ -57,8 +57,8 @@ class Metronome extends EventEngine {
     return delay;
   }
 
-  // EventEngine executeEvent
-  executeEvent(time, audioTime) {
+  // TimeEngine executeNext
+  executeNext(time, audioTime) {
     this.trigger(audioTime);
     return this.period;
   }
