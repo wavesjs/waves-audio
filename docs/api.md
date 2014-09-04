@@ -85,11 +85,11 @@ Add an engine to the transport
 ### Params: 
 
 * **Object** *engine* engine to be added to the transport 
-An engine that can be added to the transport is either an EventEngine
+An engine that can be added to the transport is either an TimeEngine
 or an engine that implements a speed attribute and a seek method.
 
-The attribute "alignEventsToTransportPosition" of an event engine determines whether
-the engine's events are scheduled in time or aligned to the transport position.
+The attribute "alignToTransportPosition" of an time engine determines whether
+the engine is scheduled in time or aligned to the transport position.
 
 ## remove()
 
@@ -97,19 +97,19 @@ Remove an engine from the transport
 
 ## resync(engine)
 
-Resychronize event engine
+Resychronize time engine
 
 ### Params: 
 
-* **Object** *engine* event engine to be resynchronized
+* **Object** *engine* time engine to be resynchronized
 
 ## reschedule(engine, time)
 
-Reschedule event engine at given time or position
+Reschedule time engine at given time or position
 
 ### Params: 
 
-* **Object** *engine* event engine to be rescheduled
+* **Object** *engine* time engine to be rescheduled
 * **Number** *time* time or position when to reschedule
 
 ## startPlaying(seek, speed)
@@ -128,6 +128,9 @@ Pause playing (high level player API)
 ## stopPlaying()
 
 Stop playing (high level player API)
+
+TODO: The following methods should go into a mixin that extends any class 
+with a speed attribute and a seek method into a player.
 
 ## playingSpeed(speed)
 

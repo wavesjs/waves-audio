@@ -1,12 +1,12 @@
 /* written in ECMAscript 6 */
 /**
- * @fileoverview WAVE audio transport class, provides synchronized time-based and position-based scheduling of events
+ * @fileoverview WAVE audio transport class, provides synchronized time-based and position-based scheduling of time engines
  * @author Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
  */
 'use strict';
 
-var EventQueue = require("event-queue");
-var EventEngine = require("event-engine");
+var TimeEngine = require("time-engine");
+var TimeEngineQueue = require("time-engine-queue");
 
 function arrayRemove(array, value) {
   var index = array.indexOf(value);
@@ -24,13 +24,13 @@ var Transport = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
   function Transport() {
     super$0.call(this);
 
-    this.__timeEvents = new EventQueue();
+    this.__timeQueue = new TimeEngineQueue();
     this.__timeEngines = [];
-    this.__nextEventTime = Infinity;
+    this.__nextEngineTime = Infinity;
 
-    this.__positionEvents = new EventQueue();
+    this.__positionQueue = new TimeEngineQueue();
     this.__positionEngines = [];
-    this.__nextEventPosition = Infinity;
+    this.__nextEnginePosition = Infinity;
 
     this.__nextTime = Infinity;
 
@@ -51,10 +51,10 @@ var Transport = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
   $proto$0.__reschedule = function() {
     var nextTime;
 
-    if (this.__nextEventPosition !== Infinity)
-      nextTime = Math.min(this.__nextEventTime, this.getTimeAtPosition(this.__nextEventPosition));
+    if (this.__nextEnginePosition !== Infinity)
+      nextTime = Math.min(this.__nextEngineTime, this.getTimeAtPosition(this.__nextEnginePosition));
     else
-      nextTime = this.__nextEventTime;
+      nextTime = this.__nextEngineTime;
 
     if (nextTime !== this.__nextTime) {
       this.__nextTime = nextTime;
@@ -62,43 +62,43 @@ var Transport = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
     }
   };
 
-  // EventEngine syncEvent
-  $proto$0.syncEvent = function(time) {
-    this.__nextEventTime = Infinity;
-    this.__nextEventPosition = Infinity;
+  // TimeEngine syncNext
+  $proto$0.syncNext = function(time) {
+    this.__nextEngineTime = Infinity;
+    this.__nextEnginePosition = Infinity;
 
     this.__time = time;
 
     if (this.__speed) {
-      this.__timeEvents.clear();
-      this.__nextEventTime = this.__timeEvents.insertAll(this.__timeEngines, time);
+      this.__timeQueue.clear();
+      this.__nextEngineTime = this.__timeQueue.insertAll(this.__timeEngines, time);
 
-      this.__positionEvents.reverse = (this.__speed < 0);
-      this.__positionEvents.clear();
-      this.__nextEventPosition = this.__positionEvents.insertAll(this.__positionEngines, this.__position);
+      this.__positionQueue.reverse = (this.__speed < 0);
+      this.__positionQueue.clear();
+      this.__nextEnginePosition = this.__positionQueue.insertAll(this.__positionEngines, this.__position);
     }
 
-    if (this.__nextEventPosition !== Infinity)
-      this.__nextTime = Math.min(this.__nextEventTime, this.getTimeAtPosition(this.__nextEventPosition));
+    if (this.__nextEnginePosition !== Infinity)
+      this.__nextTime = Math.min(this.__nextEngineTime, this.getTimeAtPosition(this.__nextEnginePosition));
     else
-      this.__nextTime = this.__nextEventTime;
+      this.__nextTime = this.__nextEngineTime;
 
     return this.__nextTime - time;
   };
 
-  // EventEngine executeEvent
-  $proto$0.executeEvent = function(time, audioTime) {
+  // TimeEngine executeNext
+  $proto$0.executeNext = function(time, audioTime) {
     this.__sync(time);
 
-    if (this.__nextTime === this.__nextEventTime)
-      this.__nextEventTime = this.__timeEvents.advance(time, audioTime);
+    if (this.__nextTime === this.__nextEngineTime)
+      this.__nextEngineTime = this.__timeQueue.execute(time, audioTime);
     else
-      this.__nextEventPosition = this.__positionEvents.advance(this.__position, audioTime);
+      this.__nextEnginePosition = this.__positionQueue.execute(this.__position, audioTime);
 
-    if (this.__nextEventPosition !== Infinity)
-      this.__nextTime = Math.min(this.__nextEventTime, this.getTimeAtPosition(this.__nextEventPosition));
+    if (this.__nextEnginePosition !== Infinity)
+      this.__nextTime = Math.min(this.__nextEngineTime, this.getTimeAtPosition(this.__nextEnginePosition));
     else
-      this.__nextTime = this.__nextEventTime;
+      this.__nextTime = this.__nextEngineTime;
 
     return this.__nextTime - time;
   };
@@ -168,21 +168,21 @@ var Transport = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
 
       if (lastSpeed === 0) {
         // start
-        this.__timeEvents.clear();
-        this.__nextEventTime = this.__timeEvents.insertAll(this.__timeEngines, this.__time);
+        this.__timeQueue.clear();
+        this.__nextEngineTime = this.__timeQueue.insertAll(this.__timeEngines, this.__time);
 
-        this.__positionEvents.reverse = (speed < 0);
-        this.__positionEvents.clear();
-        this.__nextEventPosition = this.__positionEvents.insertAll(this.__positionEngines, this.__position);
+        this.__positionQueue.reverse = (speed < 0);
+        this.__positionQueue.clear();
+        this.__nextEnginePosition = this.__positionQueue.insertAll(this.__positionEngines, this.__position);
       } else if (speed === 0) {
         // stop/pause
-        this.__nextEventTime = Infinity;
-        this.__nextEventPosition = Infinity;
+        this.__nextEngineTime = Infinity;
+        this.__nextEnginePosition = Infinity;
       } else if (speed * lastSpeed < 0) {
         // reverse direction
-        this.__positionEvents.reverse = (speed < 0);
-        this.__positionEvents.clear();
-        this.__nextEventPosition = this.__positionEvents.insertAll(this.__positionEngines, this.__position);
+        this.__positionQueue.reverse = (speed < 0);
+        this.__positionQueue.clear();
+        this.__nextEnginePosition = this.__positionQueue.insertAll(this.__positionEngines, this.__position);
       }
 
       this.__reschedule();
@@ -203,8 +203,8 @@ var Transport = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
       this.__position = position;
 
       if (this.__speed !== 0) {
-        this.__positionEvents.clear();
-        this.__nextEventPosition = this.__positionEvents.insertAll(this.__positionEngines, this.__position, true);
+        this.__positionQueue.clear();
+        this.__nextEnginePosition = this.__positionQueue.insertAll(this.__positionEngines, this.__position, true);
 
         this.__reschedule();
 
@@ -218,11 +218,11 @@ var Transport = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
    * Add an engine to the transport
    * @param {Object} engine engine to be added to the transport
    *
-   * An engine that can be added to the transport is either an EventEngine
+   * An engine that can be added to the transport is either an TimeEngine
    * or an engine that implements a speed attribute and a seek method.
    *
-   * The attribute "alignEventsToTransportPosition" of an event engine determines whether
-   * the engine's events are scheduled in time or aligned to the transport position.
+   * The attribute "alignToTransportPosition" of an time engine determines whether
+   * the engine is scheduled in time or aligned to the transport position.
    */
   $proto$0.add = function(engine) {
     if (engine.transport || engine.scheduler)
@@ -233,26 +233,26 @@ var Transport = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
 
     this.__sync(this.time);
 
-    if (engine.syncEvent && engine.executeEvent) {
-      // add an event engine
-      if (engine.alignEventsToTransportPosition) {
+    if (engine.syncNext && engine.executeNext) {
+      // add an time engine
+      if (engine.alignToTransportPosition) {
         if (this.__speed !== 0)
-          this.__nextEventPosition = this.__positionEvents.insert(engine, this.__position);
+          this.__nextEnginePosition = this.__positionQueue.insert(engine, this.__position);
         this.__positionEngines.push(engine);
       } else {
         if (this.__speed !== 0)
-          this.__nextEventTime = this.__timeEvents.insert(engine, this.__time);
+          this.__nextEngineTime = this.__timeQueue.insert(engine, this.__time);
         this.__timeEngines.push(engine);
       }
 
       if (this.__speed !== 0)
         this.__reschedule();
     } else if (Object.getOwnPropertyDescriptor(Object.getPrototypeOf(engine), "speed") && (typeof engine.seek === "function")) {
-      // add a non-event engine that has a speed property and/or a seek method
+      // add a non-TimeEngine that has a speed property and/or a seek method
       this.__speedAndSeekListeners.push(engine);
       engine.speed = this.__speed;
     } else {
-      throw new Error("cannot add an object to transport that is not an EventEngine nor has a speed attribute and seek method");
+      throw new Error("cannot add an object to transport that is not an TimeEngine nor has a speed attribute and seek method");
     }
   };
 
@@ -268,13 +268,13 @@ var Transport = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
 
     this.__sync(this.time);
 
-    if (engine.syncEvent && engine.executeEvent) {
-      // remove an event engine
-      if (engine.alignEventsToTransportPosition) {
-        this.__nextEventPosition = this.__positionEvents.remove(engine);
+    if (engine.syncNext && engine.executeNext) {
+      // remove an time engine
+      if (engine.alignToTransportPosition) {
+        this.__nextEnginePosition = this.__positionQueue.remove(engine);
         arrayRemove(this.__positionEngines, engine);
       } else {
-        this.__nextEventTime = this.__timeEvents.remove(engine);
+        this.__nextEngineTime = this.__timeQueue.remove(engine);
         arrayRemove(this.__timeEngines, engine);
       }
 
@@ -287,8 +287,8 @@ var Transport = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
   };
 
   /**
-   * Resychronize event engine
-   * @param {Object} engine event engine to be resynchronized
+   * Resychronize time engine
+   * @param {Object} engine time engine to be resynchronized
    */
   $proto$0.resync = function(engine) {
     if (engine.transport !== this)
@@ -297,18 +297,18 @@ var Transport = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
     this.__sync(this.time);
 
     if (this._speed !== 0) {
-      if (engine.alignEventsToTransportPosition)
-        this.__nextEventPosition = this.__positionEvents.move(engine, this.__position);
+      if (engine.alignToTransportPosition)
+        this.__nextEnginePosition = this.__positionQueue.move(engine, this.__position);
       else
-        this.__nextEventTime = this.__timeEvents.move(engine, this.__time);
+        this.__nextEngineTime = this.__timeQueue.move(engine, this.__time);
 
       this.__reschedule();
     }
   };
 
   /**
-   * Reschedule event engine at given time or position
-   * @param {Object} engine event engine to be rescheduled
+   * Reschedule time engine at given time or position
+   * @param {Object} engine time engine to be rescheduled
    * @param {Number} time time or position when to reschedule
    */
   $proto$0.reschedule = function(engine, time) {
@@ -318,10 +318,10 @@ var Transport = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
     this.__sync(this.time);
 
     if (this._speed !== 0) {
-      if (engine.alignEventsToTransportPosition)
-        this.__nextEventPosition = this.__positionEvents.move(engine, time, false);
+      if (engine.alignToTransportPosition)
+        this.__nextEnginePosition = this.__positionQueue.move(engine, time, false);
       else
-        this.__nextEventTime = this.__timeEvents.move(engine, time, false);
+        this.__nextEngineTime = this.__timeQueue.move(engine, time, false);
 
       this.__reschedule();
     }
@@ -357,6 +357,10 @@ var Transport = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
     this.seek(0);
   };
 
+  /* TODO: The following methods should go into a mixin that extends any class 
+   * with a speed attribute and a seek method into a player.
+   */
+
   /**
    * Set playing speed (high level player API)
    * @param {Number} speed playing speed (non-zero speed between -16 and -1/16 or between 1/16 and 16)
@@ -387,6 +391,6 @@ var Transport = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
   function playingSpeed$get$0() {
     return this.__playingSpeed;
   }
-MIXIN$0(Transport.prototype,$proto$0);$proto$0=void 0;return Transport;})(EventEngine);
+MIXIN$0(Transport.prototype,$proto$0);$proto$0=void 0;return Transport;})(TimeEngine);
 
 module.exports = Transport;
