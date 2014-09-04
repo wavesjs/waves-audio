@@ -6,12 +6,12 @@
 "use strict";
 
 var audioContext = require("audio-context");
-var EventEngine = require("event-engine");
+var TimeEngine = require("time-engine");
 
-class GranularEngine extends EventEngine {
+class GranularEngine extends TimeEngine {
 
   constructor(buffer = null, bufferExt = 0) {
-    super(false); // by default events don't sync to transport position
+    super(false); // by default grains don't sync to transport position
 
     /**
      * Audio buffer
@@ -115,13 +115,13 @@ class GranularEngine extends EventEngine {
     this.outputNode = this.__gainNode = audioContext.createGain();
   }
 
-  // EventEngine syncEvent
-  syncEvent(time) {
+  // TimeEngine syncNext
+  syncNext(time) {
     return 0;
   }
 
-  // EventEngine executeEvent
-  executeEvent(time, audioTime) {
+  // TimeEngine executeNext
+  executeNext(time, audioTime) {
     return this.trigger(audioTime);
   }
 

@@ -6,12 +6,12 @@
 "use strict";
 
 var audioContext = require("audio-context");
-var EventEngine = require("event-engine");
+var TimeEngine = require("time-engine");
 
 var GranularEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};MIXIN$0(GranularEngine, super$0);var $proto$0={};
 
   function GranularEngine() {var buffer = arguments[0];if(buffer === void 0)buffer = null;var bufferExt = arguments[1];if(bufferExt === void 0)bufferExt = 0;
-    super$0.call(this, false); // by default events don't sync to transport position
+    super$0.call(this, false); // by default grains don't sync to transport position
 
     /**
      * Audio buffer
@@ -115,13 +115,13 @@ var GranularEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIX
     this.outputNode = this.__gainNode = audioContext.createGain();
   }GranularEngine.prototype = Object.create(super$0.prototype, {"constructor": {"value": GranularEngine, "configurable": true, "writable": true}, gain: {"get": gain$get$0, "set": gain$set$0, "configurable": true, "enumerable": true} });DP$0(GranularEngine, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
-  // EventEngine syncEvent
-  $proto$0.syncEvent = function(time) {
+  // TimeEngine syncNext
+  $proto$0.syncNext = function(time) {
     return 0;
   };
 
-  // EventEngine executeEvent
-  $proto$0.executeEvent = function(time, audioTime) {
+  // TimeEngine executeNext
+  $proto$0.executeNext = function(time, audioTime) {
     return this.trigger(audioTime);
   };
 
@@ -249,6 +249,6 @@ var GranularEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIX
 
     return grainPeriod;
   };
-MIXIN$0(GranularEngine.prototype,$proto$0);$proto$0=void 0;return GranularEngine;})(EventEngine);
+MIXIN$0(GranularEngine.prototype,$proto$0);$proto$0=void 0;return GranularEngine;})(TimeEngine);
 
 module.exports = GranularEngine;
