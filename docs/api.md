@@ -52,36 +52,36 @@ Add a periodically repeated callback to the scheduler
 
 ## add(engine, delay)
 
-Add an event engine to the scheduler
+Add a time engine to the scheduler
 
 ### Params: 
 
-* **object** *engine* event engine to be added to the scheduler
+* **object** *engine* time engine to be added to the scheduler
 * **Number** *delay* scheduling delay time
 
 ## remove(engine)
 
-Remove a scheduled event engine or callback from the scheduler
+Remove a scheduled time engine or callback from the scheduler
 
 ### Params: 
 
-* **Object** *engine* event engine or callback to be removed from the scheduler
+* **Object** *engine* time engine or callback to be removed from the scheduler
 
 ## resync(engine)
 
-Resychronize a scheduled event engine
+Resychronize a scheduled time engine
 
 ### Params: 
 
-* **Object** *engine* event engine to be resynchronized
+* **Object** *engine* time engine to be resynchronized
 
 ## reschedule(engine, time)
 
-Reschedule a scheduled event engine or callback
+Reschedule a scheduled time engine or callback
 
 ### Params: 
 
-* **Object** *engine* event engine or callback to be rescheduled
+* **Object** *engine* time engine or callback to be rescheduled
 * **Number** *time* time when to reschedule
 
 <!-- End ./src/index.js -->

@@ -1,7 +1,7 @@
 !function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.scheduler=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 /* written in ECMAscript 6 */
 /**
- * @fileoverview WAVE audio event scheduler singleton based on audio time
+ * @fileoverview WAVE simplified scheduler singleton based on audio time
  * @author Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
  */
 'use strict';
@@ -30,12 +30,12 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 =
     this.lookahead = 0.1;
   }Object.defineProperties(SimpleScheduler.prototype, {time: {"get": time$get$0, "configurable": true, "enumerable": true}});DP$0(SimpleScheduler, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
-  $proto$0.__insertEvent = function(object, time) {
+  $proto$0.__insertEngine = function(object, time) {
     this.__objects.push(object);
     this.__times.push(time);
   };
 
-  $proto$0.__moveEvent = function(object, time) {
+  $proto$0.__moveEngine = function(object, time) {
     var index = this.__objects.indexOf(object);
 
     if (index >= 0) {
@@ -48,7 +48,7 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 =
     }
   };
 
-  $proto$0.__withdrawEvent = function(object) {
+  $proto$0.__withdrawEngine = function(object) {
     var index = this.__objects.indexOf(object);
 
     if (index >= 0) {
@@ -77,13 +77,13 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 =
       while (time <= audioContext.currentTime + this.lookahead) {
         var audioTime = Math.max(time, audioContext.currentTime);
         this.__currentTime = time;
-        time += Math.max(object.executeEvent(time, audioTime), 0);
+        time += Math.max(object.executeNext(time, audioTime), 0);
       }
 
       if (time !== Infinity)
         this.__times[i++] = time;
       else
-        this.__withdrawEvent(object);
+        this.__withdrawEngine(object);
     }
 
     this.__currentTime = null;
@@ -112,13 +112,13 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 =
    */
   $proto$0.callback = function(callback) {var delay = arguments[1];if(delay === void 0)delay = 0;
     var object = {
-      executeEvent: function(time, audioTime) {
+      executeNext: function(time, audioTime) {
         callback(time, audioTime);
         return Infinity;
       }
     };
 
-    this.__insertEvent(object, this.time + delay);
+    this.__insertEngine(object, this.time + delay);
     this.__reschedule();
 
     return object;
@@ -134,78 +134,78 @@ var SimpleScheduler = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 =
   $proto$0.repeat = function(callback) {var period = arguments[1];if(period === void 0)period = 1;var delay = arguments[2];if(delay === void 0)delay = 0;
     var object = {
       period: period,
-      executeEvent: function(time, audioTime) {
+      executeNext: function(time, audioTime) {
         callback(time, audioTime);
         return this.period;
       }
     };
 
-    this.__insertEvent(object, this.time + delay);
+    this.__insertEngine(object, this.time + delay);
     this.__reschedule();
 
     return object;
   };
 
   /**
-   * Add an event engine to the scheduler
-   * @param {object} engine event engine to be added to the scheduler
+   * Add a time engine to the scheduler
+   * @param {object} engine time engine to be added to the scheduler
    * @param {Number} delay scheduling delay time
    */
   $proto$0.add = function(engine) {var delay = arguments[1];if(delay === void 0)delay = 0;
     if (engine.scheduler !== null)
       throw new Error("object has already been added to a scheduler");
 
-    if (!engine.syncEvent)
-      throw new Error("object does not have a syncEvent method");
+    if (!engine.syncNext)
+      throw new Error("object does not have a syncNext method");
 
-    if (!engine.executeEvent)
-      throw new Error("object does not have a executeEvent method");
+    if (!engine.executeNext)
+      throw new Error("object does not have a executeNext method");
 
     engine.scheduler = this;
-    this.__insertEvent(engine, this.time + delay);
+    this.__insertEngine(engine, this.time + delay);
     this.__reschedule();
   };
 
   /**
-   * Remove a scheduled event engine or callback from the scheduler
-   * @param {Object} engine event engine or callback to be removed from the scheduler
+   * Remove a scheduled time engine or callback from the scheduler
+   * @param {Object} engine time engine or callback to be removed from the scheduler
    */
   $proto$0.remove = function(engine) {
     if (engine.scheduler !== this)
       throw new Error("object has not been added to this scheduler");
 
     engine.scheduler = null;
-    this.__withdrawEvent(engine);
+    this.__withdrawEngine(engine);
     this.__reschedule();
   };
 
   /**
-   * Resychronize a scheduled event engine
-   * @param {Object} engine event engine to be resynchronized
+   * Resychronize a scheduled time engine
+   * @param {Object} engine time engine to be resynchronized
    */
   $proto$0.resync = function(engine) {
     if (engine.scheduler !== this)
       throw new Error("object has not been added to this scheduler");
 
-    if (!engine.syncEvent)
-      throw new Error("object does not have a syncEvent method");
+    if (!engine.syncNext)
+      throw new Error("object does not have a syncNext method");
 
     var time = this.time;
-    var nextEventTime = time + Math.max(engine.syncEvent(time), 0);
-    this.__moveEvent(engine, nextEventTime);
+    var nextTime = time + Math.max(engine.syncNext(time), 0);
+    this.__moveEngine(engine, nextTime);
     this.__reschedule();
   };
 
   /**
-   * Reschedule a scheduled event engine or callback
-   * @param {Object} engine event engine or callback to be rescheduled
+   * Reschedule a scheduled time engine or callback
+   * @param {Object} engine time engine or callback to be rescheduled
    * @param {Number} time time when to reschedule
    */
   $proto$0.reschedule = function(engine, time) {
     if (engine.scheduler !== this)
       throw new Error("object has not been added to this scheduler");
 
-    this.__moveEvent(engine, time);
+    this.__moveEngine(engine, time);
     this.__reschedule();
   };
 MIXIN$0(SimpleScheduler.prototype,$proto$0);$proto$0=void 0;return SimpleScheduler;})();

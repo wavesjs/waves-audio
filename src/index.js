@@ -1,6 +1,6 @@
 /* written in ECMAscript 6 */
 /**
- * @fileoverview WAVE audio event scheduler singleton based on audio time
+ * @fileoverview WAVE simplified scheduler singleton based on audio time
  * @author Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
  */
 'use strict';
@@ -29,12 +29,12 @@ class SimpleScheduler {
     this.lookahead = 0.1;
   }
 
-  __insertEvent(object, time) {
+  __insertEngine(object, time) {
     this.__objects.push(object);
     this.__times.push(time);
   }
 
-  __moveEvent(object, time) {
+  __moveEngine(object, time) {
     var index = this.__objects.indexOf(object);
 
     if (index >= 0) {
@@ -47,7 +47,7 @@ class SimpleScheduler {
     }
   }
 
-  __withdrawEvent(object) {
+  __withdrawEngine(object) {
     var index = this.__objects.indexOf(object);
 
     if (index >= 0) {
@@ -76,13 +76,13 @@ class SimpleScheduler {
       while (time <= audioContext.currentTime + this.lookahead) {
         var audioTime = Math.max(time, audioContext.currentTime);
         this.__currentTime = time;
-        time += Math.max(object.executeEvent(time, audioTime), 0);
+        time += Math.max(object.executeNext(time, audioTime), 0);
       }
 
       if (time !== Infinity)
         this.__times[i++] = time;
       else
-        this.__withdrawEvent(object);
+        this.__withdrawEngine(object);
     }
 
     this.__currentTime = null;
@@ -111,13 +111,13 @@ class SimpleScheduler {
    */
   callback(callback, delay = 0) {
     var object = {
-      executeEvent: function(time, audioTime) {
+      executeNext: function(time, audioTime) {
         callback(time, audioTime);
         return Infinity;
       }
     };
 
-    this.__insertEvent(object, this.time + delay);
+    this.__insertEngine(object, this.time + delay);
     this.__reschedule();
 
     return object;
@@ -133,78 +133,78 @@ class SimpleScheduler {
   repeat(callback, period = 1, delay = 0) {
     var object = {
       period: period,
-      executeEvent: function(time, audioTime) {
+      executeNext: function(time, audioTime) {
         callback(time, audioTime);
         return this.period;
       }
     };
 
-    this.__insertEvent(object, this.time + delay);
+    this.__insertEngine(object, this.time + delay);
     this.__reschedule();
 
     return object;
   }
 
   /**
-   * Add an event engine to the scheduler
-   * @param {object} engine event engine to be added to the scheduler
+   * Add a time engine to the scheduler
+   * @param {object} engine time engine to be added to the scheduler
    * @param {Number} delay scheduling delay time
    */
   add(engine, delay = 0) {
     if (engine.scheduler !== null)
       throw new Error("object has already been added to a scheduler");
 
-    if (!engine.syncEvent)
-      throw new Error("object does not have a syncEvent method");
+    if (!engine.syncNext)
+      throw new Error("object does not have a syncNext method");
 
-    if (!engine.executeEvent)
-      throw new Error("object does not have a executeEvent method");
+    if (!engine.executeNext)
+      throw new Error("object does not have a executeNext method");
 
     engine.scheduler = this;
-    this.__insertEvent(engine, this.time + delay);
+    this.__insertEngine(engine, this.time + delay);
     this.__reschedule();
   }
 
   /**
-   * Remove a scheduled event engine or callback from the scheduler
-   * @param {Object} engine event engine or callback to be removed from the scheduler
+   * Remove a scheduled time engine or callback from the scheduler
+   * @param {Object} engine time engine or callback to be removed from the scheduler
    */
   remove(engine) {
     if (engine.scheduler !== this)
       throw new Error("object has not been added to this scheduler");
 
     engine.scheduler = null;
-    this.__withdrawEvent(engine);
+    this.__withdrawEngine(engine);
     this.__reschedule();
   }
 
   /**
-   * Resychronize a scheduled event engine
-   * @param {Object} engine event engine to be resynchronized
+   * Resychronize a scheduled time engine
+   * @param {Object} engine time engine to be resynchronized
    */
   resync(engine) {
     if (engine.scheduler !== this)
       throw new Error("object has not been added to this scheduler");
 
-    if (!engine.syncEvent)
-      throw new Error("object does not have a syncEvent method");
+    if (!engine.syncNext)
+      throw new Error("object does not have a syncNext method");
 
     var time = this.time;
-    var nextEventTime = time + Math.max(engine.syncEvent(time), 0);
-    this.__moveEvent(engine, nextEventTime);
+    var nextTime = time + Math.max(engine.syncNext(time), 0);
+    this.__moveEngine(engine, nextTime);
     this.__reschedule();
   }
 
   /**
-   * Reschedule a scheduled event engine or callback
-   * @param {Object} engine event engine or callback to be rescheduled
+   * Reschedule a scheduled time engine or callback
+   * @param {Object} engine time engine or callback to be rescheduled
    * @param {Number} time time when to reschedule
    */
   reschedule(engine, time) {
     if (engine.scheduler !== this)
       throw new Error("object has not been added to this scheduler");
 
-    this.__moveEvent(engine, time);
+    this.__moveEngine(engine, time);
     this.__reschedule();
   }
 }
