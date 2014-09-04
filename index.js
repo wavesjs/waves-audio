@@ -54,11 +54,17 @@ var AudioPlayer = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = fun
     if (this.buffer) {
       var time = this.__time;
       var position = this.__position;
+      var bufferDuration = this.buffer.duration;
 
-      if (this.__cyclic)
-        position %= this.buffer.duration;
+      if (this.buffer.wrapAroundExtension)
+        bufferDuration -= this.buffer.wrapAroundExtension;
 
-      if (position >= 0 && position < this.buffer.duration && speed > 0) {
+      if (this.__cyclic && (position < 0 || position >= bufferDuration)) {
+        var phase = position / bufferDuration;
+        position = (phase - Math.floor(phase)) * bufferDuration;
+      }
+
+      if (position >= 0 && position < bufferDuration && speed > 0) {
         this.__envNode = audioContext.createGain();
         this.__envNode.gain.setValueAtTime(0, time);
         this.__envNode.gain.linearRampToValueAtTime(1, time + this.fadeTime);
@@ -68,6 +74,8 @@ var AudioPlayer = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = fun
         this.__bufferSource.buffer = this.buffer;
         this.__bufferSource.playbackRate.value = speed;
         this.__bufferSource.loop = this.__cyclic;
+        this.__bufferSource.loopStart = 0;
+        this.__bufferSource.loopEnd = bufferDuration;
         this.__bufferSource.start(time, position);
         this.__bufferSource.connect(this.__envNode);
       }
@@ -128,7 +136,9 @@ var AudioPlayer = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = fun
 
       this.__stop();
       this.__position = position;
-      this.__start(this.__speed);
+
+      if (this.__speed !== 0)
+        this.__start(this.__speed);
     }
   };
 
@@ -142,7 +152,9 @@ var AudioPlayer = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = fun
 
       this.__stop();
       this.__cyclic = cyclic;
-      this.__start(this.__speed);
+
+      if (this.__speed !== 0)
+        this.__start(this.__speed);
     }
   }
 
