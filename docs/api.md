@@ -4,39 +4,37 @@
 
 written in ECMAscript 6
 
-Author: Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
+Author: Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr 
+First rather stupid implementation to be optimized...
 
-## __engineIndex()
+## __objectIndex()
 
-Get the index of an engine in the engine list
+Get the index of an object in the object list
 
-## __removeEngine()
+## __removeObject()
 
-Withdraw an engine from the engine list
+Withdraw an object from the object list
 
 ## insert()
 
-Insert an engine to the sequence
-
-## insertAll()
-
-Insert an array of engines to the sequence
+Insert an object to the queue
+(for this primitive version: prevent sorting for each element by calling with "false" as third argument)
 
 ## move()
 
-Move an engine to another time in the sequence
+Move an object to another time in the queue
 
 ## remove()
 
-Remove an engine from the sequence
+Remove an object from the queue
 
 ## clear()
 
-Clear sequence
+Clear queue
 
-## execute()
+## getHead()
 
-Execute next engine and return time of next engine
+Get first object in queue
 
 <!-- End ./src/index.js -->
 

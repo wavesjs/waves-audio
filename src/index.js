@@ -1,21 +1,23 @@
 /* written in ECMAscript 6 */
 /**
- * @fileoverview WAVE audio time engine sequence used by scheduler and transports
+ * @fileoverview WAVE audio priority queue used by scheduler and transports
  * @author Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
+ *
+ * First rather stupid implementation to be optimized...
  */
 'use strict';
 
-class TimeEngineQueue {
+class PriorityQueue {
 
   constructor() {
-    this.__engines = [];
+    this.__objects = [];
     this.reverse = false;
   }
 
-  /* Get the index of an engine in the engine list */
-  __engineIndex(engine) {
-    for (var i = 0; i < this.__engines.length; i++) {
-      if (engine === this.__engines[i][0]) {
+  /* Get the index of an object in the object list */
+  __objectIndex(object) {
+    for (var i = 0; i < this.__objects.length; i++) {
+      if (object === this.__objects[i][0]) {
         return i;
       }
     }
@@ -23,171 +25,89 @@ class TimeEngineQueue {
     return -1;
   }
 
-  /* Withdraw an engine from the engine list */
-  __removeEngine(engine) {
-    var index = this.__engineIndex(engine);
+  /* Withdraw an object from the object list */
+  __removeObject(object) {
+    var index = this.__objectIndex(object);
 
     if (index >= 0)
-      this.__engines.splice(index, 1);
+      this.__objects.splice(index, 1);
 
-    if (this.__engines.length > 0)
-      return this.__engines[0][1]; // return time of first engine
+    if (this.__objects.length > 0)
+      return this.__objects[0][1]; // return time of first object
 
     return Infinity;
   }
 
-  __syncEngine(engine, time) {
-    var nextEngineDelay = Math.max(engine.syncNext(time), 0);
-    var nextEngineTime = Infinity;
-
-    if (nextEngineDelay !== Infinity) {
-      if (!this.reverse)
-        nextEngineTime = time + nextEngineDelay;
-      else
-        nextEngineTime = time - nextEngineDelay;
-    }
-
-    return nextEngineTime;
-  }
-
-  __sortEngines() {
+  __sortObjects() {
     if (!this.reverse)
-      this.__engines.sort(function(a, b) {
+      this.__objects.sort(function(a, b) {
         return a[1] - b[1];
       });
     else
-      this.__engines.sort(function(a, b) {
+      this.__objects.sort(function(a, b) {
         return b[1] - a[1];
       });
   }
 
   /**
-   * Insert an engine to the sequence
+   * Insert an object to the queue
+   * (for this primitive version: prevent sorting for each element by calling with "false" as third argument)
    */
-  insert(engine, time, sync = true) {
-    var nextEngineTime = time;
+  insert(object, time, sort = true) {
+    if (time !== Infinity && time != -Infinity) {
+      // add new object
+      this.__objects.push([object, time]);
 
-    if (sync)
-      nextEngineTime = this.__syncEngine(engine, time);
+      if (sort)
+        this.__sortObjects();
 
-    if (nextEngineTime !== Infinity) {
-      // add new engine
-      this.__engines.push([engine, nextEngineTime]);
-      this.__sortEngines();
-      return this.__engines[0][1]; // return time of first engine
+      return this.__objects[0][1]; // return time of first object
     }
 
-    return this.__removeEngine(engine);
+    return this.__removeObject(object);
   }
 
   /**
-   * Insert an array of engines to the sequence
+   * Move an object to another time in the queue
    */
-  insertAll(arrayOfEngines, time, sync = true) {
-    var nextEngineTime = time;
+  move(object, time) {
+    if (time !== Infinity && time != -Infinity) {
+      var index = this.__objectIndex(object);
 
-    // sync each engine and add to engine list (if time is not Infinity)
-    for (var i = 0; i < arrayOfEngines.length; i++) {
-      var engine = arrayOfEngines[i];
+      if (index < 0)
+        this.__objects.push([object, time]); // add new object
+      else
+        this.__objects[index][1] = time; // update time of existing object
 
-      if (sync)
-        nextEngineTime = this.__syncEngine(engine, time);
+      this.__sortObjects();
 
-      // add engine to sequence of scheduled engines
-      if (nextEngineTime !== Infinity)
-        this.__engines.push([engine, nextEngineTime]);
+      return this.__objects[0][1]; // return time of first object
     }
 
-    // sort sequence of scheduled engines
-    this.__sortEngines();
-
-    if (this.__engines.length > 0)
-      return this.__engines[0][1]; // return time of first engine
-
-    return Infinity;
+    return this.__removeObject(object);
   }
 
   /**
-   * Move an engine to another time in the sequence
+   * Remove an object from the queue
    */
-  move(engine, time, sync = true) {
-    var nextEngineTime = time;
-
-    if (sync)
-      nextEngineTime = this.__syncEngine(engine, time);
-
-    if (nextEngineTime !== Infinity) {
-      var index = this.__engineIndex(engine);
-
-      if (index < 0) {
-        // add new engine
-        this.__engines.push([engine, nextEngineTime]);
-        this.__sortEngines();
-      } else {
-        // update time of existing engine
-        this.__engines[index][1] = nextEngineTime;
-
-        // move first engine if it is not first anymore
-        if (index === 0 && this.__engines.length > 1) {
-          var secondEngineTime = this.__engines[1][1];
-
-          if ((!this.reverse && nextEngineTime > secondEngineTime) || (this.reverse && nextEngineTime <= secondEngineTime))
-            this.__sortEngines();
-        }
-      }
-
-      return this.__engines[0][1]; // return time of first engine
-    }
-
-    return this.__removeEngine(engine);
+  remove(object) {
+    return this.__removeObject(object);
   }
 
   /**
-   * Remove an engine from the sequence
-   */
-  remove(engine) {
-    return this.__removeEngine(engine);
-  }
-
-  /**
-   * Clear sequence
+   * Clear queue
    */
   clear() {
-    this.__engines.length = 0; // clear engine list
+    this.__objects.length = 0; // clear object list
     return Infinity;
   }
 
   /**
-   * Execute next engine and return time of next engine
+   * Get first object in queue
    */
-  execute(time, audioTime) {
-    // get first engine in sequence
-    var engine = this.__engines[0][0];
-    var nextEngineDelay = Math.max(engine.executeNext(time, audioTime), 0);
-
-    if (nextEngineDelay !== Infinity) {
-      var nextEngineTime;
-
-      if (!this.reverse)
-        nextEngineTime = time + nextEngineDelay;
-      else
-        nextEngineTime = time - nextEngineDelay;
-
-      this.__engines[0][1] = nextEngineTime;
-
-      // move first engine if it is not first anymore
-      if (this.__engines.length > 1) {
-        var secondTime = this.__engines[1][1];
-
-        if ((!this.reverse && nextEngineTime > secondTime) || (this.reverse && nextEngineTime <= secondTime))
-          this.__sortEngines();
-      }
-
-      return this.__engines[0][1]; // return time of first engine
-    }
-
-    return this.__removeEngine(engine);
+  getHead() {
+    return this.__objects[0][0];
   }
 }
 
-module.exports = TimeEngineQueue;
+module.exports = PriorityQueue;

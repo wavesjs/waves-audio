@@ -1,20 +1,20 @@
 {
   "name": "time-engine-queue",
   "version": "0.7.1",
-  "description": "WAVE audio time engine queue (used by scheduler and transport)",
+  "description": "WAVE audio priority queue (used by scheduler and transport)",
   "authors": [
     "Norbert Schnell",
     "Victor Saiz",
     "Karim Barkati"
   ],
   "main": "index.js",
-  "exports": "TimeEngineQueue",
+  "exports": "PriorityQueue",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Ircam-RnD/time-engine-queue"
+    "url": "https://github.com/Ircam-RnD/priority-queue"
   },
   "dependencies": {
   },
