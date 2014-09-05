@@ -32,7 +32,7 @@ Remove an object from the queue
 
 Clear queue
 
-## getHead()
+## head
 
 Get first object in queue
 

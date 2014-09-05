@@ -105,7 +105,7 @@ class PriorityQueue {
   /**
    * Get first object in queue
    */
-  getHead() {
+  get head() {
     return this.__objects[0][0];
   }
 }
