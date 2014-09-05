@@ -1,5 +1,5 @@
 {
-  "name": "time-engine-queue",
+  "name": "priority-queue",
   "version": "0.7.1",
   "description": "WAVE audio priority queue (used by scheduler and transport)",
   "authors": [

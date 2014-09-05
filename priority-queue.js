@@ -8,15 +8,15 @@
  */
 'use strict';
 
-var PriorityQueue = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};var $proto$0={};
+var PriorityQueue = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};return o["a"]===t})({},{});var DP$0 = Object.defineProperty;var GOPD$0 = Object.getOwnPropertyDescriptor;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,GOPD$0(s,p));}}return t};var proto$0={};
 
   function PriorityQueue() {
     this.__objects = [];
     this.reverse = false;
-  }DP$0(PriorityQueue, "prototype", {"configurable": false, "enumerable": false, "writable": false});
+  }DP$0(PriorityQueue,"prototype",{"configurable":false,"enumerable":false,"writable":false});
 
   /* Get the index of an object in the object list */
-  $proto$0.__objectIndex = function(object) {
+  proto$0.__objectIndex = function(object) {
     for (var i = 0; i < this.__objects.length; i++) {
       if (object === this.__objects[i][0]) {
         return i;
@@ -27,7 +27,7 @@ var PriorityQueue = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = f
   };
 
   /* Withdraw an object from the object list */
-  $proto$0.__removeObject = function(object) {
+  proto$0.__removeObject = function(object) {
     var index = this.__objectIndex(object);
 
     if (index >= 0)
@@ -39,7 +39,7 @@ var PriorityQueue = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = f
     return Infinity;
   };
 
-  $proto$0.__sortObjects = function() {
+  proto$0.__sortObjects = function() {
     if (!this.reverse)
       this.__objects.sort(function(a, b) {
         return a[1] - b[1];
@@ -54,7 +54,7 @@ var PriorityQueue = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = f
    * Insert an object to the queue
    * (for this primitive version: prevent sorting for each element by calling with "false" as third argument)
    */
-  $proto$0.insert = function(object, time) {var sort = arguments[2];if(sort === void 0)sort = true;
+  proto$0.insert = function(object, time) {var sort = arguments[2];if(sort === void 0)sort = true;
     if (time !== Infinity && time != -Infinity) {
       // add new object
       this.__objects.push([object, time]);
@@ -71,7 +71,7 @@ var PriorityQueue = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = f
   /**
    * Move an object to another time in the queue
    */
-  $proto$0.move = function(object, time) {
+  proto$0.move = function(object, time) {
     if (time !== Infinity && time != -Infinity) {
       var index = this.__objectIndex(object);
 
@@ -91,14 +91,14 @@ var PriorityQueue = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = f
   /**
    * Remove an object from the queue
    */
-  $proto$0.remove = function(object) {
+  proto$0.remove = function(object) {
     return this.__removeObject(object);
   };
 
   /**
    * Clear queue
    */
-  $proto$0.clear = function() {
+  proto$0.clear = function() {
     this.__objects.length = 0; // clear object list
     return Infinity;
   };
@@ -106,10 +106,10 @@ var PriorityQueue = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = f
   /**
    * Get first object in queue
    */
-  $proto$0.getHead = function() {
+  proto$0.getHead = function() {
     return this.__objects[0][0];
   };
-MIXIN$0(PriorityQueue.prototype,$proto$0);$proto$0=void 0;return PriorityQueue;})();
+MIXIN$0(PriorityQueue.prototype,proto$0);proto$0=void 0;return PriorityQueue;})();
 
 module.exports = PriorityQueue;
 },{}]},{},[1])
