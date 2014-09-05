@@ -14,42 +14,25 @@ Scheduler to which the time engine has been added
 
 Transport to which the time engine has been added
 
-## alignToTransportPosition
-
-Whether the times are aligned to the transport position (or scheduled in time) when the engine is added to a transsport
-
 ## outputNode
 
 Output audio node
 
-## syncNext(time)
+## executeSchedulerTime(time, position, whether)
 
-Synchronize time engine
-
-### Params: 
-
-* **Number** *time* synchronization time or transport position
-
-### Return:
-
-* **Number** delay until next time or Infinity executeNext should not be called
-
-## executeNext(time, audioTime)
-
-Execute next time
+Execute engine at next transport position
 
 ### Params: 
 
-* **Number** *time* scheduler time or transport position
-* **Number** *audioTime* corresponding audio context's currentTime
+* **Number** *time* current scheduler (audio) time
+* **Number** *position* current transport position
+* **Bool** *whether* transport runs backward (current playing direction)
 
 ### Return:
 
-* **Number** next delay until next time or Infinity to stop execution
-
-## resyncEngine()
-
-Request time engine resynchronization (called by engine itself)
+* **Number** next transport position (given the playing direction) 
+This function is called – more or less regulary – by the scheduler to let the engine do its work
+synchronized to the scheduler time.
 
 ## rescheduleEngine(time)
 
@@ -58,6 +41,47 @@ Request time engine rescheduling (called by engine itself)
 ### Params: 
 
 * **Number** *time* new next scheduler time or transport position
+
+## syncTransportPosition(time, position, whether)
+
+Synchronize time engine to transport position
+
+### Params: 
+
+* **Number** *time* current scheduler (audio) time
+* **Number** *position* transport position to synchronize to
+* **Bool** *whether* transport runs backward (current playing direction)
+
+### Return:
+
+* **Number** next transport position (given the playing direction) 
+This function allows the engine for synchronizing (seeking) to the current transport position
+and to return the position of the next transport position of the engine.
+Engines that return Infinity or -Infinity are not called anymore until they call resyncEngine()
+with a valid transport position.
+
+## executeTransportPosition(time, position, whether)
+
+Execute engine at next transport position
+
+### Params: 
+
+* **Number** *time* current scheduler (audio) time
+* **Number** *position* current transport position
+* **Bool** *whether* transport runs backward (current playing direction)
+
+### Return:
+
+* **Number** next transport position (given the playing direction) 
+This function is called – more or less regulary – by the transport to let the engine do its work
+aligned to the transport position.
+
+## resyncEngine()
+
+Request time engine to be resynchronized to the current transport position (called by engine itself)
+
+This function will result in syncTransportPosition() being called with the current transport position
+to adjust the engines priority in the transport queue.
 
 ## connect(target)
 
