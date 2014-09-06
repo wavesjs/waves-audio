@@ -7,12 +7,12 @@
 'use strict';
 
 var audioContext = _dereq_("audio-context");
-var TimeEngineQueue = _dereq_("time-engine-queue");
+var PriorityQueue = _dereq_("priority-queue");
 
-var Scheduler = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};var $proto$0={};
+var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};return o["a"]===t})({},{});var DP$0 = Object.defineProperty;var GOPD$0 = Object.getOwnPropertyDescriptor;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,GOPD$0(s,p));}}return t};var DPS$0 = Object.defineProperties;var proto$0={};
 
   function Scheduler() {
-    this.__engineQueue = new TimeEngineQueue();
+    this.__queue = new PriorityQueue();
 
     this.__currentTime = null;
     this.__nextTime = Infinity;
@@ -29,13 +29,17 @@ var Scheduler = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = funct
      * @type {Number}
      */
     this.lookahead = 0.1;
-  }Object.defineProperties(Scheduler.prototype, {time: {"get": time$get$0, "configurable": true, "enumerable": true}});DP$0(Scheduler, "prototype", {"configurable": false, "enumerable": false, "writable": false});
+  }DPS$0(Scheduler.prototype,{time: {"get": time$get$0, "configurable":true,"enumerable":true}});DP$0(Scheduler,"prototype",{"configurable":false,"enumerable":false,"writable":false});
 
   // global setTimeout scheduling loop
-  $proto$0.__tick = function() {var this$0 = this;
+  proto$0.__tick = function() {var this$0 = this;
     while (this.__nextTime <= audioContext.currentTime + this.lookahead) {
       this.__currentTime = this.__nextTime;
-      this.__nextTime = this.__engineQueue.execute(this.__nextTime, this.__nextTime);
+
+      var nextEngine = this.__queue.head;
+      var nextEngineTime = Math.max(nextEngine.advanceTime(this.__currentTime), this.__currentTime);
+
+      this.__nextTime = this.__queue.move(nextEngine, nextEngineTime);
     }
 
     this.__currentTime = null;
@@ -47,7 +51,7 @@ var Scheduler = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = funct
     }
   };
 
-  $proto$0.__reschedule = function(time) {
+  proto$0.__reschedule = function(time) {
     if (this.__nextTime !== Infinity) {
       if (!this.__timeout)
         this.__tick();
@@ -72,7 +76,7 @@ var Scheduler = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = funct
    * @param {Number} delay of first callback
    * @return {Object} scheduled object that can be used to call remove and reschedule
    */
-  $proto$0.callback = function(callback) {var delay = arguments[1];if(delay === void 0)delay = 0;
+  proto$0.callback = function(callback) {var delay = arguments[1];if(delay === void 0)delay = 0;
     var object = {
       executeNext: function(time, audioTime) {
         callback(time, audioTime);
@@ -80,7 +84,7 @@ var Scheduler = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = funct
       }
     };
 
-    this.__nextTime = this.__engineQueue.insert(object, this.time + delay, false);
+    this.__nextTime = this.__queue.insert(object, this.time + delay);
     this.__reschedule();
 
     return object;
@@ -93,7 +97,7 @@ var Scheduler = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = funct
    * @param {Number} delay of first callback
    * @return {Object} scheduled object that can be used to call remove and reschedule
    */
-  $proto$0.repeat = function(callback) {var period = arguments[1];if(period === void 0)period = 1;var delay = arguments[2];if(delay === void 0)delay = 0;
+  proto$0.repeat = function(callback) {var period = arguments[1];if(period === void 0)period = 1;var delay = arguments[2];if(delay === void 0)delay = 0;
     var object = {
       period: period,
       executeNext: function(time, audioTime) {
@@ -102,7 +106,7 @@ var Scheduler = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = funct
       }
     };
 
-    this.__nextTime = this.__engineQueue.insert(object, this.time + delay, false);
+    this.__nextTime = this.__queue.insert(object, this.time + delay);
     this.__reschedule();
 
     return object;
@@ -113,18 +117,16 @@ var Scheduler = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = funct
    * @param {Object} engine time engine to be added to the scheduler
    * @param {Number} delay scheduling delay time
    */
-  $proto$0.add = function(engine) {var delay = arguments[1];if(delay === void 0)delay = 0;
-    if (engine.scheduler !== null)
-      throw new Error("object has already been added to a scheduler");
+  proto$0.add = function(engine) {var delay = arguments[1];if(delay === void 0)delay = 0;
+    if (!engine.advanceTime)
+      throw new Error("object does not have a method advanceTime");
 
-    if (!engine.syncNext)
-      throw new Error("object does not have a syncNext method");
+    if (engine.timeMaster !== null)
+      throw new Error("object already has a time master");
 
-    if (!engine.executeNext)
-      throw new Error("object does not have a executeNext method");
+    engine.timeMaster = this;
 
-    engine.scheduler = this;
-    this.__nextTime = this.__engineQueue.insert(engine, this.time + delay);
+    this.__nextTime = this.__queue.insert(engine, this.time + delay);
     this.__reschedule();
   };
 
@@ -132,27 +134,13 @@ var Scheduler = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = funct
    * Remove time engine from the scheduler
    * @param {Object} engine time engine or callback to be removed from the scheduler
    */
-  $proto$0.remove = function(engine) {
-    if (engine.scheduler !== this)
+  proto$0.remove = function(engine) {
+    if (engine.timeMaster !== this)
       throw new Error("object has not been added to this scheduler");
 
-    engine.scheduler = null;
-    this.__nextTime = this.__engineQueue.remove(engine);
-    this.__reschedule();
-  };
-
-  /**
-   * Resychronize a scheduled time engine
-   * @param {Object} engine time engine to be resynchronized
-   */
-  $proto$0.resync = function(engine) {
-    if (engine.scheduler !== this)
-      throw new Error("object has not been added to this scheduler");
-
-    if (!engine.syncNext)
-      throw new Error("object does not have a syncNext method");
-
-    this.__nextTime = this.__engineQueue.move(engine, this.time);
+    engine.timeMaster = null;
+    
+    this.__nextTime = this.__queue.remove(engine);
     this.__reschedule();
   };
 
@@ -161,17 +149,17 @@ var Scheduler = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = funct
    * @param {Object} engine time engine or callback to be rescheduled
    * @param {Number} time time when to reschedule
    */
-  $proto$0.reschedule = function(engine, time) {
-    if (engine.scheduler !== this)
+  proto$0.reset = function(engine, time) {
+    if (engine.timeMaster !== this)
       throw new Error("object has not been added to this scheduler");
 
-    this.__nextTime = this.__engineQueue.move(engine, time, false);
+    this.__nextTime = this.__queue.move(engine, time);
     this.__reschedule();
   };
-MIXIN$0(Scheduler.prototype,$proto$0);$proto$0=void 0;return Scheduler;})();
+MIXIN$0(Scheduler.prototype,proto$0);proto$0=void 0;return Scheduler;})();
 
 module.exports = new Scheduler; // export scheduler singleton
-},{"audio-context":2,"time-engine-queue":3}],2:[function(_dereq_,module,exports){
+},{"audio-context":2,"priority-queue":3}],2:[function(_dereq_,module,exports){
 /* Generated by es6-transpiler v 0.7.14-2 */
 // instantiates an audio context in the global scope if not there already
 var context = window.audioContext || new AudioContext() || new webkitAudioContext();
@@ -180,22 +168,24 @@ module.exports = context;
 },{}],3:[function(_dereq_,module,exports){
 /* written in ECMAscript 6 */
 /**
- * @fileoverview WAVE audio event queue used by scheduler and transports
+ * @fileoverview WAVE audio priority queue used by scheduler and transports
  * @author Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
+ *
+ * First rather stupid implementation to be optimized...
  */
 'use strict';
 
-var EventQueue = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};var $proto$0={};
+var PriorityQueue = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};return o["a"]===t})({},{});var DP$0 = Object.defineProperty;var GOPD$0 = Object.getOwnPropertyDescriptor;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,GOPD$0(s,p));}}return t};var DPS$0 = Object.defineProperties;var proto$0={};
 
-  function EventQueue() {
-    this.__events = [];
+  function PriorityQueue() {
+    this.__objects = [];
     this.reverse = false;
-  }DP$0(EventQueue, "prototype", {"configurable": false, "enumerable": false, "writable": false});
+  }DPS$0(PriorityQueue.prototype,{head: {"get": head$get$0, "configurable":true,"enumerable":true}});DP$0(PriorityQueue,"prototype",{"configurable":false,"enumerable":false,"writable":false});
 
-  /* Get the index of an object in the event list */
-  $proto$0.__eventIndex = function(object) {
-    for (var i = 0; i < this.__events.length; i++) {
-      if (object === this.__events[i][0]) {
+  /* Get the index of an object in the object list */
+  proto$0.__objectIndex = function(object) {
+    for (var i = 0; i < this.__objects.length; i++) {
+      if (object === this.__objects[i][0]) {
         return i;
       }
     }
@@ -203,174 +193,92 @@ var EventQueue = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = func
     return -1;
   };
 
-  /* Withdraw an event from the event list */
-  $proto$0.__removeEvent = function(object) {
-    var index = this.__eventIndex(object);
+  /* Withdraw an object from the object list */
+  proto$0.__removeObject = function(object) {
+    var index = this.__objectIndex(object);
 
     if (index >= 0)
-      this.__events.splice(index, 1);
+      this.__objects.splice(index, 1);
 
-    if (this.__events.length > 0)
-      return this.__events[0][1]; // return time of first event
+    if (this.__objects.length > 0)
+      return this.__objects[0][1]; // return time of first object
 
     return Infinity;
   };
 
-  $proto$0.__syncEvent = function(object, time) {
-    var nextEventDelay = Math.max(object.syncNext(time), 0);
-    var nextEventTime = Infinity;
-
-    if (nextEventDelay !== Infinity) {
-      if (!this.reverse)
-        nextEventTime = time + nextEventDelay;
-      else
-        nextEventTime = time - nextEventDelay;
-    }
-
-    return nextEventTime;
-  };
-
-  $proto$0.__sortEvents = function() {
+  proto$0.__sortObjects = function() {
     if (!this.reverse)
-      this.__events.sort(function(a, b) {
+      this.__objects.sort(function(a, b) {
         return a[1] - b[1];
       });
     else
-      this.__events.sort(function(a, b) {
+      this.__objects.sort(function(a, b) {
         return b[1] - a[1];
       });
   };
 
   /**
-   * Insert an event to the queue
+   * Insert an object to the queue
+   * (for this primitive version: prevent sorting for each element by calling with "false" as third argument)
    */
-  $proto$0.insert = function(object, time) {var sync = arguments[2];if(sync === void 0)sync = true;
-    var nextEventTime = time;
+  proto$0.insert = function(object, time) {var sort = arguments[2];if(sort === void 0)sort = true;
+    if (time !== Infinity && time != -Infinity) {
+      // add new object
+      this.__objects.push([object, time]);
 
-    if (sync)
-      nextEventTime = this.__syncEvent(object, time);
+      if (sort)
+        this.__sortObjects();
 
-    if (nextEventTime !== Infinity) {
-      // add new event
-      this.__events.push([object, nextEventTime]);
-      this.__sortEvents();
-      return this.__events[0][1]; // return time of first event
+      return this.__objects[0][1]; // return time of first object
     }
 
-    return this.__removeEvent(object);
+    return this.__removeObject(object);
   };
 
   /**
-   * Insert an array of events to the queue
+   * Move an object to another time in the queue
    */
-  $proto$0.insertAll = function(arrayOfObjects, time) {var sync = arguments[2];if(sync === void 0)sync = true;
-    var nextEventTime = time;
+  proto$0.move = function(object, time) {
+    if (time !== Infinity && time != -Infinity) {
+      var index = this.__objectIndex(object);
 
-    // sync each event and add to event list (if time is not Infinity)
-    for (var i = 0; i < arrayOfObjects.length; i++) {
-      var object = arrayOfObjects[i];
+      if (index < 0)
+        this.__objects.push([object, time]); // add new object
+      else
+        this.__objects[index][1] = time; // update time of existing object
 
-      if (sync)
-        nextEventTime = this.__syncEvent(object, time);
+      this.__sortObjects();
 
-      // add event to queue of scheduled events
-      if (nextEventTime !== Infinity)
-        this.__events.push([object, nextEventTime]);
+      return this.__objects[0][1]; // return time of first object
     }
 
-    // sort queue of scheduled events
-    this.__sortEvents();
-
-    if (this.__events.length > 0)
-      return this.__events[0][1]; // return time of first event
-
-    return Infinity;
+    return this.__removeObject(object);
   };
 
   /**
-   * Move an event to another time in the queue
+   * Remove an object from the queue
    */
-  $proto$0.move = function(object, time) {var sync = arguments[2];if(sync === void 0)sync = true;
-    var nextEventTime = time;
-
-    if (sync)
-      nextEventTime = this.__syncEvent(object, time);
-
-    if (nextEventTime !== Infinity) {
-      var index = this.__eventIndex(object);
-
-      if (index < 0) {
-        // add new event
-        this.__events.push([object, nextEventTime]);
-        this.__sortEvents();
-      } else {
-        // update time of existing event
-        this.__events[index][1] = nextEventTime;
-
-        // move first event if it is not first anymore
-        if (index === 0 && this.__events.length > 1) {
-          var secondEventTime = this.__events[1][1];
-
-          if ((!this.reverse && nextEventTime > secondEventTime) || (this.reverse && nextEventTime <= secondEventTime))
-            this.__sortEvents();
-        }
-      }
-
-      return this.__events[0][1]; // return time of first event
-    }
-
-    return this.__removeEvent(object);
-  };
-
-  /**
-   * Remove an event from the queue
-   */
-  $proto$0.remove = function(object) {
-    return this.__removeEvent(object);
+  proto$0.remove = function(object) {
+    return this.__removeObject(object);
   };
 
   /**
    * Clear queue
    */
-  $proto$0.clear = function() {
-    this.__events.length = 0; // clear event list
+  proto$0.clear = function() {
+    this.__objects.length = 0; // clear object list
     return Infinity;
   };
 
   /**
-   * Execute next event and return time of next event
+   * Get first object in queue
    */
-  $proto$0.execute = function(time, audioTime) {
-    // get first object in queue
-    var object = this.__events[0][0];
-    var nextEventDelay = Math.max(object.executeNext(time, audioTime), 0);
+  function head$get$0() {
+    return this.__objects[0][0];
+  }
+MIXIN$0(PriorityQueue.prototype,proto$0);proto$0=void 0;return PriorityQueue;})();
 
-    if (nextEventDelay !== Infinity) {
-      var nextEventTime;
-
-      if (!this.reverse)
-        nextEventTime = time + nextEventDelay;
-      else
-        nextEventTime = time - nextEventDelay;
-
-      this.__events[0][1] = nextEventTime;
-
-      // move first event if it is not first anymore
-      if (this.__events.length > 1) {
-        var secondTime = this.__events[1][1];
-
-        if ((!this.reverse && nextEventTime > secondTime) || (this.reverse && nextEventTime <= secondTime))
-          this.__sortEvents();
-      }
-
-      return this.__events[0][1]; // return time of first event
-    }
-
-    return this.__removeEvent(object);
-  };
-MIXIN$0(EventQueue.prototype,$proto$0);$proto$0=void 0;return EventQueue;})();
-
-module.exports = EventQueue;
+module.exports = PriorityQueue;
 },{}]},{},[1])
 (1)
 });

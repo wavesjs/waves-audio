@@ -6,12 +6,12 @@
 'use strict';
 
 var audioContext = require("audio-context");
-var TimeEngineQueue = require("time-engine-queue");
+var PriorityQueue = require("priority-queue");
 
 class Scheduler {
 
   constructor() {
-    this.__engineQueue = new TimeEngineQueue();
+    this.__queue = new PriorityQueue();
 
     this.__currentTime = null;
     this.__nextTime = Infinity;
@@ -34,7 +34,11 @@ class Scheduler {
   __tick() {
     while (this.__nextTime <= audioContext.currentTime + this.lookahead) {
       this.__currentTime = this.__nextTime;
-      this.__nextTime = this.__engineQueue.execute(this.__nextTime, this.__nextTime);
+
+      var nextEngine = this.__queue.head;
+      var nextEngineTime = Math.max(nextEngine.advanceTime(this.__currentTime), this.__currentTime);
+
+      this.__nextTime = this.__queue.move(nextEngine, nextEngineTime);
     }
 
     this.__currentTime = null;
@@ -79,7 +83,7 @@ class Scheduler {
       }
     };
 
-    this.__nextTime = this.__engineQueue.insert(object, this.time + delay, false);
+    this.__nextTime = this.__queue.insert(object, this.time + delay);
     this.__reschedule();
 
     return object;
@@ -101,7 +105,7 @@ class Scheduler {
       }
     };
 
-    this.__nextTime = this.__engineQueue.insert(object, this.time + delay, false);
+    this.__nextTime = this.__queue.insert(object, this.time + delay);
     this.__reschedule();
 
     return object;
@@ -113,17 +117,15 @@ class Scheduler {
    * @param {Number} delay scheduling delay time
    */
   add(engine, delay = 0) {
-    if (engine.scheduler !== null)
-      throw new Error("object has already been added to a scheduler");
+    if (!engine.advanceTime)
+      throw new Error("object does not have a method advanceTime");
 
-    if (!engine.syncNext)
-      throw new Error("object does not have a syncNext method");
+    if (engine.timeMaster !== null)
+      throw new Error("object already has a time master");
 
-    if (!engine.executeNext)
-      throw new Error("object does not have a executeNext method");
+    engine.timeMaster = this;
 
-    engine.scheduler = this;
-    this.__nextTime = this.__engineQueue.insert(engine, this.time + delay);
+    this.__nextTime = this.__queue.insert(engine, this.time + delay);
     this.__reschedule();
   }
 
@@ -132,26 +134,12 @@ class Scheduler {
    * @param {Object} engine time engine or callback to be removed from the scheduler
    */
   remove(engine) {
-    if (engine.scheduler !== this)
+    if (engine.timeMaster !== this)
       throw new Error("object has not been added to this scheduler");
 
-    engine.scheduler = null;
-    this.__nextTime = this.__engineQueue.remove(engine);
-    this.__reschedule();
-  }
-
-  /**
-   * Resychronize a scheduled time engine
-   * @param {Object} engine time engine to be resynchronized
-   */
-  resync(engine) {
-    if (engine.scheduler !== this)
-      throw new Error("object has not been added to this scheduler");
-
-    if (!engine.syncNext)
-      throw new Error("object does not have a syncNext method");
-
-    this.__nextTime = this.__engineQueue.move(engine, this.time);
+    engine.timeMaster = null;
+    
+    this.__nextTime = this.__queue.remove(engine);
     this.__reschedule();
   }
 
@@ -160,11 +148,11 @@ class Scheduler {
    * @param {Object} engine time engine or callback to be rescheduled
    * @param {Number} time time when to reschedule
    */
-  reschedule(engine, time) {
-    if (engine.scheduler !== this)
+  reset(engine, time) {
+    if (engine.timeMaster !== this)
       throw new Error("object has not been added to this scheduler");
 
-    this.__nextTime = this.__engineQueue.move(engine, time, false);
+    this.__nextTime = this.__queue.move(engine, time);
     this.__reschedule();
   }
 }

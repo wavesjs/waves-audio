@@ -1,6 +1,6 @@
 {
   "name": "scheduler",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "description": "WAVE audio global event scheduler singleton",
   "authors": [
     "Norbert Schnell",
@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "audio-context": "git://github.com/Ircam-RnD/audio-context.git#master",
-    "time-engine-queue": "git://github.com/Ircam-RnD/time-engine-queue.git#master"
+    "priority-queue": "git://github.com/Ircam-RnD/priority-queue.git#master"
   },
   "devDependencies": {
     "module-boilerplate": "git://github.com/Ircam-RnD/module-boilerplate.git#master",

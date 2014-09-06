@@ -67,15 +67,7 @@ Remove time engine from the scheduler
 
 * **Object** *engine* time engine or callback to be removed from the scheduler
 
-## resync(engine)
-
-Resychronize a scheduled time engine
-
-### Params: 
-
-* **Object** *engine* time engine to be resynchronized
-
-## reschedule(engine, time)
+## reset(engine, time)
 
 Reschedule a scheduled time engine or callback
 
