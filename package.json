@@ -1,6 +1,6 @@
 {
   "name": "priority-queue",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "description": "WAVE audio priority queue (used by scheduler and transport)",
   "authors": [
     "Norbert Schnell",
