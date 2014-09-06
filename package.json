@@ -1,6 +1,6 @@
 {
   "name": "time-engine",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "description": "WAVE audio time engine base class",
   "authors": [
     "Norbert Schnell",

@@ -6,19 +6,19 @@
 "use strict";
 
 class TimeEngine {
-  
+
   constructor() {
     /**
-     * Scheduler to which the time engine has been added
+     * Time master to which the time engine is synchronized
      * @type {Object}
      */
-    this.scheduler = null;
+    this.timeMaster = null;
 
     /**
-     * Transport to which the time engine has been added
+     * Position master to which the time engine is synchronized
      * @type {Object}
      */
-    this.transport = null;
+    this.positionMaster = null;
 
     /**
      * Output audio node
@@ -28,67 +28,71 @@ class TimeEngine {
   }
 
   /**
-   * Execute engine at next transport position
-   * @param {Number} time current scheduler (audio) time
-   * @param {Number} position current transport position
-   * @param {Bool} whether transport runs backward (current playing direction)
-   * @return {Number} next transport position (given the playing direction)
+   * Advance engine time
+   * @param {Number} time current master time (based on audio time)
+   * @return {Number} next engine time
+   *
+   * This function is called by the time master to let the engine do its work
+   * synchronized to the master's time.
+   * If the engine returns Infinity, it is not called again until it is restarted by the master 
+   * or it calls resyncEnginePosition() with a valid position.
+   */
+  advanceTime(time) {
+    return Infinity;
+  }
+
+  /**
+   * Reset engine time at master
+   * @param {Number} time new engine time, implies current master time if not given
    * 
-   * This function is called – more or less regulary – by the scheduler to let the engine do its work
-   * synchronized to the scheduler time.
+   * This function is called by the engine itself to rectify its next time.
    */
-  executeSchedulerTime(time, position, reverse = false) {
+  resetEngineTime(time) {
+    if (this.timeMaster)
+      this.timeMaster.reset(this, time);
+  }
+
+  /**
+   * Synchronize engine to master position
+   * @param {Number} time current master time (based on audio time)
+   * @param {Number} position current master position to synchronize to
+   * @param {Bool} whether position runs backward (current playing direction)
+   * @return {Number} next position (given the playing direction)
+   *
+   * This function allows the engine for synchronizing (seeking) to the current master position
+   * and to return its next position.
+   * If the engine returns Infinity or -Infinity, it is not called again until it is 
+   * resynchronized by the master or it calls resyncEnginePosition().
+   */
+  syncPosition(time, position, reverse = false) {
     return Infinity;
   }
 
   /**
-   * Request time engine rescheduling (called by engine itself)
-   * @param {Number} time new next scheduler time or transport position
-   */
-  rescheduleEngine(time) {
-    if(this.scheduler)
-      this.scheduler.reschedule(this, time);
-  }
-
-  /**
-   * Synchronize time engine to transport position
-   * @param {Number} time current scheduler (audio) time
-   * @param {Number} position transport position to synchronize to
-   * @param {Bool} whether transport runs backward (current playing direction)
-   * @return {Number} next transport position (given the playing direction)
+   * Advance engine position
+   * @param {Number} time current master time (based on audio time)
+   * @param {Number} position current master position
+   * @param {Bool} whether position runs backward (current playing direction)
+   * @return {Number} next engine position (given the playing direction)
    *
-   * This function allows the engine for synchronizing (seeking) to the current transport position
-   * and to return the position of the next transport position of the engine.
-   * Engines that return Infinity or -Infinity are not called anymore until they call resyncEngine()
-   * with a valid transport position.
+   * This function is called by the position master to let the engine do its work
+   * aligned to the master's position.
+   * If the engine returns Infinity or -Infinity, it is not called again until it is 
+   * resynchronized by the master or it calls resyncEnginePosition().
    */
-  syncTransportPosition(time, position, reverse = false) {
+  advancePosition(time, position, reverse = false) {
     return Infinity;
   }
 
   /**
-   * Execute engine at next transport position
-   * @param {Number} time current scheduler (audio) time
-   * @param {Number} position current transport position
-   * @param {Bool} whether transport runs backward (current playing direction)
-   * @return {Number} next transport position (given the playing direction)
+   * Request the position master to resynchronize the engine's position
    *
-   * This function is called – more or less regulary – by the transport to let the engine do its work
-   * aligned to the transport position.
+   * This function is called by the engine itself and will result in syncTransportPosition() 
+   * being called with the current master position.
    */
-  executeTransportPosition(time, position, reverse = false) {
-    return Infinity;
-  }
-
-  /**
-   * Request time engine to be resynchronized to the current transport position (called by engine itself)
-   *
-   * This function will result in syncTransportPosition() being called with the current transport position
-   * to adjust the engines priority in the transport queue.
-   */
-  resyncEngine() {
-    if(this.transport)
-      this.transport.resync(this);
+  resyncEnginePosition() {
+    if (this.positionMaster)
+      this.positionMaster.resync(this);
   }
 
   /**
