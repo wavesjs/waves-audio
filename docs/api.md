@@ -6,6 +6,12 @@ written in ECMAscript 6
 
 Author: Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
 
+# GranularEngine
+
+### Params: 
+
+* **AudioBuffer** *buffer* audio buffer initial for granular synthesis
+
 ## buffer
 
 Audio buffer
@@ -86,13 +92,13 @@ Get gain
 
 * **Number** current gain
 
-## trigger(audioTime)
+## trigger(time)
 
 Trigger a grain
 
 ### Params: 
 
-* **Number** *audioTime* grain synthesis audio time
+* **Number** *time* grain synthesis audio time
 
 ### Return:
 

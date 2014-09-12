@@ -5,13 +5,16 @@
  */
 "use strict";
 
-var audioContext = require("audio-context");
-var TimeEngine = require("time-engine");
+var audioContext = require("../audio-context");
+var TimeEngine = require("../time-engine");
 
+/**
+ * @class GranularEngine
+ * @param {AudioBuffer} buffer audio buffer initial for granular synthesis
+ */
 var GranularEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};MIXIN$0(GranularEngine, super$0);var $proto$0={};
-
-  function GranularEngine() {var buffer = arguments[0];if(buffer === void 0)buffer = null;var bufferExt = arguments[1];if(bufferExt === void 0)bufferExt = 0;
-    super$0.call(this, false); // by default grains don't sync to transport position
+  function GranularEngine() {var buffer = arguments[0];if(buffer === void 0)buffer = null;
+    super$0.call(this);
 
     /**
      * Audio buffer
@@ -115,14 +118,9 @@ var GranularEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIX
     this.outputNode = this.__gainNode = audioContext.createGain();
   }GranularEngine.prototype = Object.create(super$0.prototype, {"constructor": {"value": GranularEngine, "configurable": true, "writable": true}, gain: {"get": gain$get$0, "set": gain$set$0, "configurable": true, "enumerable": true} });DP$0(GranularEngine, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
-  // TimeEngine syncNext
-  $proto$0.syncNext = function(time) {
-    return 0;
-  };
-
-  // TimeEngine executeNext
-  $proto$0.executeNext = function(time, audioTime) {
-    return this.trigger(audioTime);
+  // TimeEngine method (time-based interface)
+  $proto$0.advanceTime = function(time) {
+    return time + this.trigger(time);
   };
 
   /**
@@ -143,14 +141,14 @@ var GranularEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIX
 
   /**
    * Trigger a grain
-   * @param {Number} audioTime grain synthesis audio time
+   * @param {Number} time grain synthesis audio time
    * @return {Number} period to next grain
    *
    * This function can be called at any time (whether the engine is scheduled or not)
    * to generate a single grain according to the current grain parameters.
    */
-  $proto$0.trigger = function(audioTime) {
-    var grainTime = audioTime || audioContext.currentTime;
+  $proto$0.trigger = function(time) {
+    var grainTime = time || audioContext.currentTime;
     var grainPeriod = this.periodAbs;
     var grainPosition = this.position;
     var grainDuration = this.durationAbs;
@@ -170,10 +168,6 @@ var GranularEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIX
       // grain period randon variation
       if (this.periodVar > 0.0)
         grainPeriod += 2.0 * (Math.random() - 0.5) * this.periodVar * grainPeriod;
-
-      // get transport position
-      if (this.transport)
-        grainPosition = this.transport.position;
 
       // center grain
       if (this.centered)

@@ -5,13 +5,16 @@
  */
 "use strict";
 
-var audioContext = require("audio-context");
-var TimeEngine = require("time-engine");
+var audioContext = require("../audio-context");
+var TimeEngine = require("../time-engine");
 
+/**
+ * @class GranularEngine
+ * @param {AudioBuffer} buffer audio buffer initial for granular synthesis
+ */
 class GranularEngine extends TimeEngine {
-
-  constructor(buffer = null, bufferExt = 0) {
-    super(false); // by default grains don't sync to transport position
+  constructor(buffer = null) {
+    super();
 
     /**
      * Audio buffer
@@ -115,14 +118,9 @@ class GranularEngine extends TimeEngine {
     this.outputNode = this.__gainNode = audioContext.createGain();
   }
 
-  // TimeEngine syncNext
-  syncNext(time) {
-    return 0;
-  }
-
-  // TimeEngine executeNext
-  executeNext(time, audioTime) {
-    return this.trigger(audioTime);
+  // TimeEngine method (time-based interface)
+  advanceTime(time) {
+    return time + this.trigger(time);
   }
 
   /**
@@ -143,14 +141,14 @@ class GranularEngine extends TimeEngine {
 
   /**
    * Trigger a grain
-   * @param {Number} audioTime grain synthesis audio time
+   * @param {Number} time grain synthesis audio time
    * @return {Number} period to next grain
    *
    * This function can be called at any time (whether the engine is scheduled or not)
    * to generate a single grain according to the current grain parameters.
    */
-  trigger(audioTime) {
-    var grainTime = audioTime || audioContext.currentTime;
+  trigger(time) {
+    var grainTime = time || audioContext.currentTime;
     var grainPeriod = this.periodAbs;
     var grainPosition = this.position;
     var grainDuration = this.durationAbs;
@@ -170,10 +168,6 @@ class GranularEngine extends TimeEngine {
       // grain period randon variation
       if (this.periodVar > 0.0)
         grainPeriod += 2.0 * (Math.random() - 0.5) * this.periodVar * grainPeriod;
-
-      // get transport position
-      if (this.transport)
-        grainPosition = this.transport.position;
 
       // center grain
       if (this.centered)
