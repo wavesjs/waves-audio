@@ -1,12 +1,12 @@
 /* written in ECMAscript 6 */
 /**
  * @fileoverview WAVE audio transport class, provides synchronized time-based and position-based scheduling of time engines
- * @author Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
+ * @author Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr *
  */
 'use strict';
 
-var TimeEngine = require("time-engine");
-var TimeEngineQueue = require("time-engine-queue");
+var TimeEngine = require("../time-engine");
+var PriorityQueue = require("../priority-queue");
 
 function arrayRemove(array, value) {
   var index = array.indexOf(value);
@@ -19,97 +19,136 @@ function arrayRemove(array, value) {
   return false;
 }
 
-class Transport extends TimeEngine {
+class TimeBasedAdapter {
+  constructor(engine) {
+    this.engine = engine;
+  }
+}
 
+class SpeedABasedAdapter {
+  constructor(engine) {
+    this.engine = engine;
+  }
+}
+
+class Transport extends TimeEngine {
   constructor() {
     super();
 
-    this.__timeQueue = new TimeEngineQueue();
-    this.__timeEngines = [];
-    this.__nextEngineTime = Infinity;
-
-    this.__positionQueue = new TimeEngineQueue();
+    // The transport will be added to the time master when the first
+    // engine arrives and removed when the last engine goes so that an
+    // an empty transport has no cyclic references and can be garbage collected.
+    this.__queue = new PriorityQueue();
     this.__positionEngines = [];
-    this.__nextEnginePosition = Infinity;
+    this.__speedEngines = [];
+    this.__timeEngines = [];
+
+    this.__time = 0;
+    this.__position = 0;
+    this.__speed = 0;
 
     this.__nextTime = Infinity;
+    this.__nextPosition = Infinity;
 
-    this.__time = Infinity;
-    this.__position = 0.0;
-    this.__speed = 0.0;
-
-    this.__speedAndSeekListeners = [];
-
-    this.__playingSpeed = 1.0;
+    this.__playingSpeed = 1;
   }
 
   __sync(time) {
-    this.__position += (time - this.__time) * this.__speed;
-    this.__time = time;
+    var now = time || this.getMasterTime();
+    this.__position += (now - this.__time) * this.__speed;
+    this.__time = now;
+    return now;
   }
 
-  __reschedule() {
-    var nextTime;
-
-    if (this.__nextEnginePosition !== Infinity)
-      nextTime = Math.min(this.__nextEngineTime, this.getTimeAtPosition(this.__nextEnginePosition));
-    else
-      nextTime = this.__nextEngineTime;
+  __reschedule(nextPosition) {
+    var nextTime = this.getTimeAtPosition(nextPosition);
 
     if (nextTime !== this.__nextTime) {
-      this.__nextTime = nextTime;
-      this.rescheduleEngine(nextTime);
-    }
-  }
-
-  // TimeEngine syncNext
-  syncNext(time) {
-    this.__nextEngineTime = Infinity;
-    this.__nextEnginePosition = Infinity;
-
-    this.__time = time;
-
-    if (this.__speed) {
-      this.__timeQueue.clear();
-      this.__nextEngineTime = this.__timeQueue.insertAll(this.__timeEngines, time);
-
-      this.__positionQueue.reverse = (this.__speed < 0);
-      this.__positionQueue.clear();
-      this.__nextEnginePosition = this.__positionQueue.insertAll(this.__positionEngines, this.__position);
+      this.resetEngineTime(nextTime);
+      this.__nextTime = nextTime
     }
 
-    if (this.__nextEnginePosition !== Infinity)
-      this.__nextTime = Math.min(this.__nextEngineTime, this.getTimeAtPosition(this.__nextEnginePosition));
-    else
-      this.__nextTime = this.__nextEngineTime;
-
-    return this.__nextTime - time;
+    this.__nextPosition = nextPosition;
   }
 
-  // TimeEngine executeNext
-  executeNext(time, audioTime) {
+  __resyncPositionEngines() {
+    var numPositionEngines = this.__positionEngines.length;
+    var nextPosition = Infinity;
+
+    if (numPositionEngines > 0) {
+      var time = this.__time;
+      var position = this.__position;
+      var speed = this.__speed;
+      var engine, nextEnginePosition;
+
+      this.__queue.clear();
+      this.__queue.reverse = (speed < 0);
+
+      for (var i = numPositionEngines - 1; i > 0; i--) {
+        engine = this.__positionEngines[i];
+        nextEnginePosition = engine.__startPosition + engine.syncPosition(time, position - engine.__startPosition, speed);
+        this.__queue.insert(engine, nextEnginePosition, false); // insert but don't sort
+      }
+
+      engine = this.__positionEngines[0];
+      nextEnginePosition = engine.__startPosition + engine.syncPosition(time, position - engine.__startPosition, speed);
+      nextPosition = this.__queue.insert(engine, nextEnginePosition, true); // insert and sort
+    }
+
+    return nextPosition;
+  }
+
+  get numEngines() {
+    return this.__positionEngines.length + this.__speedEngines.length + this.__timeEngines.length;
+  }
+
+  // TimeEngine method (time-based interface)
+  initTime(time) {
+    return Infinity; // don't run before started (no start before added to time master)
+  }
+
+  // TimeEngine method time-based interface)
+  advanceTime(time) {
     this.__sync(time);
 
-    if (this.__nextTime === this.__nextEngineTime)
-      this.__nextEngineTime = this.__timeQueue.execute(time, audioTime);
-    else
-      this.__nextEnginePosition = this.__positionQueue.execute(this.__position, audioTime);
+    var nextEngine = this.__queue.head;
+    var startPosition = nextEngine.__startPosition;
+    var nextEnginePosition = startPosition + nextEngine.advancePosition(time, this.__position - startPosition, this.__speed);
+    var nextPosition = this.__queue.move(nextEngine, nextEnginePosition);
+    var nextTime = this.getTimeAtPosition(nextPosition);
+    this.__nextTime = nextTime
 
-    if (this.__nextEnginePosition !== Infinity)
-      this.__nextTime = Math.min(this.__nextEngineTime, this.getTimeAtPosition(this.__nextEnginePosition));
-    else
-      this.__nextTime = this.__nextEngineTime;
-
-    return this.__nextTime - time;
+    return nextTime;
   }
 
-  /**
-   * Extrapolate transport position for given time
-   * @param {Number} time time
-   * @return {Number} extrapolated position
-   */
-  getPositionAtTime(time) {
-    return this.__position + (time - this.__time) * this.__speed;
+  // TimeEngine method (position-based interface)
+  syncPosition(position, time, speed) {
+    this.__time = time;
+    this.__position = position;
+    this.__speed = speed;
+
+    for (var listener of this.__speedEngines)
+      listener.seek(position);
+
+    var nextPosition = this.__resetAllEngines(time, position);
+    this.__nextPosition = nextPosition;
+
+    return nextPosition;
+  }
+
+  // TimeEngine method (position-based interface)
+  advancePosition(position, time, speed) {
+    this.__time = time;
+    this.__position = position;
+    this.__speed = speed;
+
+    var nextEngine = this.__queue.head;
+    var nextEnginePosition = nextEngine.advancePosition(position, time, speed);
+    var nextPosition = this.__queue.move(nextEngine, nextEnginePosition);
+
+    this.__nextPosition = nextPosition;
+
+    return nextPosition;
   }
 
   /**
@@ -122,11 +161,20 @@ class Transport extends TimeEngine {
   }
 
   /**
+   * Extrapolate transport position for given time
+   * @param {Number} time time
+   * @return {Number} extrapolated position
+   */
+  getPositionAtTime(time) {
+    return this.__position + (time - this.__time) * this.__speed;
+  }
+
+  /**
    * Get current transport (scheduling) time
    * @return {Number} current transport time
    */
   get time() {
-    return this.scheduler.time;
+    return this.getMasterTime();
   }
 
   /**
@@ -134,8 +182,42 @@ class Transport extends TimeEngine {
    * @return {Number} current transport position
    */
   get position() {
-    var time = this.scheduler.time;
-    return this.getPositionAtTime(time);
+    if (this.__positionMaster)
+      return this.getMasterPosition();
+
+    return this.getPositionAtTime(this.getMasterTime());
+  }
+
+ // TimeEngine method (speed-based interface)
+  set speed(speed) {
+    if (this.timeMaster) {
+      var lastSpeed = this.__speed;
+
+      if (speed !== lastSpeed) {
+        this.__sync();
+        this.__speed = speed;
+
+        var nextPosition = this.__nextPosition;
+
+        if (lastSpeed === 0 || speed * lastSpeed < 0) {
+          // reset all engines when start or reverse direction
+          nextPosition = this.__resyncPositionEngines();
+        } else if (speed === 0) {
+          nextPosition = Infinity;
+
+          // stop time-based engines
+          for (var timeEngine of this.__timeEngines)
+            this.resetTime(timeEngine, Infinity);
+        }
+
+        this.__reschedule(nextPosition);
+
+        for (var listener of this.__speedEngines)
+          listener.speed = speed;
+      }
+    } else {
+      throw new Error("no time master");
+    }
   }
 
   /**
@@ -147,183 +229,23 @@ class Transport extends TimeEngine {
   }
 
   /**
-   * Get whether transport runs in reverse direction (speed < 0)
-   * @return {Bool} whether transport runs in reverse direction
-   */
-  get reverse() {
-    return (this.__speed < 0);
-  }
-
-  /**
-   * Set transport speed (a speed of 0 corrsponds to stop or pause)
-   * @param {Number} speed speed
-   */
-  set speed(speed) {
-    var lastSpeed = this.__speed;
-
-    if (speed !== lastSpeed) {
-      this.__sync(this.time);
-
-      this.__speed = speed;
-
-      if (lastSpeed === 0) {
-        // start
-        this.__timeQueue.clear();
-        this.__nextEngineTime = this.__timeQueue.insertAll(this.__timeEngines, this.__time);
-
-        this.__positionQueue.reverse = (speed < 0);
-        this.__positionQueue.clear();
-        this.__nextEnginePosition = this.__positionQueue.insertAll(this.__positionEngines, this.__position);
-      } else if (speed === 0) {
-        // stop/pause
-        this.__nextEngineTime = Infinity;
-        this.__nextEnginePosition = Infinity;
-      } else if (speed * lastSpeed < 0) {
-        // reverse direction
-        this.__positionQueue.reverse = (speed < 0);
-        this.__positionQueue.clear();
-        this.__nextEnginePosition = this.__positionQueue.insertAll(this.__positionEngines, this.__position);
-      }
-
-      this.__reschedule();
-
-      for (var listener of this.__speedAndSeekListeners)
-        listener.speed = speed;
-    }
-  }
-
-  /**
    * Set (jump to) transport position
    * @param {Number} position target position
    */
   seek(position) {
-    this.__sync(this.time);
-
     if (position !== this.__position) {
+      this.__sync();
       this.__position = position;
 
-      if (this.__speed !== 0) {
-        this.__positionQueue.clear();
-        this.__nextEnginePosition = this.__positionQueue.insertAll(this.__positionEngines, this.__position, true);
+      var speed = this.__speed;
 
-        this.__reschedule();
+      if (speed !== 0) {
+        var nextPosition = this.__resyncPositionEngines();
+        this.__reschedule(nextPosition);
 
-        for (var listener of this.__speedAndSeekListeners)
+        for (var listener of this.__speedEngines)
           listener.seek(position);
       }
-    }
-  }
-
-  /**
-   * Add an engine to the transport
-   * @param {Object} engine engine to be added to the transport
-   *
-   * An engine that can be added to the transport is either an TimeEngine
-   * or an engine that implements a speed attribute and a seek method.
-   *
-   * The attribute "alignToTransportPosition" of an time engine determines whether
-   * the engine is scheduled in time or aligned to the transport position.
-   */
-  add(engine) {
-    if (engine.transport || engine.scheduler)
-      throw new Error("object has already been added to a transport");
-
-    engine.transport = this;
-    engine.scheduler = this;
-
-    this.__sync(this.time);
-
-    if (engine.syncNext && engine.executeNext) {
-      // add an time engine
-      if (engine.alignToTransportPosition) {
-        if (this.__speed !== 0)
-          this.__nextEnginePosition = this.__positionQueue.insert(engine, this.__position);
-        this.__positionEngines.push(engine);
-      } else {
-        if (this.__speed !== 0)
-          this.__nextEngineTime = this.__timeQueue.insert(engine, this.__time);
-        this.__timeEngines.push(engine);
-      }
-
-      if (this.__speed !== 0)
-        this.__reschedule();
-    } else if (Object.getOwnPropertyDescriptor(Object.getPrototypeOf(engine), "speed") && (typeof engine.seek === "function")) {
-      // add a non-TimeEngine that has a speed property and/or a seek method
-      this.__speedAndSeekListeners.push(engine);
-      engine.speed = this.__speed;
-    } else {
-      throw new Error("cannot add an object to transport that is not an TimeEngine nor has a speed attribute and seek method");
-    }
-  }
-
-  /**
-   * Remove an engine from the transport
-   */
-  remove(engine) {
-    if (engine.transport !== this)
-      throw new Error("object has not been added to this transport");
-
-    engine.transport = null;
-    engine.scheduler = null;
-
-    this.__sync(this.time);
-
-    if (engine.syncNext && engine.executeNext) {
-      // remove an time engine
-      if (engine.alignToTransportPosition) {
-        this.__nextEnginePosition = this.__positionQueue.remove(engine);
-        arrayRemove(this.__positionEngines, engine);
-      } else {
-        this.__nextEngineTime = this.__timeQueue.remove(engine);
-        arrayRemove(this.__timeEngines, engine);
-      }
-
-      if (this.__speed !== 0)
-        this.__reschedule();
-    } else if (Object.getOwnPropertyDescriptor(Object.getPrototypeOf(engine), "speed") && (typeof engine.seek === "function")) {
-      engine.speed = 0;
-      arrayRemove(this.__speedAndSeekListeners, engine);
-    }
-  }
-
-  /**
-   * Resychronize time engine
-   * @param {Object} engine time engine to be resynchronized
-   */
-  resync(engine) {
-    if (engine.transport !== this)
-      throw new Error("object has not been added to this transport");
-
-    this.__sync(this.time);
-
-    if (this._speed !== 0) {
-      if (engine.alignToTransportPosition)
-        this.__nextEnginePosition = this.__positionQueue.move(engine, this.__position);
-      else
-        this.__nextEngineTime = this.__timeQueue.move(engine, this.__time);
-
-      this.__reschedule();
-    }
-  }
-
-  /**
-   * Reschedule time engine at given time or position
-   * @param {Object} engine time engine to be rescheduled
-   * @param {Number} time time or position when to reschedule
-   */
-  reschedule(engine, time) {
-    if (engine.transport !== this)
-      throw new Error("object has not been added to this transport");
-
-    this.__sync(this.time);
-
-    if (this._speed !== 0) {
-      if (engine.alignToTransportPosition)
-        this.__nextEnginePosition = this.__positionQueue.move(engine, time, false);
-      else
-        this.__nextEngineTime = this.__timeQueue.move(engine, time, false);
-
-      this.__reschedule();
     }
   }
 
@@ -390,6 +312,122 @@ class Transport extends TimeEngine {
    */
   get playingSpeed() {
     return this.__playingSpeed;
+  }
+
+  /**
+   * Add an engine to the transport
+   * @param {Object} engine engine to be added to the transport
+   * @param {Number} position start position
+   *
+   * An engine that can be added to the transport is either an TimeEngine
+   * or an engine that implements a speed attribute (that halts with speed = 0).
+   *
+   * The attribute "alignToTransportPosition" of an time engine determines whether
+   * the engine is scheduled in time or aligned to the transport position.
+   */
+  add(engine, startPosition = 0) {
+    if (!engine.positionMaster && !engine.timeMaster) {
+      var time = this.__sync();
+      var speed = this.__speed;
+
+      engine.positionMaster = this;
+
+      // add time engine with position interface
+      if (engine.implementsPositionBased) {
+        this.__positionEngines.push(engine);
+
+        engine.__startPosition = startPosition;
+
+        engine.resyncEnginePosition = () => {
+          var time = this.__sync();
+          var position = this.__position;
+          var speed = this.__speed;
+
+          if (speed !== 0) {
+            var nextEnginePosition = engine.__startPosition + engine.syncPosition(time, position - engine.__startPosition, speed);
+            var nextPosition = this.__queue.move(engine, nextEnginePosition);
+            this.__reschedule(nextPosition);
+          }
+        };
+
+        engine.getMasterPosition = () => {
+          return this.position - engine.__startPosition;
+        };
+
+        if (speed !== 0) {
+          // sync and start
+          var nextEnginePosition = engine.__startPosition + engine.syncPosition(time, this.__position - engine.__startPosition, speed);
+          var nextPosition = this.__queue.insert(engine, nextEnginePosition);
+          this.__reschedule(nextPosition);
+        }
+      } else if (engine.implementsSpeedBased) {
+        // add time engine with speed attribute
+        this.__speedEngines.push(engine);
+        engine.speed = speed;
+      } else if (engine.implementsTimeBased) {
+        // add time engine with time interface
+        this.__timeEngines.push(engine);
+
+        if (this.timeMaster)
+          this.timeMaster.add(engine, Infinity);
+      } else {
+        throw new Error("object cannot be added to transport");
+      }
+    } else {
+      throw new Error("object already has a master");
+    }
+  }
+
+  /**
+   * Remove an engine from the transport
+   * @param {object} engine engine to be removed from the transport
+   */
+  remove(engine) {
+    if (engine.positionMaster === this) {
+      var time = this.__sync();
+
+      engine.positionMaster = null;
+
+      if (engine.implementsPositionBased) {
+        var nextPosition = this.__queue.remove(engine);
+
+        if (this.__speed !== 0)
+          this.__reschedule(nextPosition);
+
+        arrayRemove(this.__positionEngines, engine);
+      } else if (engine.implementsSpeedBased) {
+        // remove engine with speed control
+        engine.speed = 0;
+        arrayRemove(this.__speedEngines, engine);
+      } else if (engine.implementsTimeBased) {
+        if (this.timeMaster)
+          this.timeMaster.remove(engine);
+
+        arrayRemove(this.__timeEngines, engine);
+      }
+    } else {
+      throw new Error("object has not been added to this transport");
+    }
+  }
+
+  set timeMaster(timeMaster) {
+    var timeEngine;
+
+    if (timeMaster) {
+      // add all time driven engines to time master
+      for (timeEngine of this.__timeEngines)
+        timeMaster.add(timeEngine, Infinity);
+    } else {
+      // remove all time driven engines from time master
+      for (timeEngine of this.__timeEngines)
+        this.__timeMaster.remove(timeEngine);
+    }
+
+    this.__timeMaster = timeMaster;
+  }
+
+  get timeMaster() {
+    return this.__timeMaster;
   }
 }
 

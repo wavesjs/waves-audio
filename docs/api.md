@@ -4,19 +4,7 @@
 
 written in ECMAscript 6
 
-Author: Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
-
-## getPositionAtTime(time)
-
-Extrapolate transport position for given time
-
-### Params: 
-
-* **Number** *time* time
-
-### Return:
-
-* **Number** extrapolated position
+Author: Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr *
 
 ## getTimeAtPosition(position)
 
@@ -29,6 +17,18 @@ Extrapolate transport time for given position
 ### Return:
 
 * **Number** extrapolated time
+
+## getPositionAtTime(time)
+
+Extrapolate transport position for given time
+
+### Params: 
+
+* **Number** *time* time
+
+### Return:
+
+* **Number** extrapolated position
 
 ## time
 
@@ -54,22 +54,6 @@ Get current transport speed
 
 * **Number** current transport speed
 
-## reverse
-
-Get whether transport runs in reverse direction (speed < 0)
-
-### Return:
-
-* **Bool** whether transport runs in reverse direction
-
-## speed(speed)
-
-Set transport speed (a speed of 0 corrsponds to stop or pause)
-
-### Params: 
-
-* **Number** *speed* speed
-
 ## seek(position)
 
 Set (jump to) transport position
@@ -77,40 +61,6 @@ Set (jump to) transport position
 ### Params: 
 
 * **Number** *position* target position
-
-## add(engine)
-
-Add an engine to the transport
-
-### Params: 
-
-* **Object** *engine* engine to be added to the transport 
-An engine that can be added to the transport is either an TimeEngine
-or an engine that implements a speed attribute and a seek method.
-
-The attribute "alignToTransportPosition" of an time engine determines whether
-the engine is scheduled in time or aligned to the transport position.
-
-## remove()
-
-Remove an engine from the transport
-
-## resync(engine)
-
-Resychronize time engine
-
-### Params: 
-
-* **Object** *engine* time engine to be resynchronized
-
-## reschedule(engine, time)
-
-Reschedule time engine at given time or position
-
-### Params: 
-
-* **Object** *engine* time engine to be rescheduled
-* **Number** *time* time or position when to reschedule
 
 ## startPlaying(seek, speed)
 
@@ -147,6 +97,28 @@ Get playing speed (high level player API)
 ### Return:
 
 * **current** playing speed
+
+## add(engine, position)
+
+Add an engine to the transport
+
+### Params: 
+
+* **Object** *engine* engine to be added to the transport
+* **Number** *position* start position 
+An engine that can be added to the transport is either an TimeEngine
+or an engine that implements a speed attribute (that halts with speed = 0).
+
+The attribute "alignToTransportPosition" of an time engine determines whether
+the engine is scheduled in time or aligned to the transport position.
+
+## remove(engine)
+
+Remove an engine from the transport
+
+### Params: 
+
+* **object** *engine* engine to be removed from the transport
 
 <!-- End ./src/index.js -->
 

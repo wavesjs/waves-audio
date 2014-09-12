@@ -1,6 +1,6 @@
 {
   "name": "transport",
-  "version": "0.7.1",
+  "version": "0.8.1",
   "description": "WAVE audio transport",
   "authors": [
     "Norbert Schnell",
@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "time-engine": "git://github.com/Ircam-RnD/time-engine.git#master",
-    "time-engine-queue": "git://github.com/Ircam-RnD/time-engine-queue.git#master"
+    "priority-queue": "git://github.com/Ircam-RnD/priority-queue.git#master"
   },
   "devDependencies": {
     "module-boilerplate": "git://github.com/Ircam-RnD/module-boilerplate.git#master",
