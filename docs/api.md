@@ -22,13 +22,13 @@ Metronome click attack time
 
 Metronome click release time
 
-## trigger(audioTime)
+## trigger(time)
 
 Trigger metronome click
 
 ### Params: 
 
-* **Number** *audioTime* metronome click synthesis audio time
+* **Number** *time* metronome click synthesis audio time
 
 ## gain(value)
 
@@ -48,7 +48,7 @@ Get gain
 
 ## phase(phase)
 
-Set metronome phase
+Set phase parameter
 
 ### Params: 
 
@@ -56,28 +56,11 @@ Set metronome phase
 
 ## phase
 
-Get metronome phase
+Get phase parameter
 
 ### Return:
 
-* **Number** current metronome phase
-
-## aligned(aligned)
-
-Set whether metronome clicks are aligned to the absolute scheduling time
-
-### Params: 
-
-* **Bool** *aligned* whether metronome is aligned to absolute time 
-Aligning the metronome to the absolute scheduling time allows for synchronizing the phases of multiple metronomes.
-
-## aligned
-
-Get whether metronome clicks are aligned to the absolute scheduling time
-
-### Return:
-
-* **Bool** whether metronome is aligned to absolute time
+* **Number** value of phase parameter
 
 <!-- End ./src/index.js -->
 
