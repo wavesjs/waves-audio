@@ -5,11 +5,11 @@
  */
 'use strict';
 
-var audioContext = require("audio-context");
-var PriorityQueue = require("priority-queue");
+var audioContext = require("../audio-context");
+var PriorityQueue = require("../priority-queue");
+var TimeEngine = require("../time-engine");
 
 var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};return o["a"]===t})({},{});var DP$0 = Object.defineProperty;var GOPD$0 = Object.getOwnPropertyDescriptor;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,GOPD$0(s,p));}}return t};var DPS$0 = Object.defineProperties;var proto$0={};
-
   function Scheduler() {
     this.__queue = new PriorityQueue();
 
@@ -42,6 +42,7 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
     }
 
     this.__currentTime = null;
+    this.__timeout = null;
 
     if (this.__nextTime !== Infinity) {
       this.__timeout = setTimeout(function()  {
@@ -116,17 +117,29 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
    * @param {Object} engine time engine to be added to the scheduler
    * @param {Number} delay scheduling delay time
    */
-  proto$0.add = function(engine) {var delay = arguments[1];if(delay === void 0)delay = 0;
-    if (!engine.advanceTime)
-      throw new Error("object does not have a method advanceTime");
+  proto$0.add = function(engine) {var delay = arguments[1];if(delay === void 0)delay = 0;var this$0 = this;
+    if (!engine.timeMaster && !engine.positionMaster) {
+      if (engine.implementsTimeBased) {
+        engine.timeMaster = this;
 
-    if (engine.timeMaster !== null)
-      throw new Error("object already has a time master");
+        engine.getMasterTime = function()  {
+          return this$0.time;
+        };
 
-    engine.timeMaster = this;
+        engine.resetEngineTime = function(time)  {
+          this$0.__nextTime = this$0.__queue.move(engine, time);
+          this$0.__reschedule();
+        };
 
-    this.__nextTime = this.__queue.insert(engine, this.time + delay);
-    this.__reschedule();
+        var nextEngineTime = engine.initTime(this.time + delay);
+        this.__nextTime = this.__queue.insert(engine, nextEngineTime);
+        this.__reschedule();
+      } else {
+        throw new Error("object cannot be added to scheduler");
+      }
+    } else {
+      throw new Error("object already has a master");
+    }
   };
 
   /**
@@ -134,13 +147,14 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
    * @param {Object} engine time engine or callback to be removed from the scheduler
    */
   proto$0.remove = function(engine) {
-    if (engine.timeMaster !== this)
-      throw new Error("object has not been added to this scheduler");
+    if (engine.timeMaster === this) {
+      engine.timeMaster = null;
 
-    engine.timeMaster = null;
-    
-    this.__nextTime = this.__queue.remove(engine);
-    this.__reschedule();
+      this.__nextTime = this.__queue.remove(engine);
+      this.__reschedule();
+    } else {
+      throw new Error("object has not been added to this scheduler");
+    }
   };
 
   /**
@@ -149,11 +163,12 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
    * @param {Number} time time when to reschedule
    */
   proto$0.reset = function(engine, time) {
-    if (engine.timeMaster !== this)
+    if (engine.timeMaster === this) {
+      this.__nextTime = this.__queue.move(engine, time);
+      this.__reschedule();
+    } else {
       throw new Error("object has not been added to this scheduler");
-
-    this.__nextTime = this.__queue.move(engine, time);
-    this.__reschedule();
+    }
   };
 MIXIN$0(Scheduler.prototype,proto$0);proto$0=void 0;return Scheduler;})();
 

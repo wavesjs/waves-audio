@@ -5,11 +5,11 @@
  */
 'use strict';
 
-var audioContext = require("audio-context");
-var PriorityQueue = require("priority-queue");
+var audioContext = require("../audio-context");
+var PriorityQueue = require("../priority-queue");
+var TimeEngine = require("../time-engine");
 
 class Scheduler {
-
   constructor() {
     this.__queue = new PriorityQueue();
 
@@ -42,6 +42,7 @@ class Scheduler {
     }
 
     this.__currentTime = null;
+    this.__timeout = null;
 
     if (this.__nextTime !== Infinity) {
       this.__timeout = setTimeout(() => {
@@ -117,16 +118,28 @@ class Scheduler {
    * @param {Number} delay scheduling delay time
    */
   add(engine, delay = 0) {
-    if (!engine.advanceTime)
-      throw new Error("object does not have a method advanceTime");
+    if (!engine.timeMaster && !engine.positionMaster) {
+      if (engine.implementsTimeBased) {
+        engine.timeMaster = this;
 
-    if (engine.timeMaster !== null)
-      throw new Error("object already has a time master");
+        engine.getMasterTime = () => {
+          return this.time;
+        };
 
-    engine.timeMaster = this;
+        engine.resetEngineTime = (time) => {
+          this.__nextTime = this.__queue.move(engine, time);
+          this.__reschedule();
+        };
 
-    this.__nextTime = this.__queue.insert(engine, this.time + delay);
-    this.__reschedule();
+        var nextEngineTime = engine.initTime(this.time + delay);
+        this.__nextTime = this.__queue.insert(engine, nextEngineTime);
+        this.__reschedule();
+      } else {
+        throw new Error("object cannot be added to scheduler");
+      }
+    } else {
+      throw new Error("object already has a master");
+    }
   }
 
   /**
@@ -134,13 +147,14 @@ class Scheduler {
    * @param {Object} engine time engine or callback to be removed from the scheduler
    */
   remove(engine) {
-    if (engine.timeMaster !== this)
-      throw new Error("object has not been added to this scheduler");
+    if (engine.timeMaster === this) {
+      engine.timeMaster = null;
 
-    engine.timeMaster = null;
-    
-    this.__nextTime = this.__queue.remove(engine);
-    this.__reschedule();
+      this.__nextTime = this.__queue.remove(engine);
+      this.__reschedule();
+    } else {
+      throw new Error("object has not been added to this scheduler");
+    }
   }
 
   /**
@@ -149,11 +163,12 @@ class Scheduler {
    * @param {Number} time time when to reschedule
    */
   reset(engine, time) {
-    if (engine.timeMaster !== this)
+    if (engine.timeMaster === this) {
+      this.__nextTime = this.__queue.move(engine, time);
+      this.__reschedule();
+    } else {
       throw new Error("object has not been added to this scheduler");
-
-    this.__nextTime = this.__queue.move(engine, time);
-    this.__reschedule();
+    }
   }
 }
 
