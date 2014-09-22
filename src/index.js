@@ -5,10 +5,10 @@
  */
 "use strict";
 
-var audioContext = require("audio-context");
+var audioContext = require("../audio-context");
+var TimeEngine = require("../time-engine");
 
-class AudioPlayer {
-
+class AudioPlayer extends TimeEngine{
   constructor(buffer = null) {
     this.transport = null; // set when added to transporter
 
@@ -37,23 +37,8 @@ class AudioPlayer {
     this.outputNode = this.__gainNode = audioContext.createGain();
   }
 
-  __sync() {
-    if (this.transport) {
-      this.__position = this.transport.position;
-      this.__time = this.transport.time;
-    } else {
-      var time = audioContext.currentTime;
-      this.__position += (time - this.__time) * this.__speed;
-      this.__time = time;
-    }
-
-    return this.__time;
-  }
-
-  __start(speed) {
+  __start(time, position, speed) {
     if (this.buffer) {
-      var time = this.__time;
-      var position = this.__position;
       var bufferDuration = this.buffer.duration;
 
       if (this.buffer.wrapAroundExtension)
@@ -82,10 +67,8 @@ class AudioPlayer {
     }
   }
 
-  __stop() {
+  __halt(time) {
     if (this.__bufferSource) {
-      var time = this.__time;
-
       this.__envNode.gain.cancelScheduledValues(time);
       this.__envNode.gain.setValueAtTime(this.__envNode.gain.value, time);
       this.__envNode.gain.linearRampToValueAtTime(0, time + this.fadeTime);
@@ -96,49 +79,20 @@ class AudioPlayer {
     }
   }
 
-  /**
-   * Set speed
-   * @param {Number} speed speed (a speed of 0 corrsponds to stop or pause)
-   */
-  set speed(speed) {
+  // TimeEngine method (speed-controlled interface)
+  syncSpeed(time, position, speed) {
     if (speed !== this.__speed) {
-      var time = this.__sync();
-
       if (this.__speed === 0)
-        this.__start(speed);
+        this.__start(time, position, speed);
       else if (speed === 0)
-        this.__stop();
+        this.__halt(time);
       else if (this.__speed * speed < 0) {
-        this.__stop();
-        this.__start(speed);
+        this.__halt(time);
+        this.__start(time, position, speed);
       } else if (this.__bufferSource)
         this.__bufferSource.playbackRate.setValueAtTime(speed, time);
 
       this.__speed = speed;
-    }
-  }
-
-  /**
-   * Get current speed
-   * @return {Number} current speed
-   */
-  get speed() {
-    return this.__speed;
-  }
-
-  /**
-   * Set (jump to) transport position
-   * @param {Number} position target position
-   */
-  seek(position) {
-    if (position !== this.__position) {
-      this.__sync();
-
-      this.__stop();
-      this.__position = position;
-
-      if (this.__speed !== 0)
-        this.__start(this.__speed);
     }
   }
 
@@ -148,13 +102,14 @@ class AudioPlayer {
    */
   set cyclic(cyclic) {
     if (cyclic !== this.__cyclic) {
-      this.__sync();
+      var time = this.getSchedulerTime();
+      var position = this.getTransportPosition();
 
-      this.__stop();
+      this.__halt(time);
       this.__cyclic = cyclic;
 
       if (this.__speed !== 0)
-        this.__start(this.__speed);
+        this.__start(time, position, this.__speed);
     }
   }
 
@@ -184,75 +139,6 @@ class AudioPlayer {
    */
   get gain() {
     return this.__gainNode.gain.value;
-  }
-
-  /**
-   * Start playing (high level player API)
-   * @param {Number} seek start position
-   * @param {Number} speed playing speed
-   */
-  startPlaying(seek = null, speed = null) {
-    if (seek)
-      this.seek(seek);
-
-    if (speed)
-      this.playingSpeed = speed;
-
-    this.speed = this.playingSpeed;
-  }
-
-  /**
-   * Pause playing (high level player API)
-   */
-  pausePlaying() {
-    this.speed = 0;
-  }
-
-  /**
-   * Stop playing (high level player API)
-   */
-  stopPlaying() {
-    this.speed = 0;
-    this.seek(0);
-  }
-
-  /**
-   * Set playing speed (high level player API)
-   * @param {Number} speed playing speed (non-zero speed between -16 and -1/16 or between 1/16 and 16)
-   */
-  set playingSpeed(speed) {
-    if (speed >= 0) {
-      if (speed < 0.0625)
-        speed = 0.0625;
-      else if (speed > 16)
-        speed = 16;
-    } else {
-      if (speed < -16)
-        speed = -16
-      else if (speed > -0.0625)
-        speed = -0.0625;
-    }
-
-    this.__playingSpeed = speed;
-
-    if (this.__speed !== 0)
-      this.speed = speed;
-  }
-
-  /**
-   * Get playing speed (high level player API)
-   * @return current playing speed
-   */
-  get playingSpeed() {
-    return this.__playingSpeed;
-  }
-
-  connect(target) {
-    this.__gainNode.connect(target);
-  }
-
-  disconnect(connection) {
-    this.__gainNode.disconnect(connection);
   }
 }
 

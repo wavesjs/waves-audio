@@ -5,10 +5,10 @@
  */
 "use strict";
 
-var audioContext = require("audio-context");
+var audioContext = require("../audio-context");
+var TimeEngine = require("../time-engine");
 
-var AudioPlayer = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};var $proto$0={};
-
+var AudioPlayer = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};MIXIN$0(AudioPlayer, super$0);var $proto$0={};
   function AudioPlayer() {var buffer = arguments[0];if(buffer === void 0)buffer = null;
     this.transport = null; // set when added to transporter
 
@@ -35,25 +35,10 @@ var AudioPlayer = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = fun
     this.__playingSpeed = 1;
 
     this.outputNode = this.__gainNode = audioContext.createGain();
-  }Object.defineProperties(AudioPlayer.prototype, {speed: {"get": speed$get$0, "set": speed$set$0, "configurable": true, "enumerable": true}, cyclic: {"get": cyclic$get$0, "set": cyclic$set$0, "configurable": true, "enumerable": true}, gain: {"get": gain$get$0, "set": gain$set$0, "configurable": true, "enumerable": true}, playingSpeed: {"get": playingSpeed$get$0, "set": playingSpeed$set$0, "configurable": true, "enumerable": true}});DP$0(AudioPlayer, "prototype", {"configurable": false, "enumerable": false, "writable": false});
+  }AudioPlayer.prototype = Object.create(super$0.prototype, {"constructor": {"value": AudioPlayer, "configurable": true, "writable": true}, cyclic: {"get": cyclic$get$0, "set": cyclic$set$0, "configurable": true, "enumerable": true}, gain: {"get": gain$get$0, "set": gain$set$0, "configurable": true, "enumerable": true} });DP$0(AudioPlayer, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
-  $proto$0.__sync = function() {
-    if (this.transport) {
-      this.__position = this.transport.position;
-      this.__time = this.transport.time;
-    } else {
-      var time = audioContext.currentTime;
-      this.__position += (time - this.__time) * this.__speed;
-      this.__time = time;
-    }
-
-    return this.__time;
-  };
-
-  $proto$0.__start = function(speed) {
+  $proto$0.__start = function(time, position, speed) {
     if (this.buffer) {
-      var time = this.__time;
-      var position = this.__position;
       var bufferDuration = this.buffer.duration;
 
       if (this.buffer.wrapAroundExtension)
@@ -82,10 +67,8 @@ var AudioPlayer = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = fun
     }
   };
 
-  $proto$0.__stop = function() {
+  $proto$0.__halt = function(time) {
     if (this.__bufferSource) {
-      var time = this.__time;
-
       this.__envNode.gain.cancelScheduledValues(time);
       this.__envNode.gain.setValueAtTime(this.__envNode.gain.value, time);
       this.__envNode.gain.linearRampToValueAtTime(0, time + this.fadeTime);
@@ -96,49 +79,20 @@ var AudioPlayer = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = fun
     }
   };
 
-  /**
-   * Set speed
-   * @param {Number} speed speed (a speed of 0 corrsponds to stop or pause)
-   */
-  function speed$set$0(speed) {
+  // TimeEngine method (speed-controlled interface)
+  $proto$0.syncSpeed = function(time, position, speed) {
     if (speed !== this.__speed) {
-      var time = this.__sync();
-
       if (this.__speed === 0)
-        this.__start(speed);
+        this.__start(time, position, speed);
       else if (speed === 0)
-        this.__stop();
+        this.__halt(time);
       else if (this.__speed * speed < 0) {
-        this.__stop();
-        this.__start(speed);
+        this.__halt(time);
+        this.__start(time, position, speed);
       } else if (this.__bufferSource)
         this.__bufferSource.playbackRate.setValueAtTime(speed, time);
 
       this.__speed = speed;
-    }
-  }
-
-  /**
-   * Get current speed
-   * @return {Number} current speed
-   */
-  function speed$get$0() {
-    return this.__speed;
-  }
-
-  /**
-   * Set (jump to) transport position
-   * @param {Number} position target position
-   */
-  $proto$0.seek = function(position) {
-    if (position !== this.__position) {
-      this.__sync();
-
-      this.__stop();
-      this.__position = position;
-
-      if (this.__speed !== 0)
-        this.__start(this.__speed);
     }
   };
 
@@ -148,13 +102,14 @@ var AudioPlayer = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = fun
    */
   function cyclic$set$0(cyclic) {
     if (cyclic !== this.__cyclic) {
-      this.__sync();
+      var time = this.getSchedulerTime();
+      var position = this.getTransportPosition();
 
-      this.__stop();
+      this.__halt(time);
       this.__cyclic = cyclic;
 
       if (this.__speed !== 0)
-        this.__start(this.__speed);
+        this.__start(time, position, this.__speed);
     }
   }
 
@@ -185,75 +140,6 @@ var AudioPlayer = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = fun
   function gain$get$0() {
     return this.__gainNode.gain.value;
   }
-
-  /**
-   * Start playing (high level player API)
-   * @param {Number} seek start position
-   * @param {Number} speed playing speed
-   */
-  $proto$0.startPlaying = function() {var seek = arguments[0];if(seek === void 0)seek = null;var speed = arguments[1];if(speed === void 0)speed = null;
-    if (seek)
-      this.seek(seek);
-
-    if (speed)
-      this.playingSpeed = speed;
-
-    this.speed = this.playingSpeed;
-  };
-
-  /**
-   * Pause playing (high level player API)
-   */
-  $proto$0.pausePlaying = function() {
-    this.speed = 0;
-  };
-
-  /**
-   * Stop playing (high level player API)
-   */
-  $proto$0.stopPlaying = function() {
-    this.speed = 0;
-    this.seek(0);
-  };
-
-  /**
-   * Set playing speed (high level player API)
-   * @param {Number} speed playing speed (non-zero speed between -16 and -1/16 or between 1/16 and 16)
-   */
-  function playingSpeed$set$0(speed) {
-    if (speed >= 0) {
-      if (speed < 0.0625)
-        speed = 0.0625;
-      else if (speed > 16)
-        speed = 16;
-    } else {
-      if (speed < -16)
-        speed = -16
-      else if (speed > -0.0625)
-        speed = -0.0625;
-    }
-
-    this.__playingSpeed = speed;
-
-    if (this.__speed !== 0)
-      this.speed = speed;
-  }
-
-  /**
-   * Get playing speed (high level player API)
-   * @return current playing speed
-   */
-  function playingSpeed$get$0() {
-    return this.__playingSpeed;
-  }
-
-  $proto$0.connect = function(target) {
-    this.__gainNode.connect(target);
-  };
-
-  $proto$0.disconnect = function(connection) {
-    this.__gainNode.disconnect(connection);
-  };
-MIXIN$0(AudioPlayer.prototype,$proto$0);$proto$0=void 0;return AudioPlayer;})();
+MIXIN$0(AudioPlayer.prototype,$proto$0);$proto$0=void 0;return AudioPlayer;})(TimeEngine);
 
 module.exports = AudioPlayer;
