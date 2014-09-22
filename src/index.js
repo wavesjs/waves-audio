@@ -41,13 +41,13 @@ class Metronome extends TimeEngine {
     this.outputNode = this.__gainNode = audioContext.createGain();
   }
 
-  // TimeEngine method (can be inserted automatically by time master)
+  // TimeEngine method (scheduled interface)
   advanceTime(time) {
     this.trigger(time);
     return time + this.period;
   }
 
-  // TimeEngine method
+  // TimeEngine method (transported interface)
   syncPosition(time, position, speed) {
     var nextPosition = (Math.floor(position / this.period) + this.__phase) * this.period;
 
@@ -59,7 +59,7 @@ class Metronome extends TimeEngine {
     return nextPosition;
   }
 
-  // TimeEngine method
+  // TimeEngine method (transported interface)
   advancePosition(time, position, speed) {
     this.trigger(time);
 

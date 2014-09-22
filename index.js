@@ -41,13 +41,13 @@ var Metronome = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
     this.outputNode = this.__gainNode = audioContext.createGain();
   }Metronome.prototype = Object.create(super$0.prototype, {"constructor": {"value": Metronome, "configurable": true, "writable": true}, gain: {"get": gain$get$0, "set": gain$set$0, "configurable": true, "enumerable": true}, phase: {"get": phase$get$0, "set": phase$set$0, "configurable": true, "enumerable": true} });DP$0(Metronome, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
-  // TimeEngine method (can be inserted automatically by time master)
+  // TimeEngine method (scheduled interface)
   $proto$0.advanceTime = function(time) {
     this.trigger(time);
     return time + this.period;
   };
 
-  // TimeEngine method
+  // TimeEngine method (transported interface)
   $proto$0.syncPosition = function(time, position, speed) {
     var nextPosition = (Math.floor(position / this.period) + this.__phase) * this.period;
 
@@ -59,7 +59,7 @@ var Metronome = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
     return nextPosition;
   };
 
-  // TimeEngine method
+  // TimeEngine method (transported interface)
   $proto$0.advancePosition = function(time, position, speed) {
     this.trigger(time);
 
