@@ -130,9 +130,21 @@ var audioContext = _dereq_("../audio-context");
 var PriorityQueue = _dereq_("../priority-queue");
 var TimeEngine = _dereq_("../time-engine");
 
+function arrayRemove(array, value) {
+  var index = array.indexOf(value);
+
+  if (index >= 0) {
+    array.splice(index, 1);
+    return true;
+  }
+
+  return false;
+}
+
 var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};return o["a"]===t})({},{});var DP$0 = Object.defineProperty;var GOPD$0 = Object.getOwnPropertyDescriptor;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,GOPD$0(s,p));}}return t};var DPS$0 = Object.defineProperties;var proto$0={};
   function Scheduler() {
     this.__queue = new PriorityQueue();
+    this.__scheduledEngines = [];
 
     this.__currentTime = null;
     this.__nextTime = Infinity;
@@ -149,7 +161,7 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
      * @type {Number}
      */
     this.lookahead = 0.1;
-  }DPS$0(Scheduler.prototype,{time: {"get": time$get$0, "configurable":true,"enumerable":true}});DP$0(Scheduler,"prototype",{"configurable":false,"enumerable":false,"writable":false});
+  }DPS$0(Scheduler.prototype,{currentTime: {"get": currentTime$get$0, "configurable":true,"enumerable":true}});DP$0(Scheduler,"prototype",{"configurable":false,"enumerable":false,"writable":false});
 
   // global setTimeout scheduling loop
   proto$0.__tick = function() {var this$0 = this;
@@ -186,48 +198,27 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
    * Get scheduler time
    * @return {Number} current scheduler time including lookahead
    */
-  function time$get$0() {
+  function currentTime$get$0() {
     return this.__currentTime || audioContext.currentTime + this.lookahead;
   }
 
   /**
    * Add a callback to the scheduler
    * @param {Function} callback function(time, audioTime) to be called
-   * @param {Number} period callback period
-   * @param {Number} delay of first callback
+   * @param {Number} period callback period (default is 0 for one-shot)
+   * @param {Number} delay of first callback (default is 0)
    * @return {Object} scheduled object that can be used to call remove and reschedule
    */
-  proto$0.callback = function(callback) {var delay = arguments[1];if(delay === void 0)delay = 0;
+  proto$0.callback = function(callback) {var period = arguments[1];if(period === void 0)period = 0;var delay = arguments[2];if(delay === void 0)delay = 0;
     var object = {
+      period: period || Infinity,
       executeNext: function(time, audioTime) {
         callback(time, audioTime);
-        return Infinity;
+        return time + this.period;
       }
     };
 
-    this.__nextTime = this.__queue.insert(object, this.time + delay);
-    this.__reschedule();
-
-    return object;
-  };
-
-  /**
-   * Add a periodically repeated callback to the scheduler
-   * @param {Function} callback function(time, audioTime) to be called periodically
-   * @param {Number} period callback period
-   * @param {Number} delay of first callback
-   * @return {Object} scheduled object that can be used to call remove and reschedule
-   */
-  proto$0.repeat = function(callback) {var period = arguments[1];if(period === void 0)period = 1;var delay = arguments[2];if(delay === void 0)delay = 0;
-    var object = {
-      period: period,
-      executeNext: function(time, audioTime) {
-        callback(time, audioTime);
-        return this.period;
-      }
-    };
-
-    this.__nextTime = this.__queue.insert(object, this.time + delay);
+    this.__nextTime = this.__queue.insert(object, this.currentTime + delay);
     this.__reschedule();
 
     return object;
@@ -237,29 +228,27 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
    * Add a time engine to the scheduler
    * @param {Object} engine time engine to be added to the scheduler
    * @param {Number} delay scheduling delay time
+   * @param {Function} function to get current position
    */
-  proto$0.add = function(engine) {var delay = arguments[1];if(delay === void 0)delay = 0;var this$0 = this;
-    if (!engine.timeMaster && !engine.positionMaster) {
-      if (engine.implementsTimeBased) {
-        engine.timeMaster = this;
+  proto$0.add = function(engine) {var delay = arguments[1];if(delay === void 0)delay = 0;var getCurrentPosition = arguments[2];if(getCurrentPosition === void 0)getCurrentPosition = null;var this$0 = this;
+    if (!engine.master) {
+      if (engine.implementsScheduled) {
+        this.__scheduledEngines.push(engine);
 
-        engine.getMasterTime = function()  {
-          return this$0.time;
-        };
-
-        engine.resetEngineTime = function(time)  {
+        engine.setScheduled(this, function(time)  {
           this$0.__nextTime = this$0.__queue.move(engine, time);
           this$0.__reschedule();
-        };
+        }, function()  {
+          return this$0.currentTime;
+        }, getCurrentPosition);
 
-        var nextEngineTime = engine.initTime(this.time + delay);
-        this.__nextTime = this.__queue.insert(engine, nextEngineTime);
+        this.__nextTime = this.__queue.insert(engine, this.currentTime + delay);
         this.__reschedule();
       } else {
         throw new Error("object cannot be added to scheduler");
       }
     } else {
-      throw new Error("object already has a master");
+      throw new Error("object has already been added to a master");
     }
   };
 
@@ -268,8 +257,8 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
    * @param {Object} engine time engine or callback to be removed from the scheduler
    */
   proto$0.remove = function(engine) {
-    if (engine.timeMaster === this) {
-      engine.timeMaster = null;
+    if (arrayRemove(this.__scheduledEngines, engine)) {
+      engine.resetScheduled();
 
       this.__nextTime = this.__queue.remove(engine);
       this.__reschedule();
@@ -284,7 +273,7 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
    * @param {Number} time time when to reschedule
    */
   proto$0.reset = function(engine, time) {
-    if (engine.timeMaster === this) {
+    if (engine.master === this) {
       this.__nextTime = this.__queue.move(engine, time);
       this.__reschedule();
     } else {
@@ -302,168 +291,46 @@ module.exports = new Scheduler; // export scheduler singleton
  */
 "use strict";
 
+var audioContext = _dereq_("../audio-context");
+
 var TimeEngine = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};var $proto$0={};
   function TimeEngine() {
     /**
-     * Time master to which the time engine is synchronized
+     * Master (scheduler, transport, player) to which the time engine is synchronized
      * @type {Object}
      */
-    this.__timeMaster = null;
+    this.master = null;
 
     /**
-     * Function provided by time master to get the master time
-     * @type {Function}
+     * Interface used by teh current master
+     * @type {String}
      */
-    this.getMasterTime = function() {
-      return 0;
-    };
+    this.interface = null;
 
     /**
-     * Function provided by the time master to reset the engine's next time
-     * @param {Number} time new engine time (immediately if not specified)
-     */
-    this.resetEngineTime = function(time) {};
-
-    /**
-     * Position master to which the time engine is synchronized
+     * Transport start position of the engine (handled by )
      * @type {Object}
      */
-    this.__positionMaster = null;
-
-    /**
-     * Start position of the engine
-     * @type {Object}
-     */
-    this.__startPosition = 0;
-
-    /**
-     * Function provided by position master to get the master position
-     * @type {Function}
-     */
-    this.getMasterPosition = function() {
-      return 0;
-    };
-
-    /**
-     * Function provided by the position master to request resynchronizing the engine's position
-     * @param {Number} time new engine time (immediately if not specified)
-     */
-    this.resyncEnginePosition = function() {};
+    this.transportStartPosition = 0;
 
     /**
      * Output audio node
      * @type {Object}
      */
     this.outputNode = null;
-  }Object.defineProperties(TimeEngine.prototype, {timeMaster: {"get": timeMaster$get$0, "set": timeMaster$set$0, "configurable": true, "enumerable": true}, positionMaster: {"get": positionMaster$get$0, "set": positionMaster$set$0, "configurable": true, "enumerable": true}, implementsTimeBased: {"get": implementsTimeBased$get$0, "configurable": true, "enumerable": true}, implementsPositionBased: {"get": implementsPositionBased$get$0, "configurable": true, "enumerable": true}, implementsSpeedBased: {"get": implementsSpeedBased$get$0, "configurable": true, "enumerable": true}});DP$0(TimeEngine, "prototype", {"configurable": false, "enumerable": false, "writable": false});
-
-  function timeMaster$set$0(timeMaster) {
-    this.__timeMaster = timeMaster;
-  }
-
-  function timeMaster$get$0() {
-    return this.__timeMaster;
-  }
-
-  function positionMaster$set$0(positionMaster) {
-    this.__positionMaster = positionMaster;
-  }
-
-  function positionMaster$get$0() {
-    return this.__positionMaster;
-  }
+  }Object.defineProperties(TimeEngine.prototype, {implementsScheduled: {"get": implementsScheduled$get$0, "configurable": true, "enumerable": true}, implementsTransported: {"get": implementsTransported$get$0, "configurable": true, "enumerable": true}, implementsSpeedControlled: {"get": implementsSpeedControlled$get$0, "configurable": true, "enumerable": true}, currentTime: {"get": currentTime$get$0, "configurable": true, "enumerable": true}, currentPosition: {"get": currentPosition$get$0, "configurable": true, "enumerable": true}});DP$0(TimeEngine, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
   /**
-   * Synchronize engine to master time ("time-based" interface, optional function)
-   * @param {Number} time current master time (based on audio time)
-   * @return {Number} first time
-   *
-   * This optional function is called by the time master and allows the engine to
-   * return its first time.
-   * If the engine returns Infinity or -Infinity, it is not called again until it is
-   * reset by the time master or it calls resetEngineTime().
-   */
-  $proto$0.initTime = function(time) {
-    return time;
-  };
-
-  /**
-   * Advance engine time ("time-based" interface)
-   * @param {Number} time current master time (based on audio time)
-   * @return {Number} next engine time
-   *
-   * This function is called by the time master to let the engine do its work
-   * synchronized to the master's time.
-   * If the engine returns Infinity, it is not called again until it is restarted by
-   * the time master or it calls resyncEnginePosition() with a valid position.
-   */
-  // advanceTime(time) {
-  //   return time;
-  // }
-
-  /**
-   * Synchronize engine to master position ("position-based" interface)
-   * @param {Number} position current master position to synchronize to
-   * @param {Number} time current master time (based on audio time)
-   * @param {Number} speed current speed
-   * @return {Number} next position (given the playing direction)
-   *
-   * This function is called by the msater and allows the engine for synchronizing
-   * (seeking) to the current master position and to return its next position.
-   * If the engine returns Infinity or -Infinity, it is not called again until it is
-   * resynchronized by the position master or it calls resyncEnginePosition().
-   */
-  // syncPosition(time, position, speed) {
-  //   return position;
-  // }
-
-  /**
-   * Advance engine position ("position-based" interface)
-   * @param {Number} time current master time (based on audio time)
-   * @param {Number} position current master position
-   * @param {Number} speed current speed
-   * @return {Number} next engine position (given the playing direction)
-   *
-   * This function is called by the position master to let the engine do its work
-   * aligned to the master's position.
-   * If the engine returns Infinity or -Infinity, it is not called again until it is
-   * resynchronized by the position master or it calls resyncEnginePosition().
-   */
-  // advancePosition(time, position, speed) {
-  //   return position;
-  // }
-
-  /**
-   * Set engine speed ("speed-based" interface)
-   * @param {Number} speed current master speed
-   *
-   * This function is called by the speed master to propagate the master's speed to the engine.
-   * The speed can be of any bewteen -16 and 16.
-   * With a speed of 0 the engine is halted.
-   */
-  // set speed(speed) {
-  // }
-
-  /**
-   * Seek engine to a given position ("speed-based" interface)
-   * @param {Number} position position to seek to
-   *
-   * This function is called by the speed master to propagate position jumps to the engine.
-   */
-  // seek(speed) {
-  // }
-
-  /**
-   * Return whether the time engine implements the time-based interface
+   * Check whether the time engine implements the scheduled interface
    **/
-  function implementsTimeBased$get$0() {
+  function implementsScheduled$get$0() {
     return (this.advanceTime && this.advanceTime instanceof Function);
   }
 
   /**
-   * Return whether the time engine implements the position-based interface
+   * Check whether the time engine implements the transported interface
    **/
-  function implementsPositionBased$get$0() {
+  function implementsTransported$get$0() {
     return (
       this.syncPosition && this.syncPosition instanceof Function &&
       this.advancePosition && this.advancePosition instanceof Function
@@ -471,14 +338,188 @@ var TimeEngine = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = func
   }
 
   /**
-   * Return whether the time engine implements the speed-based interface
+   * Check whether the time engine implements the speed-controlled interface
    **/
-  function implementsSpeedBased$get$0() {
-    return (
-      Object.getOwnPropertyDescriptor(Object.getPrototypeOf(this), "speed") &&
-      this.seek && this.seek instanceof Function
-    );
+  function implementsSpeedControlled$get$0() {
+    return (this.syncSpeed && this.syncSpeed instanceof Function);
   }
+
+  /**
+   * Get the time engine's current master time
+   * @type {Function}
+   *
+   * This function provided by the master.
+   */
+  function currentTime$get$0() {
+    return audioContext.currentTime;
+  }
+
+  /**
+   * Get the time engine's current master position
+   * @type {Function}
+   *
+   * This function provided by the master.
+   */
+  function currentPosition$get$0() {
+    return 0;
+  };
+
+  /**
+   * Advance engine time (scheduled interface)
+   * @param {Number} time current scheduler time (based on audio time)
+   * @return {Number} next engine time
+   *
+   * This function is called by the scheduler to let the engine do its work
+   * synchronized to the scheduler time.
+   * If the engine returns Infinity, it is not called again until it is restarted by
+   * the scheduler or it calls resyncEnginePosition() with a valid position.
+   */
+  // advanceTime(time) {
+  //   return time;
+  // }
+
+  /**
+   * Function provided by the scheduler to reset the engine's next time
+   * @param {Number} time new engine time (immediately if not specified)
+   */
+  $proto$0.resetEngineTime = function(time) {};
+
+  /**
+   * Synchronize engine to transport position (transported interface)
+   * @param {Number} position current transport position to synchronize to
+   * @param {Number} time current scheduler time (based on audio time)
+   * @param {Number} speed current speed
+   * @return {Number} next position (given the playing direction)
+   *
+   * This function is called by the msater and allows the engine for synchronizing
+   * (seeking) to the current transport position and to return its next position.
+   * If the engine returns Infinity or -Infinity, it is not called again until it is
+   * resynchronized by the transport or it calls resyncEnginePosition().
+   */
+  // syncPosition(time, position, speed) {
+  //   return position;
+  // }
+
+  /**
+   * Advance engine position (transported interface)
+   * @param {Number} time current scheduler time (based on audio time)
+   * @param {Number} position current transport position
+   * @param {Number} speed current speed
+   * @return {Number} next engine position (given the playing direction)
+   *
+   * This function is called by the transport to let the engine do its work
+   * aligned to the transport's position.
+   * If the engine returns Infinity or -Infinity, it is not called again until it is
+   * resynchronized by the transport or it calls resyncEnginePosition().
+   */
+  // advancePosition(time, position, speed) {
+  //   return position;
+  // }
+
+  /**
+   * Function provided by the transport to request resynchronizing the engine's position
+   * @param {Number} time new engine time (immediately if not specified)
+   */
+  $proto$0.resyncEnginePosition = function() {};;
+
+  /**
+   * Set engine speed (speed-controlled interface)
+   * @param {Number} time current scheduler time (based on audio time)
+   * @param {Number} position current transport position
+   * @param {Number} speed current transport speed
+   *
+   * This function is called by the transport to propagate the transport speed to the engine.
+   * The speed can be of any bewteen -16 and 16.
+   * With a speed of 0 the engine is halted.
+   */
+  // syncSpeed(time, position, speed) {
+  // }
+
+  $proto$0.__setGetters = function(getCurrentTime, getCurrentPosition) {
+    if (getCurrentTime) {
+      Object.defineProperty(this, 'currentTime', {
+        configurable: true,
+        get: getCurrentTime,
+        set: function(time) {}
+      });
+    }
+
+    if (getCurrentPosition) {
+      Object.defineProperty(this, 'currentPosition', {
+        configurable: true,
+        get: getCurrentPosition,
+        set: function(position) {}
+      });
+    }
+  };
+
+  $proto$0.__deleteGetters = function() {
+    delete this.currentTime;
+    delete this.currentPosition;
+  };
+
+  $proto$0.setScheduled = function(scheduler, resetEngineTime, getCurrentTime, getCurrentPosition) {
+    this.master = scheduler;
+    this.interface = "scheduled";
+
+    this.__setGetters(getCurrentTime, getCurrentPosition);
+
+    if (resetEngineTime)
+      this.resetEngineTime = resetEngineTime;
+  };
+
+  $proto$0.resetScheduled = function() {
+    this.__deleteGetters();
+
+    delete this.resetEngineTime;
+
+    this.master = null;
+    this.interface = null;
+  };
+
+  $proto$0.setTransported = function(transport, startPosition, resyncEnginePosition, getCurrentTime, getCurrentPosition) {
+    this.master = transport;
+    this.interface = "transported";
+
+    this.transportStartPosition = startPosition;
+
+    this.__setGetters(getCurrentTime, getCurrentPosition);
+
+    if (resyncEnginePosition)
+      this.resyncEnginePosition = resyncEnginePosition;
+  };
+
+  $proto$0.resetTransported = function() {
+    this.__deleteGetters();
+
+    delete this.resyncEnginePosition;
+
+    this.transportStartPosition = 0;
+    this.master = null;
+    this.interface = null;
+  };
+
+  $proto$0.setSpeedControlled = function(master, getCurrentTime, getCurrentPosition) {
+    this.master = master;
+    this.interface = "speed-controlled";
+
+    this.__setGetters(getCurrentTime, getCurrentPosition);
+  };
+
+  $proto$0.resetSpeedControlled = function() {
+    this.__deleteGetters();
+
+    this.master = null;
+    this.interface = null;
+  };
+
+  /**
+   * Remove engine from current master
+   */
+  $proto$0.removeFromMaster = function() {
+    if (this.master)
+      this.master.remove(this);
+  };
 
   /**
    * Connect audio node
@@ -500,6 +541,6 @@ var TimeEngine = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = func
 MIXIN$0(TimeEngine.prototype,$proto$0);$proto$0=void 0;return TimeEngine;})();
 
 module.exports = TimeEngine;
-},{}]},{},[3])
+},{"../audio-context":1}]},{},[3])
 (3)
 });

@@ -14,7 +14,7 @@ scheduler (setTimeout) period
 
 scheduler lookahead time (> period)
 
-## time
+## currentTime
 
 Get scheduler time
 
@@ -29,28 +29,14 @@ Add a callback to the scheduler
 ### Params: 
 
 * **Function** *callback* function(time, audioTime) to be called
-* **Number** *period* callback period
-* **Number** *delay* of first callback
+* **Number** *period* callback period (default is 0 for one-shot)
+* **Number** *delay* of first callback (default is 0)
 
 ### Return:
 
 * **Object** scheduled object that can be used to call remove and reschedule
 
-## repeat(callback, period, delay)
-
-Add a periodically repeated callback to the scheduler
-
-### Params: 
-
-* **Function** *callback* function(time, audioTime) to be called periodically
-* **Number** *period* callback period
-* **Number** *delay* of first callback
-
-### Return:
-
-* **Object** scheduled object that can be used to call remove and reschedule
-
-## add(engine, delay)
+## add(engine, delay, function)
 
 Add a time engine to the scheduler
 
@@ -58,6 +44,7 @@ Add a time engine to the scheduler
 
 * **Object** *engine* time engine to be added to the scheduler
 * **Number** *delay* scheduling delay time
+* **Function** *function* to get current position
 
 ## remove(engine)
 

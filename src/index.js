@@ -9,9 +9,21 @@ var audioContext = require("../audio-context");
 var PriorityQueue = require("../priority-queue");
 var TimeEngine = require("../time-engine");
 
+function arrayRemove(array, value) {
+  var index = array.indexOf(value);
+
+  if (index >= 0) {
+    array.splice(index, 1);
+    return true;
+  }
+
+  return false;
+}
+
 class Scheduler {
   constructor() {
     this.__queue = new PriorityQueue();
+    this.__scheduledEngines = [];
 
     this.__currentTime = null;
     this.__nextTime = Infinity;
@@ -65,48 +77,27 @@ class Scheduler {
    * Get scheduler time
    * @return {Number} current scheduler time including lookahead
    */
-  get time() {
+  get currentTime() {
     return this.__currentTime || audioContext.currentTime + this.lookahead;
   }
 
   /**
    * Add a callback to the scheduler
    * @param {Function} callback function(time, audioTime) to be called
-   * @param {Number} period callback period
-   * @param {Number} delay of first callback
+   * @param {Number} period callback period (default is 0 for one-shot)
+   * @param {Number} delay of first callback (default is 0)
    * @return {Object} scheduled object that can be used to call remove and reschedule
    */
-  callback(callback, delay = 0) {
+  callback(callback, period = 0, delay = 0) {
     var object = {
+      period: period || Infinity,
       executeNext: function(time, audioTime) {
         callback(time, audioTime);
-        return Infinity;
+        return time + this.period;
       }
     };
 
-    this.__nextTime = this.__queue.insert(object, this.time + delay);
-    this.__reschedule();
-
-    return object;
-  }
-
-  /**
-   * Add a periodically repeated callback to the scheduler
-   * @param {Function} callback function(time, audioTime) to be called periodically
-   * @param {Number} period callback period
-   * @param {Number} delay of first callback
-   * @return {Object} scheduled object that can be used to call remove and reschedule
-   */
-  repeat(callback, period = 1, delay = 0) {
-    var object = {
-      period: period,
-      executeNext: function(time, audioTime) {
-        callback(time, audioTime);
-        return this.period;
-      }
-    };
-
-    this.__nextTime = this.__queue.insert(object, this.time + delay);
+    this.__nextTime = this.__queue.insert(object, this.currentTime + delay);
     this.__reschedule();
 
     return object;
@@ -116,29 +107,27 @@ class Scheduler {
    * Add a time engine to the scheduler
    * @param {Object} engine time engine to be added to the scheduler
    * @param {Number} delay scheduling delay time
+   * @param {Function} function to get current position
    */
-  add(engine, delay = 0) {
-    if (!engine.timeMaster && !engine.positionMaster) {
-      if (engine.implementsTimeBased) {
-        engine.timeMaster = this;
+  add(engine, delay = 0, getCurrentPosition = null) {
+    if (!engine.master) {
+      if (engine.implementsScheduled) {
+        this.__scheduledEngines.push(engine);
 
-        engine.getMasterTime = () => {
-          return this.time;
-        };
-
-        engine.resetEngineTime = (time) => {
+        engine.setScheduled(this, (time) => {
           this.__nextTime = this.__queue.move(engine, time);
           this.__reschedule();
-        };
+        }, () => {
+          return this.currentTime;
+        }, getCurrentPosition);
 
-        var nextEngineTime = engine.initTime(this.time + delay);
-        this.__nextTime = this.__queue.insert(engine, nextEngineTime);
+        this.__nextTime = this.__queue.insert(engine, this.currentTime + delay);
         this.__reschedule();
       } else {
         throw new Error("object cannot be added to scheduler");
       }
     } else {
-      throw new Error("object already has a master");
+      throw new Error("object has already been added to a master");
     }
   }
 
@@ -147,8 +136,8 @@ class Scheduler {
    * @param {Object} engine time engine or callback to be removed from the scheduler
    */
   remove(engine) {
-    if (engine.timeMaster === this) {
-      engine.timeMaster = null;
+    if (arrayRemove(this.__scheduledEngines, engine)) {
+      engine.resetScheduled();
 
       this.__nextTime = this.__queue.remove(engine);
       this.__reschedule();
@@ -163,7 +152,7 @@ class Scheduler {
    * @param {Number} time time when to reschedule
    */
   reset(engine, time) {
-    if (engine.timeMaster === this) {
+    if (engine.master === this) {
       this.__nextTime = this.__queue.move(engine, time);
       this.__reschedule();
     } else {
