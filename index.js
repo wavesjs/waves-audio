@@ -116,12 +116,25 @@ var GranularEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIX
     this.__aligned = true;
 
     this.outputNode = this.__gainNode = audioContext.createGain();
-  }GranularEngine.prototype = Object.create(super$0.prototype, {"constructor": {"value": GranularEngine, "configurable": true, "writable": true}, gain: {"get": gain$get$0, "set": gain$set$0, "configurable": true, "enumerable": true} });DP$0(GranularEngine, "prototype", {"configurable": false, "enumerable": false, "writable": false});
+  }GranularEngine.prototype = Object.create(super$0.prototype, {"constructor": {"value": GranularEngine, "configurable": true, "writable": true}, bufferDuration: {"get": bufferDuration$get$0, "configurable": true, "enumerable": true}, playbackLength: {"get": playbackLength$get$0, "configurable": true, "enumerable": true}, gain: {"get": gain$get$0, "set": gain$set$0, "configurable": true, "enumerable": true} });DP$0(GranularEngine, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
-  // TimeEngine method (time-based interface)
+  function bufferDuration$get$0() {
+    var bufferDuration = this.buffer.duration;
+
+    if (this.buffer.wrapAroundExtention)
+      bufferDuration -= this.buffer.wrapAroundExtention;
+
+    return bufferDuration
+  }
+
+  // TimeEngine method (scheduled interface)
   $proto$0.advanceTime = function(time) {
     return time + this.trigger(time);
   };
+
+  function playbackLength$get$0() {
+    return this.bufferDuration;
+  }
 
   /**
    * Set gain
@@ -150,7 +163,7 @@ var GranularEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIX
   $proto$0.trigger = function(time) {
     var grainTime = time || audioContext.currentTime;
     var grainPeriod = this.periodAbs;
-    var grainPosition = this.position;
+    var grainPosition = this.position + this.currentPosition;
     var grainDuration = this.durationAbs;
 
     if (this.buffer) {
@@ -177,10 +190,7 @@ var GranularEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIX
       if (this.positionVar > 0)
         grainPosition += (2.0 * Math.random() - 1) * this.positionVar;
 
-      var bufferDuration = this.buffer.duration;
-
-      if (this.buffer.wrapAroundExtention)
-        bufferDuration -= this.buffer.wrapAroundExtention;
+      var bufferDuration = this.bufferDuration;
 
       // wrap or clip grain position and duration into buffer duration
       if (grainPosition < 0 || grainPosition >= bufferDuration) {

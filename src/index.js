@@ -118,9 +118,22 @@ class GranularEngine extends TimeEngine {
     this.outputNode = this.__gainNode = audioContext.createGain();
   }
 
-  // TimeEngine method (time-based interface)
+  get bufferDuration() {
+    var bufferDuration = this.buffer.duration;
+
+    if (this.buffer.wrapAroundExtention)
+      bufferDuration -= this.buffer.wrapAroundExtention;
+
+    return bufferDuration
+  }
+
+  // TimeEngine method (scheduled interface)
   advanceTime(time) {
     return time + this.trigger(time);
+  }
+
+  get playbackLength() {
+    return this.bufferDuration;
   }
 
   /**
@@ -150,7 +163,7 @@ class GranularEngine extends TimeEngine {
   trigger(time) {
     var grainTime = time || audioContext.currentTime;
     var grainPeriod = this.periodAbs;
-    var grainPosition = this.position;
+    var grainPosition = this.position + this.currentPosition;
     var grainDuration = this.durationAbs;
 
     if (this.buffer) {
@@ -177,10 +190,7 @@ class GranularEngine extends TimeEngine {
       if (this.positionVar > 0)
         grainPosition += (2.0 * Math.random() - 1) * this.positionVar;
 
-      var bufferDuration = this.buffer.duration;
-
-      if (this.buffer.wrapAroundExtention)
-        bufferDuration -= this.buffer.wrapAroundExtention;
+      var bufferDuration = this.bufferDuration;
 
       // wrap or clip grain position and duration into buffer duration
       if (grainPosition < 0 || grainPosition >= bufferDuration) {
