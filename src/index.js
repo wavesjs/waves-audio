@@ -86,21 +86,21 @@ class Scheduler {
    * @param {Function} callback function(time, audioTime) to be called
    * @param {Number} period callback period (default is 0 for one-shot)
    * @param {Number} delay of first callback (default is 0)
-   * @return {Object} scheduled object that can be used to call remove and reschedule
+   * @return {Object} scheduled object that can be used to call remove and reset
    */
   callback(callback, period = 0, delay = 0) {
-    var object = {
+    var engine = {
       period: period || Infinity,
-      advanceTime: function(time, audioTime) {
-        callback(time, audioTime);
+      advanceTime: function(time) {
+        callback(time);
         return time + this.period;
       }
     };
 
-    this.__nextTime = this.__queue.insert(object, this.currentTime + delay);
+    this.__nextTime = this.__queue.insert(engine, this.currentTime + delay);
     this.__reschedule();
 
-    return object;
+    return engine;
   }
 
   /**
