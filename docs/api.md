@@ -14,7 +14,7 @@ scheduler (setTimeout) period
 
 scheduler lookahead time (> period)
 
-## time
+## currentTime
 
 Get scheduler time
 
@@ -48,7 +48,7 @@ Add a periodically repeated callback to the scheduler
 
 ### Return:
 
-* **Object** scheduled object that can be used to call remove and reschedule
+* **Object** scheduled object that can be used to call remove and reset
 
 ## add(engine, delay)
 
@@ -67,15 +67,7 @@ Remove a scheduled time engine or callback from the scheduler
 
 * **Object** *engine* time engine or callback to be removed from the scheduler
 
-## resync(engine)
-
-Resychronize a scheduled time engine
-
-### Params: 
-
-* **Object** *engine* time engine to be resynchronized
-
-## reschedule(engine, time)
+## reset(engine, time)
 
 Reschedule a scheduled time engine or callback
 
