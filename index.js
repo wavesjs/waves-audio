@@ -145,25 +145,19 @@ var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXI
     this.outputNode = this.__gainNode = audioContext.createGain();
   }SegmentEngine.prototype = Object.create(super$0.prototype, {"constructor": {"value": SegmentEngine, "configurable": true, "writable": true}, gain: {"get": gain$get$0, "set": gain$set$0, "configurable": true, "enumerable": true} });DP$0(SegmentEngine, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
-  // TimeEngine syncNext
-  $proto$0.syncNext = function(time) {
-    var delay = 0;
-
-    if (this.__aligned || this.transport) { // is always aligned in transport
-      var cycles = time / this.period;
-
-      if (this.transport && this.transport.reverse)
-        cycles *= -1;
-
-      delay = (Math.ceil(cycles) - cycles) * this.period;
-    }
-
-    return delay;
+  // TimeEngine method (transported interface)
+  $proto$0.syncPosition = function(time, position, speed) {
+    return Infinity;
   };
 
-  // TimeEngine executeNext
-  $proto$0.executeNext = function(time, audioTime) {
-    return this.trigger(audioTime);
+  // TimeEngine method (transported interface)
+  $proto$0.advancePosition = function(time, position, speed) {
+    return Infinity;
+  };
+
+  // TimeEngine method (transported interface)
+  $proto$0.advanceTime = function(time, position, speed) {
+    return time + this.trigger(time);
   };
 
   /**

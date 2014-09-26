@@ -146,25 +146,19 @@ var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXI
     this.outputNode = this.__gainNode = audioContext.createGain();
   }SegmentEngine.prototype = Object.create(super$0.prototype, {"constructor": {"value": SegmentEngine, "configurable": true, "writable": true}, gain: {"get": gain$get$0, "set": gain$set$0, "configurable": true, "enumerable": true} });DP$0(SegmentEngine, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
-  // TimeEngine syncNext
-  $proto$0.syncNext = function(time) {
-    var delay = 0;
-
-    if (this.__aligned || this.transport) { // is always aligned in transport
-      var cycles = time / this.period;
-
-      if (this.transport && this.transport.reverse)
-        cycles *= -1;
-
-      delay = (Math.ceil(cycles) - cycles) * this.period;
-    }
-
-    return delay;
+  // TimeEngine method (transported interface)
+  $proto$0.syncPosition = function(time, position, speed) {
+    return Infinity;
   };
 
-  // TimeEngine executeNext
-  $proto$0.executeNext = function(time, audioTime) {
-    return this.trigger(audioTime);
+  // TimeEngine method (transported interface)
+  $proto$0.advancePosition = function(time, position, speed) {
+    return Infinity;
+  };
+
+  // TimeEngine method (transported interface)
+  $proto$0.advanceTime = function(time, position, speed) {
+    return time + this.trigger(time);
   };
 
   /**
@@ -358,24 +352,19 @@ module.exports = context;
 "use strict";
 
 var TimeEngine = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};var $proto$0={};
-  function TimeEngine() {var alignToTransportPosition = arguments[0];if(alignToTransportPosition === void 0)alignToTransportPosition = true;
+
+  function TimeEngine() {
     /**
-     * Scheduler to which the time engine has been added
+     * Time master to which the time engine is synchronized
      * @type {Object}
      */
-    this.scheduler = null;
+    this.timeMaster = null;
 
     /**
-     * Transport to which the time engine has been added
+     * Position master to which the time engine is synchronized
      * @type {Object}
      */
-    this.transport = null;
-
-    /**
-     * Whether the times are aligned to the transport position (or scheduled in time) when the engine is added to a transsport
-     * @type {Bool}
-     */
-    this.alignToTransportPosition = alignToTransportPosition; // true: times are aligned to position when executed within transport
+    this.positionMaster = null;
 
     /**
      * Output audio node
@@ -385,39 +374,71 @@ var TimeEngine = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = func
   }DP$0(TimeEngine, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
   /**
-   * Synchronize time engine
-   * @param {Number} time synchronization time or transport position
-   * @return {Number} delay until next time or Infinity executeNext should not be called
+   * Advance engine time
+   * @param {Number} time current master time (based on audio time)
+   * @return {Number} next engine time
+   *
+   * This function is called by the time master to let the engine do its work
+   * synchronized to the master's time.
+   * If the engine returns Infinity, it is not called again until it is restarted by the master 
+   * or it calls resyncEnginePosition() with a valid position.
    */
-  $proto$0.syncNext = function(time) {
+  $proto$0.advanceTime = function(time) {
     return Infinity;
   };
 
   /**
-   * Execute next time
-   * @param {Number} time scheduler time or transport position
-   * @param {Number} audioTime corresponding audio context's currentTime
-   * @return {Number} next delay until next time or Infinity to stop execution
+   * Reset engine time at master
+   * @param {Number} time new engine time, implies current master time if not given
+   * 
+   * This function is called by the engine itself to rectify its next time.
    */
-  $proto$0.executeNext = function(time, audioTime) {
+  $proto$0.resetEngineTime = function(time) {
+    if (this.timeMaster)
+      this.timeMaster.reset(this, time);
+  };
+
+  /**
+   * Synchronize engine to master position
+   * @param {Number} time current master time (based on audio time)
+   * @param {Number} position current master position to synchronize to
+   * @param {Bool} whether position runs backward (current playing direction)
+   * @return {Number} next position (given the playing direction)
+   *
+   * This function allows the engine for synchronizing (seeking) to the current master position
+   * and to return its next position.
+   * If the engine returns Infinity or -Infinity, it is not called again until it is 
+   * resynchronized by the master or it calls resyncEnginePosition().
+   */
+  $proto$0.syncPosition = function(time, position) {var reverse = arguments[2];if(reverse === void 0)reverse = false;
     return Infinity;
   };
 
   /**
-   * Request time engine resynchronization (called by engine itself)
+   * Advance engine position
+   * @param {Number} time current master time (based on audio time)
+   * @param {Number} position current master position
+   * @param {Bool} whether position runs backward (current playing direction)
+   * @return {Number} next engine position (given the playing direction)
+   *
+   * This function is called by the position master to let the engine do its work
+   * aligned to the master's position.
+   * If the engine returns Infinity or -Infinity, it is not called again until it is 
+   * resynchronized by the master or it calls resyncEnginePosition().
    */
-  $proto$0.resyncEngine = function() {
-    if(this.scheduler)
-      this.scheduler.resync(this);
+  $proto$0.advancePosition = function(time, position) {var reverse = arguments[2];if(reverse === void 0)reverse = false;
+    return Infinity;
   };
 
   /**
-   * Request time engine rescheduling (called by engine itself)
-   * @param {Number} time new next scheduler time or transport position
+   * Request the position master to resynchronize the engine's position
+   *
+   * This function is called by the engine itself and will result in syncTransportPosition() 
+   * being called with the current master position.
    */
-  $proto$0.rescheduleEngine = function(time) {
-    if(this.scheduler)
-      this.scheduler.reschedule(this, time);
+  $proto$0.resyncEnginePosition = function() {
+    if (this.positionMaster)
+      this.positionMaster.resync(this);
   };
 
   /**

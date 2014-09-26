@@ -145,25 +145,19 @@ class SegmentEngine extends TimeEngine {
     this.outputNode = this.__gainNode = audioContext.createGain();
   }
 
-  // TimeEngine syncNext
-  syncNext(time) {
-    var delay = 0;
-
-    if (this.__aligned || this.transport) { // is always aligned in transport
-      var cycles = time / this.period;
-
-      if (this.transport && this.transport.reverse)
-        cycles *= -1;
-
-      delay = (Math.ceil(cycles) - cycles) * this.period;
-    }
-
-    return delay;
+  // TimeEngine method (transported interface)
+  syncPosition(time, position, speed) {
+    return Infinity;
   }
 
-  // TimeEngine executeNext
-  executeNext(time, audioTime) {
-    return this.trigger(audioTime);
+  // TimeEngine method (transported interface)
+  advancePosition(time, position, speed) {
+    return Infinity;
+  }
+
+  // TimeEngine method (transported interface)
+  advanceTime(time, position, speed) {
+    return time + this.trigger(time);
   }
 
   /**
