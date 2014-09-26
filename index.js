@@ -91,7 +91,7 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
   proto$0.callback = function(callback) {var period = arguments[1];if(period === void 0)period = 0;var delay = arguments[2];if(delay === void 0)delay = 0;
     var object = {
       period: period || Infinity,
-      executeNext: function(time, audioTime) {
+      advanceTime: function(time, audioTime) {
         callback(time, audioTime);
         return time + this.period;
       }
@@ -111,7 +111,7 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
    */
   proto$0.add = function(engine) {var delay = arguments[1];if(delay === void 0)delay = 0;var getCurrentPosition = arguments[2];if(getCurrentPosition === void 0)getCurrentPosition = null;var this$0 = this;
     if (!engine.master) {
-      if (engine.implementsScheduled) {
+      if (TimeEngine.implementsScheduled(engine)) {
         this.__scheduledEngines.push(engine);
 
         engine.setScheduled(this, function(time)  {

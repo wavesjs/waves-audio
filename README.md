@@ -1,15 +1,14 @@
 ## scheduler
 
-> WAVE audio event scheduler singleton
+> WAVE audio event scheduler singleton (time-engine master)
 
-The scheduler is a global singleton that allows for scheduling event engines (see [EventEngine](https://github.com/Ircam-RnD/event-engine)) like the [granular engine](https://github.com/Ircam-RnD/granular-engine) and the [metronome](https://github.com/Ircam-RnD/metronome) as well as simple callback functions.
+The scheduler is a global singleton that allows for scheduling time-engines (see [TimeEngine](https://github.com/Ircam-RnD/time-engine)) like the [granular engine](https://github.com/Ircam-RnD/granular-engine) and the [metronome](https://github.com/Ircam-RnD/metronome) as well as simple callback functions.
 
 ## API
 
 Method | Description
 --- | ---
-`callback(callback, delay = 0)` | Schedule an arbitrary callback function called with (time, audioTime).
-`repeat(callback, period = 0, delay = 0)` | Schedule an arbitrary callback periodically.
+`callback(callback, delay = 0, period = 0)` | Schedule (once or periodically) an arbitrary callback function called with the scheduling time as argument.
 `add(engine, delay = 0)` | Add an event engine to the scheduler with an optional delay.
 `remove(engine)` | Remove an event engine from the scheduler.
 `resync(engine)` | Resynchronize an already scheduled event engine.

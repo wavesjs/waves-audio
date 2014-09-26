@@ -5,9 +5,9 @@
  */
 'use strict';
 
-var audioContext = require("../audio-context");
-var PriorityQueue = require("../priority-queue");
-var TimeEngine = require("../time-engine");
+var audioContext = require("audio-context");
+var PriorityQueue = require("priority-queue");
+var TimeEngine = require("time-engine");
 
 function arrayRemove(array, value) {
   var index = array.indexOf(value);
@@ -91,7 +91,7 @@ class Scheduler {
   callback(callback, period = 0, delay = 0) {
     var object = {
       period: period || Infinity,
-      executeNext: function(time, audioTime) {
+      advanceTime: function(time, audioTime) {
         callback(time, audioTime);
         return time + this.period;
       }
@@ -111,7 +111,7 @@ class Scheduler {
    */
   add(engine, delay = 0, getCurrentPosition = null) {
     if (!engine.master) {
-      if (engine.implementsScheduled) {
+      if (TimeEngine.implementsScheduled(engine)) {
         this.__scheduledEngines.push(engine);
 
         engine.setScheduled(this, (time) => {
