@@ -8,8 +8,8 @@
 var audioContext = require("../audio-context");
 var TimeEngine = require("../time-engine");
 
-var AudioPlayer = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};MIXIN$0(AudioPlayer, super$0);var $proto$0={};
-  function AudioPlayer() {var buffer = arguments[0];if(buffer === void 0)buffer = null;
+var PlayerEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};MIXIN$0(PlayerEngine, super$0);var $proto$0={};
+  function PlayerEngine() {var buffer = arguments[0];if(buffer === void 0)buffer = null;
     this.transport = null; // set when added to transporter
 
     /**
@@ -35,7 +35,7 @@ var AudioPlayer = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$
     this.__playingSpeed = 1;
 
     this.outputNode = this.__gainNode = audioContext.createGain();
-  }AudioPlayer.prototype = Object.create(super$0.prototype, {"constructor": {"value": AudioPlayer, "configurable": true, "writable": true}, cyclic: {"get": cyclic$get$0, "set": cyclic$set$0, "configurable": true, "enumerable": true}, gain: {"get": gain$get$0, "set": gain$set$0, "configurable": true, "enumerable": true} });DP$0(AudioPlayer, "prototype", {"configurable": false, "enumerable": false, "writable": false});
+  }PlayerEngine.prototype = Object.create(super$0.prototype, {"constructor": {"value": PlayerEngine, "configurable": true, "writable": true}, cyclic: {"get": cyclic$get$0, "set": cyclic$set$0, "configurable": true, "enumerable": true}, gain: {"get": gain$get$0, "set": gain$set$0, "configurable": true, "enumerable": true} });DP$0(PlayerEngine, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
   $proto$0.__start = function(time, position, speed) {
     if (this.buffer) {
@@ -143,6 +143,6 @@ var AudioPlayer = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$
   function gain$get$0() {
     return this.__gainNode.gain.value;
   }
-MIXIN$0(AudioPlayer.prototype,$proto$0);$proto$0=void 0;return AudioPlayer;})(TimeEngine);
+MIXIN$0(PlayerEngine.prototype,$proto$0);$proto$0=void 0;return PlayerEngine;})(TimeEngine);
 
-module.exports = AudioPlayer;
+module.exports = PlayerEngine;

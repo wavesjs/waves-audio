@@ -8,7 +8,7 @@
 var audioContext = require("../audio-context");
 var TimeEngine = require("../time-engine");
 
-class AudioPlayer extends TimeEngine{
+class PlayerEngine extends TimeEngine{
   constructor(buffer = null) {
     this.transport = null; // set when added to transporter
 
@@ -145,4 +145,4 @@ class AudioPlayer extends TimeEngine{
   }
 }
 
-module.exports = AudioPlayer;
+module.exports = PlayerEngine;

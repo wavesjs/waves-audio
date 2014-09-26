@@ -1,5 +1,5 @@
 {
-  "name": "audio-player",
+  "name": "player-engine",
   "version": "0.9.1",
   "description": "WAVE audio player engine",
   "authors": [
@@ -8,13 +8,13 @@
     "Karim Barkati"
   ],
   "main": "index.js",
-  "exports": "AudioPlayer",
+  "exports": "PlayerEngine",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Ircam-RnD/audio-player"
+    "url": "https://github.com/Ircam-RnD/player-engine"
   },
   "dependencies": {
     "audio-context": "git://github.com/Ircam-RnD/audio-context.git#master"
