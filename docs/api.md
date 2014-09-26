@@ -12,7 +12,7 @@ Master (scheduler, transport, player) to which the time engine is synchronized
 
 ## interface
 
-Interface used by teh current master
+Interface used by the current master
 
 ## transportStartPosition
 
@@ -21,18 +21,6 @@ Transport start position of the engine (handled by )
 ## outputNode
 
 Output audio node
-
-## implementsScheduled
-
-Check whether the time engine implements the scheduled interface
-
-## implementsTransported
-
-Check whether the time engine implements the transported interface
-
-## implementsSpeedControlled
-
-Check whether the time engine implements the speed-controlled interface
 
 ## currentTime
 
@@ -54,9 +42,9 @@ Advance engine time (scheduled interface)
 This function is called by the scheduler to let the engine do its work
 synchronized to the scheduler time.
 If the engine returns Infinity, it is not called again until it is restarted by
-the scheduler or it calls resyncEnginePosition() with a valid position.
+the scheduler or it calls resetNextPosition with a valid position.
 
-## resetEngineTime(time)
+## resetNextTime(time)
 
 Function provided by the scheduler to reset the engine's next time
 
@@ -78,7 +66,7 @@ Synchronize engine to transport position (transported interface)
 This function is called by the msater and allows the engine for synchronizing
 (seeking) to the current transport position and to return its next position.
 If the engine returns Infinity or -Infinity, it is not called again until it is
-resynchronized by the transport or it calls resyncEnginePosition().
+resynchronized by the transport or it calls resetNextPosition.
 
 Advance engine position (transported interface)
 
@@ -94,15 +82,15 @@ Advance engine position (transported interface)
 This function is called by the transport to let the engine do its work
 aligned to the transport's position.
 If the engine returns Infinity or -Infinity, it is not called again until it is
-resynchronized by the transport or it calls resyncEnginePosition().
+resynchronized by the transport or it calls resetNextPosition.
 
-## resyncEnginePosition(time)
+## resetNextPosition(position)
 
-Function provided by the transport to request resynchronizing the engine's position
+Function provided by the transport to reset the next position or to request resynchronizing the engine's position
 
 ### Params: 
 
-* **Number** *time* new engine time (immediately if not specified)
+* **Number** *position* new engine position (will call syncPosition with the current position if not specified)
 
 Set engine speed (speed-controlled interface)
 
@@ -134,6 +122,18 @@ Disconnect audio node
 ### Params: 
 
 * **Number** *connection* connection to be disconnected
+
+## implementsScheduled()
+
+Check whether the time engine implements the scheduled interface
+
+## implementsTransported()
+
+Check whether the time engine implements the transported interface
+
+## implementsSpeedControlled()
+
+Check whether the time engine implements the speed-controlled interface
 
 <!-- End ./src/index.js -->
 

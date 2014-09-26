@@ -5,7 +5,7 @@
  */
 "use strict";
 
-var audioContext = require("../audio-context");
+var audioContext = require("audio-context");
 
 class TimeEngine {
   constructor() {
@@ -16,7 +16,7 @@ class TimeEngine {
     this.master = null;
 
     /**
-     * Interface used by teh current master
+     * Interface used by the current master
      * @type {String}
      */
     this.interface = null;
@@ -32,30 +32,6 @@ class TimeEngine {
      * @type {Object}
      */
     this.outputNode = null;
-  }
-
-  /**
-   * Check whether the time engine implements the scheduled interface
-   **/
-  get implementsScheduled() {
-    return (this.advanceTime && this.advanceTime instanceof Function);
-  }
-
-  /**
-   * Check whether the time engine implements the transported interface
-   **/
-  get implementsTransported() {
-    return (
-      this.syncPosition && this.syncPosition instanceof Function &&
-      this.advancePosition && this.advancePosition instanceof Function
-    );
-  }
-
-  /**
-   * Check whether the time engine implements the speed-controlled interface
-   **/
-  get implementsSpeedControlled() {
-    return (this.syncSpeed && this.syncSpeed instanceof Function);
   }
 
   /**
@@ -86,7 +62,7 @@ class TimeEngine {
    * This function is called by the scheduler to let the engine do its work
    * synchronized to the scheduler time.
    * If the engine returns Infinity, it is not called again until it is restarted by
-   * the scheduler or it calls resyncEnginePosition() with a valid position.
+   * the scheduler or it calls resetNextPosition with a valid position.
    */
   // advanceTime(time) {
   //   return time;
@@ -96,7 +72,7 @@ class TimeEngine {
    * Function provided by the scheduler to reset the engine's next time
    * @param {Number} time new engine time (immediately if not specified)
    */
-  resetEngineTime(time) {}
+  resetNextTime(time = null) {}
 
   /**
    * Synchronize engine to transport position (transported interface)
@@ -108,7 +84,7 @@ class TimeEngine {
    * This function is called by the msater and allows the engine for synchronizing
    * (seeking) to the current transport position and to return its next position.
    * If the engine returns Infinity or -Infinity, it is not called again until it is
-   * resynchronized by the transport or it calls resyncEnginePosition().
+   * resynchronized by the transport or it calls resetNextPosition.
    */
   // syncPosition(time, position, speed) {
   //   return position;
@@ -124,17 +100,17 @@ class TimeEngine {
    * This function is called by the transport to let the engine do its work
    * aligned to the transport's position.
    * If the engine returns Infinity or -Infinity, it is not called again until it is
-   * resynchronized by the transport or it calls resyncEnginePosition().
+   * resynchronized by the transport or it calls resetNextPosition.
    */
   // advancePosition(time, position, speed) {
   //   return position;
   // }
 
   /**
-   * Function provided by the transport to request resynchronizing the engine's position
-   * @param {Number} time new engine time (immediately if not specified)
+   * Function provided by the transport to reset the next position or to request resynchronizing the engine's position
+   * @param {Number} position new engine position (will call syncPosition with the current position if not specified)
    */
-  resyncEnginePosition() {};
+  resetNextPosition(position = null) {};
 
   /**
    * Set engine speed (speed-controlled interface)
@@ -172,26 +148,26 @@ class TimeEngine {
     delete this.currentPosition;
   }
 
-  setScheduled(scheduler, resetEngineTime, getCurrentTime, getCurrentPosition) {
+  setScheduled(scheduler, resetNextTime, getCurrentTime, getCurrentPosition) {
     this.master = scheduler;
     this.interface = "scheduled";
 
     this.__setGetters(getCurrentTime, getCurrentPosition);
 
-    if (resetEngineTime)
-      this.resetEngineTime = resetEngineTime;
+    if (resetNextTime)
+      this.resetNextTime = resetNextTime;
   }
 
   resetScheduled() {
     this.__deleteGetters();
 
-    delete this.resetEngineTime;
+    delete this.resetNextTime;
 
     this.master = null;
     this.interface = null;
   }
 
-  setTransported(transport, startPosition, resyncEnginePosition, getCurrentTime, getCurrentPosition) {
+  setTransported(transport, startPosition, resetNextPosition, getCurrentTime, getCurrentPosition) {
     this.master = transport;
     this.interface = "transported";
 
@@ -199,14 +175,14 @@ class TimeEngine {
 
     this.__setGetters(getCurrentTime, getCurrentPosition);
 
-    if (resyncEnginePosition)
-      this.resyncEnginePosition = resyncEnginePosition;
+    if (resetNextPosition)
+      this.resetNextPosition = resetNextPosition;
   }
 
   resetTransported() {
     this.__deleteGetters();
 
-    delete this.resyncEnginePosition;
+    delete this.resetNextPosition;
 
     this.transportStartPosition = 0;
     this.master = null;
@@ -252,6 +228,30 @@ class TimeEngine {
     this.outputNode.disconnect(connection);
     return this;
   }
+}
+
+/**
+ * Check whether the time engine implements the scheduled interface
+ **/
+TimeEngine.implementsScheduled = function(engine) {
+  return (engine.advanceTime && engine.advanceTime instanceof Function);
+}
+
+/**
+ * Check whether the time engine implements the transported interface
+ **/
+TimeEngine.implementsTransported = function(engine) {
+  return (
+    engine.syncPosition && engine.syncPosition instanceof Function &&
+    engine.advancePosition && engine.advancePosition instanceof Function
+  );
+}
+
+/**
+ * Check whether the time engine implements the speed-controlled interface
+ **/
+TimeEngine.implementsSpeedControlled = function(engine) {
+  return (engine.syncSpeed && engine.syncSpeed instanceof Function);
 }
 
 module.exports = TimeEngine;
