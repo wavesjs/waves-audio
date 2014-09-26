@@ -5,8 +5,8 @@
  */
 "use strict";
 
-var audioContext = require("../audio-context");
-var TimeEngine = require("../time-engine");
+var audioContext = require("audio-context");
+var TimeEngine = require("time-engine");
 
 class Metronome extends TimeEngine {
   constructor(period = 1) {
@@ -121,7 +121,7 @@ class Metronome extends TimeEngine {
    */
   set phase(phase) {
     this.__phase = phase - Math.floor(phase);
-    this.resyncEnginePosition();
+    this.resetNextPosition();
   }
 
   /**

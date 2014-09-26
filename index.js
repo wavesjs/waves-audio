@@ -121,7 +121,7 @@ var Metronome = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
    */
   function phase$set$0(phase) {
     this.__phase = phase - Math.floor(phase);
-    this.resyncEnginePosition();
+    this.resetNextPosition();
   }
 
   /**
