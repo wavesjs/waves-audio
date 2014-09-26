@@ -5,8 +5,8 @@
  */
 "use strict";
 
-var audioContext = require("../audio-context");
-var TimeEngine = require("../time-engine");
+var audioContext = require("audio-context");
+var TimeEngine = require("time-engine");
 
 /**
  * @class GranularEngine
