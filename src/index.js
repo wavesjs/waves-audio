@@ -80,17 +80,20 @@ class AudioPlayer extends TimeEngine{
   }
 
   // TimeEngine method (speed-controlled interface)
-  syncSpeed(time, position, speed) {
-    if (speed !== this.__speed) {
-      if (this.__speed === 0)
-        this.__start(time, position, speed);
-      else if (speed === 0)
-        this.__halt(time);
-      else if (this.__speed * speed < 0) {
+  syncSpeed(time, position, speed, seek = false) {
+    var lastSpeed = this.__speed;
+
+    if (speed !== lastSpeed || seek) {
+      if(seek || lastSpeed * speed < 0) {
         this.__halt(time);
         this.__start(time, position, speed);
-      } else if (this.__bufferSource)
+      } else if (lastSpeed === 0 || seek) {
+        this.__start(time, position, speed);
+      } else if (speed === 0) {
+        this.__halt(time);
+      } else if (this.__bufferSource) {
         this.__bufferSource.playbackRate.setValueAtTime(speed, time);
+      }
 
       this.__speed = speed;
     }
