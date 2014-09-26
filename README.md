@@ -1,6 +1,6 @@
 ## scheduler
 
-> WAVE audio transport
+> WAVE audio transport (time-engine master)
 
 ### Usage
 
