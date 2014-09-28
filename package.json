@@ -1,7 +1,7 @@
 {
   "name": "segment-engine",
-  "version": "0.8.0",
-  "description": "WAVE audio segment engine",
+  "version": "0.9.1",
+  "description": "WAVE audio sound segment engine",
   "authors": [
     "Norbert Schnell",
     "Victor Saiz",

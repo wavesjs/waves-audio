@@ -1,6 +1,6 @@
 /* written in ECMAscript 6 */
 /**
- * @fileoverview WAVE audio granular engine
+ * @fileoverview WAVE audio sound segment engine
  * @author Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
  */
 "use strict";
