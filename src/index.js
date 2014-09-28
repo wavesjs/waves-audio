@@ -1,6 +1,6 @@
 /* written in ECMAscript 6 */
 /**
- * @fileoverview WAVE scheduler singleton based on audio time
+ * @fileoverview WAVE scheduler singleton based on audio time (time-engine master)
  * @author Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
  */
 'use strict';
@@ -84,11 +84,11 @@ class Scheduler {
   /**
    * Add a callback to the scheduler
    * @param {Function} callback function(time, audioTime) to be called
-   * @param {Number} period callback period (default is 0 for one-shot)
    * @param {Number} delay of first callback (default is 0)
+   * @param {Number} period callback period (default is 0 for one-shot)
    * @return {Object} scheduled object that can be used to call remove and reset
    */
-  callback(callback, period = 0, delay = 0) {
+  callback(callback, delay = 0, period = 0) {
     var engine = {
       period: period || Infinity,
       advanceTime: function(time) {
@@ -110,11 +110,11 @@ class Scheduler {
    * @param {Function} function to get current position
    */
   add(engine, delay = 0, getCurrentPosition = null) {
-    if (!engine.master) {
+    if (!engine.interface) {
       if (TimeEngine.implementsScheduled(engine)) {
         this.__scheduledEngines.push(engine);
 
-        engine.setScheduled(this, (time) => {
+        engine.setScheduled((time) => {
           this.__nextTime = this.__queue.move(engine, time);
           this.__reschedule();
         }, () => {
@@ -132,12 +132,12 @@ class Scheduler {
   }
 
   /**
-   * Remove time engine from the scheduler
+   * Remove time engine or callback from the scheduler
    * @param {Object} engine time engine or callback to be removed from the scheduler
    */
   remove(engine) {
     if (arrayRemove(this.__scheduledEngines, engine)) {
-      engine.resetScheduled();
+      engine.resetInterface();
 
       this.__nextTime = this.__queue.remove(engine);
       this.__reschedule();
@@ -147,17 +147,13 @@ class Scheduler {
   }
 
   /**
-   * Reschedule a scheduled time engine or callback
+   * Reschedule a scheduled time engine or callback at a given time
    * @param {Object} engine time engine or callback to be rescheduled
    * @param {Number} time time when to reschedule
    */
   reset(engine, time) {
-    if (engine.master === this) {
-      this.__nextTime = this.__queue.move(engine, time);
-      this.__reschedule();
-    } else {
-      throw new Error("object has not been added to this scheduler");
-    }
+    this.__nextTime = this.__queue.move(engine, time);
+    this.__reschedule();
   }
 }
 

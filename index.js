@@ -1,13 +1,13 @@
 /* written in ECMAscript 6 */
 /**
- * @fileoverview WAVE scheduler singleton based on audio time
+ * @fileoverview WAVE scheduler singleton based on audio time (time-engine master)
  * @author Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
  */
 'use strict';
 
-var audioContext = require("../audio-context");
-var PriorityQueue = require("../priority-queue");
-var TimeEngine = require("../time-engine");
+var audioContext = require("audio-context");
+var PriorityQueue = require("priority-queue");
+var TimeEngine = require("time-engine");
 
 function arrayRemove(array, value) {
   var index = array.indexOf(value);
@@ -84,23 +84,23 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
   /**
    * Add a callback to the scheduler
    * @param {Function} callback function(time, audioTime) to be called
-   * @param {Number} period callback period (default is 0 for one-shot)
    * @param {Number} delay of first callback (default is 0)
-   * @return {Object} scheduled object that can be used to call remove and reschedule
+   * @param {Number} period callback period (default is 0 for one-shot)
+   * @return {Object} scheduled object that can be used to call remove and reset
    */
-  proto$0.callback = function(callback) {var period = arguments[1];if(period === void 0)period = 0;var delay = arguments[2];if(delay === void 0)delay = 0;
-    var object = {
+  proto$0.callback = function(callback) {var delay = arguments[1];if(delay === void 0)delay = 0;var period = arguments[2];if(period === void 0)period = 0;
+    var engine = {
       period: period || Infinity,
-      advanceTime: function(time, audioTime) {
-        callback(time, audioTime);
+      advanceTime: function(time) {
+        callback(time);
         return time + this.period;
       }
     };
 
-    this.__nextTime = this.__queue.insert(object, this.currentTime + delay);
+    this.__nextTime = this.__queue.insert(engine, this.currentTime + delay);
     this.__reschedule();
 
-    return object;
+    return engine;
   };
 
   /**
@@ -110,11 +110,11 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
    * @param {Function} function to get current position
    */
   proto$0.add = function(engine) {var delay = arguments[1];if(delay === void 0)delay = 0;var getCurrentPosition = arguments[2];if(getCurrentPosition === void 0)getCurrentPosition = null;var this$0 = this;
-    if (!engine.master) {
+    if (!engine.interface) {
       if (TimeEngine.implementsScheduled(engine)) {
         this.__scheduledEngines.push(engine);
 
-        engine.setScheduled(this, function(time)  {
+        engine.setScheduled(function(time)  {
           this$0.__nextTime = this$0.__queue.move(engine, time);
           this$0.__reschedule();
         }, function()  {
@@ -132,12 +132,12 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
   };
 
   /**
-   * Remove time engine from the scheduler
+   * Remove time engine or callback from the scheduler
    * @param {Object} engine time engine or callback to be removed from the scheduler
    */
   proto$0.remove = function(engine) {
     if (arrayRemove(this.__scheduledEngines, engine)) {
-      engine.resetScheduled();
+      engine.resetInterface();
 
       this.__nextTime = this.__queue.remove(engine);
       this.__reschedule();
@@ -147,17 +147,13 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
   };
 
   /**
-   * Reschedule a scheduled time engine or callback
+   * Reschedule a scheduled time engine or callback at a given time
    * @param {Object} engine time engine or callback to be rescheduled
    * @param {Number} time time when to reschedule
    */
   proto$0.reset = function(engine, time) {
-    if (engine.master === this) {
-      this.__nextTime = this.__queue.move(engine, time);
-      this.__reschedule();
-    } else {
-      throw new Error("object has not been added to this scheduler");
-    }
+    this.__nextTime = this.__queue.move(engine, time);
+    this.__reschedule();
   };
 MIXIN$0(Scheduler.prototype,proto$0);proto$0=void 0;return Scheduler;})();
 
