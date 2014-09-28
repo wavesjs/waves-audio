@@ -1,13 +1,12 @@
 /* written in ECMAscript 6 */
 /**
- * @fileoverview WAVE audio play control class, provides play control to a single engine
+ * @fileoverview WAVE audio play control class (time-engine master), provides play control to a single engine
  * @author Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
  */
 'use strict';var PRS$0 = (function(o,t){o["__proto__"]={"a":t};return o["a"]===t})({},{});var DP$0 = Object.defineProperty;var GOPD$0 = Object.getOwnPropertyDescriptor;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,GOPD$0(s,p));}}return t};var SP$0 = Object.setPrototypeOf||function(o,p){if(PRS$0){o["__proto__"]=p;}else {DP$0(o,"__proto__",{"value":p,"configurable":true,"enumerable":false,"writable":true});}return o};var OC$0 = Object.create;
 
-var TimeEngine = require("../time-engine");
-var PriorityQueue = require("../priority-queue");
-var scheduler = require("../scheduler");
+var TimeEngine = require("time-engine");
+var scheduler = require("scheduler");
 
 var PlayControlScheduledCell = (function(super$0){if(!PRS$0)MIXIN$0(PlayControlScheduledCell, super$0);var proto$0={};
   function PlayControlScheduledCell(playControl) {
@@ -55,12 +54,12 @@ var PlayControl = (function(super$0){if(!PRS$0)MIXIN$0(PlayControl, super$0);var
       if (TimeEngine.implementsSpeedControlled(engine)) {
         // add time engine with speed-controlled interface
         this.__engine = engine;
-        engine.setSpeedControlled(this, getCurrentTime, getCurrentPosition);
+        engine.setSpeedControlled(getCurrentTime, getCurrentPosition);
       } else if (TimeEngine.implementsTransported(engine)) {
         // add time engine with transported interface
         this.__engine = engine;
 
-        engine.setTransported(this, 0, function()  {var nextPosition = arguments[0];if(nextPosition === void 0)nextPosition = null;
+        engine.setTransported(0, function()  {var nextPosition = arguments[0];if(nextPosition === void 0)nextPosition = null;
           // resetNextPosition
           if (nextPosition === null) {
             var time = scheduler.currentTime;
@@ -72,7 +71,7 @@ var PlayControl = (function(super$0){if(!PRS$0)MIXIN$0(PlayControl, super$0);var
         }, getCurrentTime, getCurrentPosition);
       } else if (TimeEngine.implementsScheduled(engine)) {
         // add time engine with scheduled interface
-        this.__scheduledEngine = engine;
+        this.__engine = engine;
         scheduler.add(engine, Infinity, getCurrentPosition);
       } else {
         throw new Error("object cannot be added to play control");
@@ -92,7 +91,7 @@ var PlayControl = (function(super$0){if(!PRS$0)MIXIN$0(PlayControl, super$0);var
   };
 
   /**
-   * Extrapolate transport position for given time
+   * Extrapolate playing position for given time
    * @param {Number} time time
    * @return {Number} extrapolated position
    */
@@ -109,7 +108,7 @@ var PlayControl = (function(super$0){if(!PRS$0)MIXIN$0(PlayControl, super$0);var
 
   /**
    * Get current master position
-   * @return {Number} current transport position
+   * @return {Number} current playing position
    */
   proto$0.__resetNextPosition = function(nextPosition) {
     if (this.__scheduledCell)
@@ -122,7 +121,7 @@ var PlayControl = (function(super$0){if(!PRS$0)MIXIN$0(PlayControl, super$0);var
    * Get current master time
    * @return {Number} current time
    *
-   * This function will be replaced when the transport is added to a master.
+   * This function will be replaced when the play-control is added to a master.
    */
   function $currentTime_get$0() {
     return scheduler.currentTime;
@@ -130,9 +129,9 @@ var PlayControl = (function(super$0){if(!PRS$0)MIXIN$0(PlayControl, super$0);var
 
   /**
    * Get current master position
-   * @return {Number} current transport position
+   * @return {Number} current playing position
    *
-   * This function will be replaced when the transport is added to a master.
+   * This function will be replaced when the play-control is added to a master.
    */
   function $currentPosition_get$0() {
     return this.__position + (scheduler.currentTime - this.__time) * this.__speed;
@@ -245,7 +244,7 @@ var PlayControl = (function(super$0){if(!PRS$0)MIXIN$0(PlayControl, super$0);var
   }
 
   /**
-   * Set (jump to) transport position
+   * Set (jump to) playing position
    * @param {Number} position target position
    */
   proto$0.seek = function(position) {
@@ -261,22 +260,8 @@ var PlayControl = (function(super$0){if(!PRS$0)MIXIN$0(PlayControl, super$0);var
    */
   proto$0.clear = function() {
     var time = this.__sync();
-
     this.syncSpeed(time, this.__position, 0);
-
-    switch (this.__engine.interface) {
-      case "speed-controlled":
-        this.__engine.resetSpeedControlled();
-        break;
-
-      case "transported":
-        this.__engine.resetTransported();
-        break;
-
-      case "scheduled":
-        this.__engine.resetScheduled();
-        break;
-    }
+    this.__engine.resetInterface();
   };
 MIXIN$0(PlayControl.prototype,proto$0);proto$0=void 0;return PlayControl;})(TimeEngine);
 

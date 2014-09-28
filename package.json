@@ -1,7 +1,7 @@
 {
   "name": "play-control",
-  "version": "0.9.1",
-  "description": "WAVE audio play control (time-engine master)",
+  "version": "0.9.2",
+  "description": "WAVE audio play control class (time-engine master)",
   "authors": [
     "Norbert Schnell",
     "Victor Saiz",
@@ -17,7 +17,8 @@
     "url": "https://github.com/Ircam-RnD/play-control"
   },
   "dependencies": {
-    "time-engine": "git://github.com/Ircam-RnD/time-engine.git#master"
+    "time-engine": "git://github.com/Ircam-RnD/time-engine.git#master",
+    "scheduler": "git://github.com/Ircam-RnD/scheduler.git#master"
   },
   "devDependencies": {
     "module-boilerplate": "git://github.com/Ircam-RnD/module-boilerplate.git#master",

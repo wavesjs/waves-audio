@@ -20,7 +20,7 @@ Extrapolate transport time for given position
 
 ## __getPositionAtTime(time)
 
-Extrapolate transport position for given time
+Extrapolate playing position for given time
 
 ### Params: 
 
@@ -36,7 +36,7 @@ Get current master position
 
 ### Return:
 
-* **Number** current transport position
+* **Number** current playing position
 
 ## currentTime
 
@@ -45,7 +45,7 @@ Get current master time
 ### Return:
 
 * **Number** current time 
-This function will be replaced when the transport is added to a master.
+This function will be replaced when the play-control is added to a master.
 
 ## currentPosition
 
@@ -53,8 +53,8 @@ Get current master position
 
 ### Return:
 
-* **Number** current transport position 
-This function will be replaced when the transport is added to a master.
+* **Number** current playing position 
+This function will be replaced when the play-control is added to a master.
 
 ## start()
 
@@ -86,7 +86,7 @@ Get playing speed
 
 ## seek(position)
 
-Set (jump to) transport position
+Set (jump to) playing position
 
 ### Params: 
 
