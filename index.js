@@ -1,12 +1,12 @@
 /* written in ECMAscript 6 */
 /**
- * @fileoverview WAVE audio granular engine
+ * @fileoverview WAVE audio granular synthesis engine
  * @author Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
  */
 "use strict";
 
-var audioContext = require("../audio-context");
-var TimeEngine = require("../time-engine");
+var audioContext = require("audio-context");
+var TimeEngine = require("time-engine");
 
 /**
  * @class GranularEngine

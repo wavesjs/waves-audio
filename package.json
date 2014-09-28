@@ -1,7 +1,7 @@
 {
   "name": "granular-engine",
   "version": "0.9.1",
-  "description": "WAVE audio granular engine",
+  "description": "WAVE audio granular synthesis engine",
   "authors": [
     "Norbert Schnell",
     "Victor Saiz",
