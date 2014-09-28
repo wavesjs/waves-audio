@@ -21,16 +21,16 @@ Get current master position
 
 ### Return:
 
-* **Number** current transport position 
+* **Number** current playing position 
 This function will be replaced when the transport is added to a master (i.e. transport or player).
 
-## resetNextPosition()
+## resetNextPosition(next)
 
-Get current master position
+Reset next transport position
 
-### Return:
+### Params: 
 
-* **Number** current transport position 
+* **Number** *next* transport position 
 This function will be replaced when the transport is added to a master (i.e. transport or player).
 
 ## add(engine, position)

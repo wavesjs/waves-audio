@@ -1,6 +1,6 @@
 /* written in ECMAscript 6 */
 /**
- * @fileoverview WAVE audio transport class, provides synchronized scheduling of time engines
+ * @fileoverview WAVE audio transport class (time-engine master), provides synchronized scheduling of time engines
  * @author Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
  */
 'use strict';
@@ -20,7 +20,7 @@ function arrayRemove(array, value) {
   return false;
 }
 
-// ScheduledAdapter has to switch on and off a scheduled engine 
+// ScheduledAdapter has to switch on and off the scheduled engines
 // when the transport hits the engine's start and end position
 class ScheduledAdapter {
   constructor(engine) {
@@ -28,7 +28,7 @@ class ScheduledAdapter {
   }
 }
 
-// ScheduledAdapter has to start and stop a speed-controlled engine 
+// ScheduledAdapter has to start and stop the speed-controlled engines
 // when the transport hits the engine's start and end position
 class SpeedControlledAdapter {
   constructor(engine) {
@@ -50,7 +50,11 @@ class TransportScheduledCell extends TimeEngine {
     return transport.__getTimeAtPosition(nextPosition);
   }
 }
-
+/**
+ * 
+ *
+ * 
+ */
 class Transport extends TimeEngine {
   constructor() {
     super();
@@ -114,7 +118,7 @@ class Transport extends TimeEngine {
 
   /**
    * Get current master position
-   * @return {Number} current transport position
+   * @return {Number} current playing position
    *
    * This function will be replaced when the transport is added to a master (i.e. transport or player).
    */
@@ -123,8 +127,8 @@ class Transport extends TimeEngine {
   }
 
   /**
-   * Get current master position
-   * @return {Number} current transport position
+   * Reset next transport position
+   * @param {Number} next transport position
    *
    * This function will be replaced when the transport is added to a master (i.e. transport or player).
    */
@@ -210,7 +214,7 @@ class Transport extends TimeEngine {
    * @param {Number} position start position
    */
   add(engine, startPosition = 0) {
-    if (!engine.master) {
+    if (!engine.interface) {
       var time = this.currentTime;
       var position = this.currentPosition;
       var speed = this.__speed;
@@ -227,7 +231,7 @@ class Transport extends TimeEngine {
         // add time engine with transported interface
         this.__transportedEngines.push(engine);
 
-        engine.setTransported(this, startPosition, (nextEnginePosition = null) => {
+        engine.setTransported(startPosition, (nextEnginePosition = null) => {
           // resetNextPosition
           var time = this.currentTime;
           var position = this.currentPosition;
@@ -253,7 +257,7 @@ class Transport extends TimeEngine {
         // add time engine with speed-controlled interface
         this.__speedControlledEngines.push(engine);
 
-        engine.setSpeedControlled(this, getCurrentTime, getCurrentPosition);
+        engine.setSpeedControlled(getCurrentTime, getCurrentPosition);
 
         if (speed !== 0)
           engine.syncSpeed(time, position, speed);
@@ -286,17 +290,15 @@ class Transport extends TimeEngine {
       if (this.__speed !== 0)
         this.resetNextPosition(nextPosition);
 
-      engine.resetTransported();
+      engine.resetInterface();
     } else if (TimeEngine.implementsSpeedControlled(engine) && arrayRemove(this.__speedControlledEngines, engine)) {
       // remove engine with speed-controlled interface
       engine.syncSpeed(time, position, 0);
 
-      engine.resetSpeedControlled();
+      engine.resetInterface();
     } else if (TimeEngine.implementsScheduled(engine) && arrayRemove(this.__scheduledEngines, engine)) {
       // remove engine with scheduled interface
       scheduler.remove(engine);
-
-      engine.resetScheduled();
     } else {
       throw new Error("object has not been added to this transport");
     }
@@ -312,13 +314,13 @@ class Transport extends TimeEngine {
     this.syncSpeed(time, position, 0);
 
     for (var transportedEngine of this.__transportedEngines)
-      transportedEngine.resetTransported();
+      transportedEngine.resetInterface();
 
     for (var speedControlledEngine of this.__speedControlledEngines)
-      speedControlledEngine.resetSpeedControlled();
+      speedControlledEngine.resetInterface();
 
     for (var scheduledEngine of this.__scheduledEngines)
-      scheduledEngine.resetScheduled();
+      scheduler.remove(scheduledEngine);
 
     this.__transportedEngines.length = 0;
     this.__speedControlledEngines.length = 0;

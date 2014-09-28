@@ -1,13 +1,13 @@
 /* written in ECMAscript 6 */
 /**
- * @fileoverview WAVE audio transport class, provides synchronized scheduling of time engines
+ * @fileoverview WAVE audio transport class (time-engine master), provides synchronized scheduling of time engines
  * @author Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
  */
 'use strict';var PRS$0 = (function(o,t){o["__proto__"]={"a":t};return o["a"]===t})({},{});var DP$0 = Object.defineProperty;var GOPD$0 = Object.getOwnPropertyDescriptor;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,GOPD$0(s,p));}}return t};var SP$0 = Object.setPrototypeOf||function(o,p){o["__proto__"]=p;return o};var OC$0 = Object.create;
 
-var TimeEngine = require("../time-engine");
-var PriorityQueue = require("../priority-queue");
-var scheduler = require("../scheduler");
+var TimeEngine = require("time-engine");
+var PriorityQueue = require("priority-queue");
+var scheduler = require("scheduler");
 
 function arrayRemove(array, value) {
   var index = array.indexOf(value);
@@ -20,7 +20,7 @@ function arrayRemove(array, value) {
   return false;
 }
 
-// ScheduledAdapter has to switch on and off a scheduled engine 
+// ScheduledAdapter has to switch on and off the scheduled engines
 // when the transport hits the engine's start and end position
 var ScheduledAdapter = (function(){
   function ScheduledAdapter(engine) {
@@ -28,7 +28,7 @@ var ScheduledAdapter = (function(){
   }DP$0(ScheduledAdapter,"prototype",{"configurable":false,"enumerable":false,"writable":false});
 ;return ScheduledAdapter;})();
 
-// ScheduledAdapter has to start and stop a speed-controlled engine 
+// ScheduledAdapter has to start and stop the speed-controlled engines
 // when the transport hits the engine's start and end position
 var SpeedControlledAdapter = (function(){
   function SpeedControlledAdapter(engine) {
@@ -50,7 +50,11 @@ var TransportScheduledCell = (function(super$0){if(!PRS$0)MIXIN$0(TransportSched
     return transport.__getTimeAtPosition(nextPosition);
   };
 MIXIN$0(TransportScheduledCell.prototype,proto$0);proto$0=void 0;return TransportScheduledCell;})(TimeEngine);
-
+/**
+ * 
+ *
+ * 
+ */
 var Transport = (function(super$0){if(!PRS$0)MIXIN$0(Transport, super$0);var proto$0={};var S_ITER$0 = typeof Symbol!=='undefined'&&Symbol&&Symbol.iterator||'@@iterator';var S_MARK$0 = typeof Symbol!=='undefined'&&Symbol&&Symbol["__setObjectSetter__"];function GET_ITER$0(v){if(v){if(Array.isArray(v))return 0;var f;if(S_MARK$0)S_MARK$0(v);if(typeof v==='object'&&typeof (f=v[S_ITER$0])==='function'){if(S_MARK$0)S_MARK$0(void 0);return f.call(v);}if(S_MARK$0)S_MARK$0(void 0);if((v+'')==='[object Generator]')return v;}throw new Error(v+' is not iterable')};
   function Transport() {
     super$0.call(this);
@@ -114,7 +118,7 @@ var Transport = (function(super$0){if(!PRS$0)MIXIN$0(Transport, super$0);var pro
 
   /**
    * Get current master position
-   * @return {Number} current transport position
+   * @return {Number} current playing position
    *
    * This function will be replaced when the transport is added to a master (i.e. transport or player).
    */
@@ -123,8 +127,8 @@ var Transport = (function(super$0){if(!PRS$0)MIXIN$0(Transport, super$0);var pro
   }
 
   /**
-   * Get current master position
-   * @return {Number} current transport position
+   * Reset next transport position
+   * @param {Number} next transport position
    *
    * This function will be replaced when the transport is added to a master (i.e. transport or player).
    */
@@ -210,7 +214,7 @@ var Transport = (function(super$0){if(!PRS$0)MIXIN$0(Transport, super$0);var pro
    * @param {Number} position start position
    */
   proto$0.add = function(engine) {var startPosition = arguments[1];if(startPosition === void 0)startPosition = 0;var this$0 = this;
-    if (!engine.master) {
+    if (!engine.interface) {
       var time = this.currentTime;
       var position = this.currentPosition;
       var speed = this.__speed;
@@ -227,7 +231,7 @@ var Transport = (function(super$0){if(!PRS$0)MIXIN$0(Transport, super$0);var pro
         // add time engine with transported interface
         this.__transportedEngines.push(engine);
 
-        engine.setTransported(this, startPosition, function()  {var nextEnginePosition = arguments[0];if(nextEnginePosition === void 0)nextEnginePosition = null;
+        engine.setTransported(startPosition, function()  {var nextEnginePosition = arguments[0];if(nextEnginePosition === void 0)nextEnginePosition = null;
           // resetNextPosition
           var time = this$0.currentTime;
           var position = this$0.currentPosition;
@@ -253,7 +257,7 @@ var Transport = (function(super$0){if(!PRS$0)MIXIN$0(Transport, super$0);var pro
         // add time engine with speed-controlled interface
         this.__speedControlledEngines.push(engine);
 
-        engine.setSpeedControlled(this, getCurrentTime, getCurrentPosition);
+        engine.setSpeedControlled(getCurrentTime, getCurrentPosition);
 
         if (speed !== 0)
           engine.syncSpeed(time, position, speed);
@@ -286,17 +290,15 @@ var Transport = (function(super$0){if(!PRS$0)MIXIN$0(Transport, super$0);var pro
       if (this.__speed !== 0)
         this.resetNextPosition(nextPosition);
 
-      engine.resetTransported();
+      engine.resetInterface();
     } else if (TimeEngine.implementsSpeedControlled(engine) && arrayRemove(this.__speedControlledEngines, engine)) {
       // remove engine with speed-controlled interface
       engine.syncSpeed(time, position, 0);
 
-      engine.resetSpeedControlled();
+      engine.resetInterface();
     } else if (TimeEngine.implementsScheduled(engine) && arrayRemove(this.__scheduledEngines, engine)) {
       // remove engine with scheduled interface
       scheduler.remove(engine);
-
-      engine.resetScheduled();
     } else {
       throw new Error("object has not been added to this transport");
     }
@@ -312,13 +314,13 @@ var Transport = (function(super$0){if(!PRS$0)MIXIN$0(Transport, super$0);var pro
     this.syncSpeed(time, position, 0);
 
     $D$11 = (this.__transportedEngines);$D$8 = GET_ITER$0($D$11);$D$10 = $D$8 === 0;$D$9 = ($D$10 ? $D$11.length : void 0);for (var transportedEngine ;$D$10 ? ($D$8 < $D$9) : !($D$9 = $D$8["next"]())["done"];)
-{transportedEngine = ($D$10 ? $D$11[$D$8++] : $D$9["value"]);transportedEngine.resetTransported();};$D$8 = $D$9 = $D$10 = $D$11 = void 0;
+{transportedEngine = ($D$10 ? $D$11[$D$8++] : $D$9["value"]);transportedEngine.resetInterface();};$D$8 = $D$9 = $D$10 = $D$11 = void 0;
 
     $D$11 = (this.__speedControlledEngines);$D$8 = GET_ITER$0($D$11);$D$10 = $D$8 === 0;$D$9 = ($D$10 ? $D$11.length : void 0);for (var speedControlledEngine ;$D$10 ? ($D$8 < $D$9) : !($D$9 = $D$8["next"]())["done"];)
-{speedControlledEngine = ($D$10 ? $D$11[$D$8++] : $D$9["value"]);speedControlledEngine.resetSpeedControlled();};$D$8 = $D$9 = $D$10 = $D$11 = void 0;
+{speedControlledEngine = ($D$10 ? $D$11[$D$8++] : $D$9["value"]);speedControlledEngine.resetInterface();};$D$8 = $D$9 = $D$10 = $D$11 = void 0;
 
     $D$11 = (this.__scheduledEngines);$D$8 = GET_ITER$0($D$11);$D$10 = $D$8 === 0;$D$9 = ($D$10 ? $D$11.length : void 0);for (var scheduledEngine ;$D$10 ? ($D$8 < $D$9) : !($D$9 = $D$8["next"]())["done"];)
-{scheduledEngine = ($D$10 ? $D$11[$D$8++] : $D$9["value"]);scheduledEngine.resetScheduled();};$D$8 = $D$9 = $D$10 = $D$11 = void 0;
+{scheduledEngine = ($D$10 ? $D$11[$D$8++] : $D$9["value"]);scheduler.remove(scheduledEngine);};$D$8 = $D$9 = $D$10 = $D$11 = void 0;
 
     this.__transportedEngines.length = 0;
     this.__speedControlledEngines.length = 0;
