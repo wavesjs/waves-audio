@@ -1,7 +1,7 @@
 {
   "name": "simple-scheduler",
-  "version": "0.8.0",
-  "description": "WAVE audio simplified global event scheduler singleton",
+  "version": "0.9.2",
+  "description": "WAVE audio simplified global event scheduler singleton (time-engine master)",
   "authors": [
     "Norbert Schnell",
     "Victor Saiz",
@@ -17,7 +17,8 @@
     "url": "https://github.com/Ircam-RnD/simple-scheduler"
   },
   "dependencies": {
-    "audio-context": "git://github.com/Ircam-RnD/audio-context.git#master"
+    "audio-context": "git://github.com/Ircam-RnD/audio-context.git#master",
+    "time-engine": "git://github.com/Ircam-RnD/time-engine.git#master"
   },
   "devDependencies": {
     "module-boilerplate": "git://github.com/Ircam-RnD/module-boilerplate.git#master",

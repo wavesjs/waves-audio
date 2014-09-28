@@ -22,29 +22,15 @@ Get scheduler time
 
 * **Number** current scheduler time including lookahead
 
-## callback(callback, period, delay)
+## callback(callback, delay, period)
 
 Add a callback to the scheduler
 
 ### Params: 
 
 * **Function** *callback* function(time, audioTime) to be called
-* **Number** *period* callback period
-* **Number** *delay* of first callback
-
-### Return:
-
-* **Object** scheduled object that can be used to call remove and reschedule
-
-## repeat(callback, period, delay)
-
-Add a periodically repeated callback to the scheduler
-
-### Params: 
-
-* **Function** *callback* function(time, audioTime) to be called periodically
-* **Number** *period* callback period
-* **Number** *delay* of first callback
+* **Number** *delay* of first callback (default is 0)
+* **Number** *period* callback period (default is 0 for one-shot)
 
 ### Return:
 
@@ -56,7 +42,7 @@ Add a time engine to the scheduler
 
 ### Params: 
 
-* **object** *engine* time engine to be added to the scheduler
+* **Object** *engine* time engine to be added to the scheduler
 * **Number** *delay* scheduling delay time
 
 ## remove(engine)

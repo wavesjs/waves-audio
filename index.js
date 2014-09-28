@@ -1,12 +1,12 @@
 /* written in ECMAscript 6 */
 /**
- * @fileoverview WAVE simplified scheduler singleton based on audio time
+ * @fileoverview WAVE simplified scheduler singleton based on audio time (time-engine master)
  * @author Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
  */
 'use strict';
 
-var audioContext = require("../audio-context");
-var TimeEngine = require("../time-engine");
+var audioContext = require("audio-context");
+var TimeEngine = require("time-engine");
 
 var SimpleScheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};return o["a"]===t})({},{});var DP$0 = Object.defineProperty;var GOPD$0 = Object.getOwnPropertyDescriptor;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,GOPD$0(s,p));}}return t};var DPS$0 = Object.defineProperties;var proto$0={};
 
@@ -107,34 +107,13 @@ var SimpleScheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a"
   /**
    * Add a callback to the scheduler
    * @param {Function} callback function(time, audioTime) to be called
-   * @param {Number} period callback period
-   * @param {Number} delay of first callback
-   * @return {Object} scheduled object that can be used to call remove and reschedule
-   */
-  proto$0.callback = function(callback) {var delay = arguments[1];if(delay === void 0)delay = 0;
-    var object = {
-      executeNext: function(time, audioTime) {
-        callback(time, audioTime);
-        return Infinity;
-      }
-    };
-
-    this.__insertEngine(object, this.currentTime + delay);
-    this.__reschedule();
-
-    return object;
-  };
-
-  /**
-   * Add a periodically repeated callback to the scheduler
-   * @param {Function} callback function(time, audioTime) to be called periodically
-   * @param {Number} period callback period
-   * @param {Number} delay of first callback
+   * @param {Number} delay of first callback (default is 0)
+   * @param {Number} period callback period (default is 0 for one-shot)
    * @return {Object} scheduled object that can be used to call remove and reset
    */
-  proto$0.repeat = function(callback) {var period = arguments[1];if(period === void 0)period = 1;var delay = arguments[2];if(delay === void 0)delay = 0;
+  proto$0.callback = function(callback) {var delay = arguments[1];if(delay === void 0)delay = 0;var period = arguments[2];if(period === void 0)period = 0;
     var engine = {
-      period: period,
+      period: period || Infinity,
       advanceTime: function(time) {
         callback(time);
         return time + this.period;
@@ -149,14 +128,14 @@ var SimpleScheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a"
 
   /**
    * Add a time engine to the scheduler
-   * @param {object} engine time engine to be added to the scheduler
+   * @param {Object} engine time engine to be added to the scheduler
    * @param {Number} delay scheduling delay time
    */
   proto$0.add = function(engine) {var delay = arguments[1];if(delay === void 0)delay = 0;var getCurrentPosition = arguments[2];if(getCurrentPosition === void 0)getCurrentPosition = null;var this$0 = this;
-    if (!engine.master) {
+    if (!engine.interface) {
       if (TimeEngine.implementsScheduled(engine)) {
 
-        engine.setScheduled(this, function(time)  {
+        engine.setScheduled(function(time)  {
           this$0.__nextTime = this$0.__queue.move(engine, time);
           this$0.__reschedule();
         }, function()  {
@@ -178,8 +157,8 @@ var SimpleScheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a"
    * @param {Object} engine time engine or callback to be removed from the scheduler
    */
   proto$0.remove = function(engine) {
-    if (engine.master !== this) {
-      engine.resetScheduled();
+    if (this.__objects.indexOf(engine) >= 0) {
+      engine.resetInterface();
       this.__withdrawEngine(engine);
       this.__reschedule();
     } else {
@@ -193,12 +172,8 @@ var SimpleScheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a"
    * @param {Number} time time when to reschedule
    */
   proto$0.reset = function(engine, time) {
-    if (this.__objects.indexOf(engine)) {
-      this.__moveEngine(engine, time);
-      this.__reschedule();
-    } else {
-      throw new Error("object has not been added to this scheduler");
-    }
+    this.__moveEngine(engine, time);
+    this.__reschedule();
   };
 MIXIN$0(SimpleScheduler.prototype,proto$0);proto$0=void 0;return SimpleScheduler;})();
 
