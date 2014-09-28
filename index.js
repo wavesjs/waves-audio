@@ -5,8 +5,8 @@
  */
 "use strict";
 
-var audioContext = require("../audio-context");
-var TimeEngine = require("../time-engine");
+var audioContext = require("audio-context");
+var TimeEngine = require("time-engine");
 
 var PlayerEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};MIXIN$0(PlayerEngine, super$0);var $proto$0={};
   function PlayerEngine() {var buffer = arguments[0];if(buffer === void 0)buffer = null;
@@ -84,7 +84,7 @@ var PlayerEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN
     var lastSpeed = this.__speed;
 
     if (speed !== lastSpeed || seek) {
-      if(seek || lastSpeed * speed < 0) {
+      if (seek || lastSpeed * speed < 0) {
         this.__halt(time);
         this.__start(time, position, speed);
       } else if (lastSpeed === 0 || seek) {

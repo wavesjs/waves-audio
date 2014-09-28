@@ -91,7 +91,7 @@ var PlayerEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN
     var lastSpeed = this.__speed;
 
     if (speed !== lastSpeed || seek) {
-      if(seek || lastSpeed * speed < 0) {
+      if (seek || lastSpeed * speed < 0) {
         this.__halt(time);
         this.__start(time, position, speed);
       } else if (lastSpeed === 0 || seek) {
@@ -163,16 +163,10 @@ module.exports = PlayerEngine;
 
 var audioContext = _dereq_("../audio-context");
 
-var TimeEngine = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};var $proto$0={};
+var TimeEngine = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};return o["a"]===t})({},{});var DP$0 = Object.defineProperty;var GOPD$0 = Object.getOwnPropertyDescriptor;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,GOPD$0(s,p));}}return t};var DPS$0 = Object.defineProperties;var proto$0={};
   function TimeEngine() {
     /**
-     * Master (scheduler, transport, player) to which the time engine is synchronized
-     * @type {Object}
-     */
-    this.master = null;
-
-    /**
-     * Interface used by the current master
+     * Interface currently used
      * @type {String}
      */
     this.interface = null;
@@ -188,7 +182,7 @@ var TimeEngine = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = func
      * @type {Object}
      */
     this.outputNode = null;
-  }Object.defineProperties(TimeEngine.prototype, {currentTime: {"get": currentTime$get$0, "configurable": true, "enumerable": true}, currentPosition: {"get": currentPosition$get$0, "configurable": true, "enumerable": true}});DP$0(TimeEngine, "prototype", {"configurable": false, "enumerable": false, "writable": false});
+  }DPS$0(TimeEngine.prototype,{currentTime: {"get": $currentTime_get$0, "configurable":true,"enumerable":true}, currentPosition: {"get": $currentPosition_get$0, "configurable":true,"enumerable":true}});DP$0(TimeEngine,"prototype",{"configurable":false,"enumerable":false,"writable":false});
 
   /**
    * Get the time engine's current master time
@@ -196,7 +190,7 @@ var TimeEngine = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = func
    *
    * This function provided by the master.
    */
-  function currentTime$get$0() {
+  function $currentTime_get$0() {
     return audioContext.currentTime;
   }
 
@@ -206,7 +200,7 @@ var TimeEngine = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = func
    *
    * This function provided by the master.
    */
-  function currentPosition$get$0() {
+  function $currentPosition_get$0() {
     return 0;
   };
 
@@ -228,7 +222,7 @@ var TimeEngine = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = func
    * Function provided by the scheduler to reset the engine's next time
    * @param {Number} time new engine time (immediately if not specified)
    */
-  $proto$0.resetNextTime = function() {var time = arguments[0];if(time === void 0)time = null;};
+  proto$0.resetNextTime = function() {var time = arguments[0];if(time === void 0)time = null;};
 
   /**
    * Synchronize engine to transport position (transported interface)
@@ -266,7 +260,7 @@ var TimeEngine = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = func
    * Function provided by the transport to reset the next position or to request resynchronizing the engine's position
    * @param {Number} position new engine position (will call syncPosition with the current position if not specified)
    */
-  $proto$0.resetNextPosition = function() {var position = arguments[0];if(position === void 0)position = null;};;
+  proto$0.resetNextPosition = function() {var position = arguments[0];if(position === void 0)position = null;};;
 
   /**
    * Set engine speed (speed-controlled interface)
@@ -281,7 +275,7 @@ var TimeEngine = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = func
   // syncSpeed(time, position, speed) {
   // }
 
-  $proto$0.__setGetters = function(getCurrentTime, getCurrentPosition) {
+  proto$0.__setGetters = function(getCurrentTime, getCurrentPosition) {
     if (getCurrentTime) {
       Object.defineProperty(this, 'currentTime', {
         configurable: true,
@@ -299,79 +293,44 @@ var TimeEngine = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = func
     }
   };
 
-  $proto$0.__deleteGetters = function() {
+  proto$0.__deleteGetters = function() {
     delete this.currentTime;
     delete this.currentPosition;
   };
 
-  $proto$0.setScheduled = function(scheduler, resetNextTime, getCurrentTime, getCurrentPosition) {
-    this.master = scheduler;
+  proto$0.setScheduled = function(resetNextTime, getCurrentTime, getCurrentPosition) {
     this.interface = "scheduled";
-
     this.__setGetters(getCurrentTime, getCurrentPosition);
-
     if (resetNextTime)
       this.resetNextTime = resetNextTime;
   };
 
-  $proto$0.resetScheduled = function() {
-    this.__deleteGetters();
-
-    delete this.resetNextTime;
-
-    this.master = null;
-    this.interface = null;
-  };
-
-  $proto$0.setTransported = function(transport, startPosition, resetNextPosition, getCurrentTime, getCurrentPosition) {
-    this.master = transport;
+  proto$0.setTransported = function(startPosition, resetNextPosition, getCurrentTime, getCurrentPosition) {
     this.interface = "transported";
-
     this.transportStartPosition = startPosition;
-
     this.__setGetters(getCurrentTime, getCurrentPosition);
-
     if (resetNextPosition)
       this.resetNextPosition = resetNextPosition;
   };
 
-  $proto$0.resetTransported = function() {
-    this.__deleteGetters();
-
-    delete this.resetNextPosition;
-
-    this.transportStartPosition = 0;
-    this.master = null;
-    this.interface = null;
-  };
-
-  $proto$0.setSpeedControlled = function(master, getCurrentTime, getCurrentPosition) {
-    this.master = master;
+  proto$0.setSpeedControlled = function(getCurrentTime, getCurrentPosition) {
     this.interface = "speed-controlled";
-
     this.__setGetters(getCurrentTime, getCurrentPosition);
   };
 
-  $proto$0.resetSpeedControlled = function() {
+  proto$0.resetInterface = function() {
     this.__deleteGetters();
-
-    this.master = null;
+    delete this.resetNextTime;
+    delete this.resetNextPosition;
+    this.transportStartPosition = 0;
     this.interface = null;
-  };
-
-  /**
-   * Remove engine from current master
-   */
-  $proto$0.removeFromMaster = function() {
-    if (this.master)
-      this.master.remove(this);
   };
 
   /**
    * Connect audio node
    * @param {Object} target audio node
    */
-  $proto$0.connect = function(target) {
+  proto$0.connect = function(target) {
     this.outputNode.connect(target);
     return this;
   };
@@ -380,11 +339,11 @@ var TimeEngine = (function(){var DP$0 = Object.defineProperty;var MIXIN$0 = func
    * Disconnect audio node
    * @param {Number} connection connection to be disconnected
    */
-  $proto$0.disconnect = function(connection) {
+  proto$0.disconnect = function(connection) {
     this.outputNode.disconnect(connection);
     return this;
   };
-MIXIN$0(TimeEngine.prototype,$proto$0);$proto$0=void 0;return TimeEngine;})();
+MIXIN$0(TimeEngine.prototype,proto$0);proto$0=void 0;return TimeEngine;})();
 
 /**
  * Check whether the time engine implements the scheduled interface

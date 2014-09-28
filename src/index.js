@@ -8,7 +8,7 @@
 var audioContext = require("audio-context");
 var TimeEngine = require("time-engine");
 
-class PlayerEngine extends TimeEngine{
+class PlayerEngine extends TimeEngine {
   constructor(buffer = null) {
     this.transport = null; // set when added to transporter
 
@@ -84,7 +84,7 @@ class PlayerEngine extends TimeEngine{
     var lastSpeed = this.__speed;
 
     if (speed !== lastSpeed || seek) {
-      if(seek || lastSpeed * speed < 0) {
+      if (seek || lastSpeed * speed < 0) {
         this.__halt(time);
         this.__start(time, position, speed);
       } else if (lastSpeed === 0 || seek) {
