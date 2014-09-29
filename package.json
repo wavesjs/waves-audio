@@ -17,7 +17,8 @@
     "url": "https://github.com/Ircam-RnD/player-engine"
   },
   "dependencies": {
-    "audio-context": "git://github.com/Ircam-RnD/audio-context.git#master"
+    "audio-context": "git://github.com/Ircam-RnD/audio-context.git#master",
+    "time-engine": "git://github.com/Ircam-RnD/time-engine.git#master"
   },
   "devDependencies": {
     "module-boilerplate": "git://github.com/Ircam-RnD/module-boilerplate.git#master",
