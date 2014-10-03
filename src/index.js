@@ -11,7 +11,7 @@ var TimeEngine = require("time-engine");
 class SimpleScheduler {
 
   constructor() {
-    this.__objects = [];
+    this.__engines = [];
     this.__times = [];
 
     this.__currentTime = null;
@@ -30,35 +30,35 @@ class SimpleScheduler {
     this.lookahead = 0.1;
   }
 
-  __insertEngine(object, time) {
-    this.__objects.push(object);
+  __insertEngine(engine, time) {
+    this.__engines.push(engine);
     this.__times.push(time);
   }
 
-  __moveEngine(object, time) {
-    var index = this.__objects.indexOf(object);
+  __moveEngine(engine, time) {
+    var index = this.__engines.indexOf(engine);
 
     if (index >= 0) {
       if (time !== Infinity) {
         this.__times[index] = time;
       } else {
-        this.__objects.splice(index, 1);
+        this.__engines.splice(index, 1);
         this.__times.splice(index, 1);
       }
     }
   }
 
-  __withdrawEngine(object) {
-    var index = this.__objects.indexOf(object);
+  __withdrawEngine(engine) {
+    var index = this.__engines.indexOf(engine);
 
     if (index >= 0) {
-      this.__objects.splice(index, 1);
+      this.__engines.splice(index, 1);
       this.__times.splice(index, 1);
     }
   }
 
   __reschedule() {
-    if (this.__objects.length > 0) {
+    if (this.__engines.length > 0) {
       if (!this.__timeout)
         this.__tick();
     } else if (this.__timeout) {
@@ -70,26 +70,26 @@ class SimpleScheduler {
   __tick() {
     var i = 0;
 
-    while (i < this.__objects.length) {
-      var object = this.__objects[i];
+    while (i < this.__engines.length) {
+      var engine = this.__engines[i];
       var time = this.__times[i];
 
       while (time <= audioContext.currentTime + this.lookahead) {
-        var audioTime = Math.max(time, audioContext.currentTime);
+        time = Math.max(time, audioContext.currentTime);
         this.__currentTime = time;
-        time += Math.max(object.advanceTime(time, audioTime), 0);
+        time = engine.advanceTime(time);
       }
 
       if (time !== Infinity)
         this.__times[i++] = time;
       else
-        this.__withdrawEngine(object);
+        this.__withdrawEngine(engine);
     }
 
     this.__currentTime = null;
     this.__timeout = null;
 
-    if (this.__objects.length > 0) {
+    if (this.__engines.length > 0) {
       this.__timeout = setTimeout(() => {
         this.__tick();
       }, this.period * 1000);
@@ -106,7 +106,7 @@ class SimpleScheduler {
 
   /**
    * Add a callback to the scheduler
-   * @param {Function} callback function(time, audioTime) to be called
+   * @param {Function} callback function(time) to be called
    * @param {Number} delay of first callback (default is 0)
    * @param {Number} period callback period (default is 0 for one-shot)
    * @return {Object} scheduled object that can be used to call remove and reset
@@ -157,7 +157,7 @@ class SimpleScheduler {
    * @param {Object} engine time engine or callback to be removed from the scheduler
    */
   remove(engine) {
-    if (this.__objects.indexOf(engine) >= 0) {
+    if (this.__engines.indexOf(engine) >= 0) {
       engine.resetInterface();
       this.__withdrawEngine(engine);
       this.__reschedule();

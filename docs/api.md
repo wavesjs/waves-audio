@@ -28,7 +28,7 @@ Add a callback to the scheduler
 
 ### Params: 
 
-* **Function** *callback* function(time, audioTime) to be called
+* **Function** *callback* function(time) to be called
 * **Number** *delay* of first callback (default is 0)
 * **Number** *period* callback period (default is 0 for one-shot)
 

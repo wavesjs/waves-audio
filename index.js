@@ -11,7 +11,7 @@ var TimeEngine = require("time-engine");
 var SimpleScheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};return o["a"]===t})({},{});var DP$0 = Object.defineProperty;var GOPD$0 = Object.getOwnPropertyDescriptor;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,GOPD$0(s,p));}}return t};var DPS$0 = Object.defineProperties;var proto$0={};
 
   function SimpleScheduler() {
-    this.__objects = [];
+    this.__engines = [];
     this.__times = [];
 
     this.__currentTime = null;
@@ -30,35 +30,35 @@ var SimpleScheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a"
     this.lookahead = 0.1;
   }DPS$0(SimpleScheduler.prototype,{currentTime: {"get": currentTime$get$0, "configurable":true,"enumerable":true}});DP$0(SimpleScheduler,"prototype",{"configurable":false,"enumerable":false,"writable":false});
 
-  proto$0.__insertEngine = function(object, time) {
-    this.__objects.push(object);
+  proto$0.__insertEngine = function(engine, time) {
+    this.__engines.push(engine);
     this.__times.push(time);
   };
 
-  proto$0.__moveEngine = function(object, time) {
-    var index = this.__objects.indexOf(object);
+  proto$0.__moveEngine = function(engine, time) {
+    var index = this.__engines.indexOf(engine);
 
     if (index >= 0) {
       if (time !== Infinity) {
         this.__times[index] = time;
       } else {
-        this.__objects.splice(index, 1);
+        this.__engines.splice(index, 1);
         this.__times.splice(index, 1);
       }
     }
   };
 
-  proto$0.__withdrawEngine = function(object) {
-    var index = this.__objects.indexOf(object);
+  proto$0.__withdrawEngine = function(engine) {
+    var index = this.__engines.indexOf(engine);
 
     if (index >= 0) {
-      this.__objects.splice(index, 1);
+      this.__engines.splice(index, 1);
       this.__times.splice(index, 1);
     }
   };
 
   proto$0.__reschedule = function() {
-    if (this.__objects.length > 0) {
+    if (this.__engines.length > 0) {
       if (!this.__timeout)
         this.__tick();
     } else if (this.__timeout) {
@@ -70,26 +70,26 @@ var SimpleScheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a"
   proto$0.__tick = function() {var this$0 = this;
     var i = 0;
 
-    while (i < this.__objects.length) {
-      var object = this.__objects[i];
+    while (i < this.__engines.length) {
+      var engine = this.__engines[i];
       var time = this.__times[i];
 
       while (time <= audioContext.currentTime + this.lookahead) {
-        var audioTime = Math.max(time, audioContext.currentTime);
+        time = Math.max(time, audioContext.currentTime);
         this.__currentTime = time;
-        time += Math.max(object.advanceTime(time, audioTime), 0);
+        time = engine.advanceTime(time);
       }
 
       if (time !== Infinity)
         this.__times[i++] = time;
       else
-        this.__withdrawEngine(object);
+        this.__withdrawEngine(engine);
     }
 
     this.__currentTime = null;
     this.__timeout = null;
 
-    if (this.__objects.length > 0) {
+    if (this.__engines.length > 0) {
       this.__timeout = setTimeout(function()  {
         this$0.__tick();
       }, this.period * 1000);
@@ -106,7 +106,7 @@ var SimpleScheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a"
 
   /**
    * Add a callback to the scheduler
-   * @param {Function} callback function(time, audioTime) to be called
+   * @param {Function} callback function(time) to be called
    * @param {Number} delay of first callback (default is 0)
    * @param {Number} period callback period (default is 0 for one-shot)
    * @return {Object} scheduled object that can be used to call remove and reset
@@ -157,7 +157,7 @@ var SimpleScheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a"
    * @param {Object} engine time engine or callback to be removed from the scheduler
    */
   proto$0.remove = function(engine) {
-    if (this.__objects.indexOf(engine) >= 0) {
+    if (this.__engines.indexOf(engine) >= 0) {
       engine.resetInterface();
       this.__withdrawEngine(engine);
       this.__reschedule();
