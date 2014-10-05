@@ -106,8 +106,8 @@ var PlayerEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN
    */
   function cyclic$set$0(cyclic) {
     if (cyclic !== this.__cyclic) {
-      var time = this.getSchedulerTime();
-      var position = this.getTransportPosition();
+      var time = this.currentTime;
+      var position = this.currentosition;
 
       this.__halt(time);
       this.__cyclic = cyclic;
