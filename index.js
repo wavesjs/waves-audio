@@ -8,8 +8,73 @@
 var audioContext = require("audio-context");
 var TimeEngine = require("time-engine");
 
-var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};MIXIN$0(SegmentEngine, super$0);var $proto$0={};
+function getCurrentOrPreviousIndex(sortedArray, value) {
+  var size = sortedArray.length;
+  var index = 0;
 
+  if (size > 0) {
+    var firstVal = sortedArray[0];
+    var lastVal = sortedArray[size - 1];
+
+    if (value < firstVal)
+      index = -1;
+    else if (value >= lastVal)
+      index = size - 1;
+    else {
+      if (index < 0 || index >= size)
+        index = Math.floor((size - 1) * (value - firstVal) / (lastVal - firstVal));
+
+      while (sortedArray[index] > value)
+        index--;
+
+      while (sortedArray[index + 1] <= value)
+        index++;
+    }
+  }
+
+  return index;
+}
+
+function getCurrentOrNextIndex(sortedArray, value) {
+  var size = sortedArray.length;
+  var index = 0;
+
+  if (size > 0) {
+    var firstVal = sortedArray[0];
+    var lastVal = sortedArray[size - 1];
+
+    if (value <= firstVal)
+      index = 0;
+    else if (value >= lastVal)
+      index = size;
+    else {
+      if (index < 0 || index >= size)
+        index = Math.floor((size - 1) * (value - firstVal) / (lastVal - firstVal));
+
+      while (sortedArray[index] < value)
+        index++;
+
+      while (sortedArray[index + 1] >= value)
+        index--;
+    }
+  }
+
+  return index;
+}
+
+/**
+ * @class SegmentEngine
+ */
+var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};MIXIN$0(SegmentEngine, super$0);var $proto$0={};
+  /**
+   * @constructor
+   * @param {AudioBuffer} buffer initial audio buffer for granular synthesis
+   *
+   * The engine implements the "scheduled" and "transported" interfaces.
+   * When "scheduled", the engine  generates segments more or less periodically
+   * (controlled by the periodAbs, periodRel, and perioVar attributes).
+   * When "transported", the engine generates segments at the position of their onset time.
+   */
   function SegmentEngine() {var buffer = arguments[0];if(buffer === void 0)buffer = null;
     super$0.call(this, false); // by default segments don't sync to transport position
 
@@ -141,18 +206,94 @@ var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXI
      * @type {Bool}
      */
     this.cyclic = false;
+    this.__cyclicOffset = 0;
 
     this.outputNode = this.__gainNode = audioContext.createGain();
-  }SegmentEngine.prototype = Object.create(super$0.prototype, {"constructor": {"value": SegmentEngine, "configurable": true, "writable": true}, gain: {"get": gain$get$0, "set": gain$set$0, "configurable": true, "enumerable": true} });DP$0(SegmentEngine, "prototype", {"configurable": false, "enumerable": false, "writable": false});
+  }SegmentEngine.prototype = Object.create(super$0.prototype, {"constructor": {"value": SegmentEngine, "configurable": true, "writable": true}, bufferDuration: {"get": bufferDuration$get$0, "configurable": true, "enumerable": true}, gain: {"get": gain$get$0, "set": gain$set$0, "configurable": true, "enumerable": true} });DP$0(SegmentEngine, "prototype", {"configurable": false, "enumerable": false, "writable": false});
+
+  function bufferDuration$get$0() {
+    var bufferDuration = this.buffer.duration;
+
+    if (this.buffer.wrapAroundExtention)
+      bufferDuration -= this.buffer.wrapAroundExtention;
+
+    return bufferDuration
+  }
 
   // TimeEngine method (transported interface)
   $proto$0.syncPosition = function(time, position, speed) {
-    return Infinity;
+    var index = this.segmentIndex;
+    var cyclicOffset = 0;
+    var bufferDuration = this.bufferDuration;
+
+    if (this.cyclic) {
+      var cycles = position / bufferDuration;
+      
+      cyclicOffset = Math.floor(cycles) * bufferDuration;
+      position -= cyclicOffset;
+    }
+
+    if (speed > 0) {
+      index = getCurrentOrNextIndex(this.positionArray, position);
+
+      if (index >= this.positionArray.length) {
+        index = 0;
+        cyclicOffset += bufferDuration;
+
+        if (!this.cyclic)
+          return Infinity;
+      }
+    } else {
+      index = getCurrentOrPreviousIndex(this.positionArray, position);
+
+      if (index < 0) {
+        index = this.positionArray.length - 1;
+        cyclicOffset -= bufferDuration;
+
+        if (!this.cyclic)
+          return -Infinity;
+      }
+    }
+
+    this.segmentIndex = index;
+    this.__cyclicOffset = cyclicOffset;
+
+    return cyclicOffset + this.positionArray[index];
   };
 
   // TimeEngine method (transported interface)
   $proto$0.advancePosition = function(time, position, speed) {
-    return Infinity;
+    var index = this.segmentIndex;
+    var cyclicOffset = this.__cyclicOffset;
+
+    this.trigger(time);
+
+    if (speed > 0) {
+      index++;
+
+      if (index >= this.positionArray.length) {
+        index = 0;
+        cyclicOffset += this.bufferDuration;
+
+        if (!this.cyclic)
+          return Infinity;
+      }
+    } else {
+      index--;
+
+      if (index < 0) {
+        index = this.positionArray.length - 1;
+        cyclicOffset -= this.bufferDuration;
+
+        if (!this.cyclic)
+          return -Infinity;
+      }
+    }
+
+    this.segmentIndex = index;
+    this.__cyclicOffset = cyclicOffset;
+
+    return this.__cyclicOffset + this.positionArray[index];
   };
 
   // TimeEngine method (transported interface)
@@ -194,10 +335,7 @@ var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXI
       var segmentDuration = 0.0;
       var segmentOffset = 0.0;
       var resamplingRate = 1.0;
-      var bufferDuration = this.buffer.duration;
-
-      if (this.buffer.wrapAroundExtension)
-        bufferDuration -= this.buffer.wrapAroundExtension;
+      var bufferDuration = this.bufferDuration;
 
       if (this.cyclic)
         segmentIndex = segmentIndex % this.positionArray.length;

@@ -8,8 +8,73 @@
 var audioContext = require("audio-context");
 var TimeEngine = require("time-engine");
 
-class SegmentEngine extends TimeEngine {
+function getCurrentOrPreviousIndex(sortedArray, value) {
+  var size = sortedArray.length;
+  var index = 0;
 
+  if (size > 0) {
+    var firstVal = sortedArray[0];
+    var lastVal = sortedArray[size - 1];
+
+    if (value < firstVal)
+      index = -1;
+    else if (value >= lastVal)
+      index = size - 1;
+    else {
+      if (index < 0 || index >= size)
+        index = Math.floor((size - 1) * (value - firstVal) / (lastVal - firstVal));
+
+      while (sortedArray[index] > value)
+        index--;
+
+      while (sortedArray[index + 1] <= value)
+        index++;
+    }
+  }
+
+  return index;
+}
+
+function getCurrentOrNextIndex(sortedArray, value) {
+  var size = sortedArray.length;
+  var index = 0;
+
+  if (size > 0) {
+    var firstVal = sortedArray[0];
+    var lastVal = sortedArray[size - 1];
+
+    if (value <= firstVal)
+      index = 0;
+    else if (value >= lastVal)
+      index = size;
+    else {
+      if (index < 0 || index >= size)
+        index = Math.floor((size - 1) * (value - firstVal) / (lastVal - firstVal));
+
+      while (sortedArray[index] < value)
+        index++;
+
+      while (sortedArray[index + 1] >= value)
+        index--;
+    }
+  }
+
+  return index;
+}
+
+/**
+ * @class SegmentEngine
+ */
+class SegmentEngine extends TimeEngine {
+  /**
+   * @constructor
+   * @param {AudioBuffer} buffer initial audio buffer for granular synthesis
+   *
+   * The engine implements the "scheduled" and "transported" interfaces.
+   * When "scheduled", the engine  generates segments more or less periodically
+   * (controlled by the periodAbs, periodRel, and perioVar attributes).
+   * When "transported", the engine generates segments at the position of their onset time.
+   */
   constructor(buffer = null) {
     super(false); // by default segments don't sync to transport position
 
@@ -141,18 +206,94 @@ class SegmentEngine extends TimeEngine {
      * @type {Bool}
      */
     this.cyclic = false;
+    this.__cyclicOffset = 0;
 
     this.outputNode = this.__gainNode = audioContext.createGain();
   }
 
+  get bufferDuration() {
+    var bufferDuration = this.buffer.duration;
+
+    if (this.buffer.wrapAroundExtention)
+      bufferDuration -= this.buffer.wrapAroundExtention;
+
+    return bufferDuration
+  }
+
   // TimeEngine method (transported interface)
   syncPosition(time, position, speed) {
-    return Infinity;
+    var index = this.segmentIndex;
+    var cyclicOffset = 0;
+    var bufferDuration = this.bufferDuration;
+
+    if (this.cyclic) {
+      var cycles = position / bufferDuration;
+      
+      cyclicOffset = Math.floor(cycles) * bufferDuration;
+      position -= cyclicOffset;
+    }
+
+    if (speed > 0) {
+      index = getCurrentOrNextIndex(this.positionArray, position);
+
+      if (index >= this.positionArray.length) {
+        index = 0;
+        cyclicOffset += bufferDuration;
+
+        if (!this.cyclic)
+          return Infinity;
+      }
+    } else {
+      index = getCurrentOrPreviousIndex(this.positionArray, position);
+
+      if (index < 0) {
+        index = this.positionArray.length - 1;
+        cyclicOffset -= bufferDuration;
+
+        if (!this.cyclic)
+          return -Infinity;
+      }
+    }
+
+    this.segmentIndex = index;
+    this.__cyclicOffset = cyclicOffset;
+
+    return cyclicOffset + this.positionArray[index];
   }
 
   // TimeEngine method (transported interface)
   advancePosition(time, position, speed) {
-    return Infinity;
+    var index = this.segmentIndex;
+    var cyclicOffset = this.__cyclicOffset;
+
+    this.trigger(time);
+
+    if (speed > 0) {
+      index++;
+
+      if (index >= this.positionArray.length) {
+        index = 0;
+        cyclicOffset += this.bufferDuration;
+
+        if (!this.cyclic)
+          return Infinity;
+      }
+    } else {
+      index--;
+
+      if (index < 0) {
+        index = this.positionArray.length - 1;
+        cyclicOffset -= this.bufferDuration;
+
+        if (!this.cyclic)
+          return -Infinity;
+      }
+    }
+
+    this.segmentIndex = index;
+    this.__cyclicOffset = cyclicOffset;
+
+    return this.__cyclicOffset + this.positionArray[index];
   }
 
   // TimeEngine method (transported interface)
@@ -194,10 +335,7 @@ class SegmentEngine extends TimeEngine {
       var segmentDuration = 0.0;
       var segmentOffset = 0.0;
       var resamplingRate = 1.0;
-      var bufferDuration = this.buffer.duration;
-
-      if (this.buffer.wrapAroundExtension)
-        bufferDuration -= this.buffer.wrapAroundExtension;
+      var bufferDuration = this.bufferDuration;
 
       if (this.cyclic)
         segmentIndex = segmentIndex % this.positionArray.length;

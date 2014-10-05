@@ -6,6 +6,18 @@ written in ECMAscript 6
 
 Author: Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
 
+# SegmentEngine
+
+## constructor(buffer)
+
+### Params: 
+
+* **AudioBuffer** *buffer* initial audio buffer for granular synthesis 
+The engine implements the "scheduled" and "transported" interfaces.
+When "scheduled", the engine  generates segments more or less periodically
+(controlled by the periodAbs, periodRel, and perioVar attributes).
+When "transported", the engine generates segments at the position of their onset time.
+
 ## buffer
 
 Audio buffer
