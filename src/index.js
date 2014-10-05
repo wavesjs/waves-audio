@@ -10,9 +10,16 @@ var TimeEngine = require("time-engine");
 
 /**
  * @class GranularEngine
- * @param {AudioBuffer} buffer audio buffer initial for granular synthesis
  */
 class GranularEngine extends TimeEngine {
+  /**
+   * @constructor
+   * @param {AudioBuffer} buffer initial audio buffer for granular synthesis
+   *
+   * The engine implements the "scheduled" interface.
+   * The grain position (grain onset or center time in the audio buffer) is optionally 
+   * determined by the engine's currentPosition attribute.
+   */
   constructor(buffer = null) {
     super();
 
@@ -112,9 +119,6 @@ class GranularEngine extends TimeEngine {
      */
     this.cyclic = false;
 
-    this.__phase = 0;
-    this.__aligned = true;
-
     this.outputNode = this.__gainNode = audioContext.createGain();
   }
 
@@ -195,8 +199,8 @@ class GranularEngine extends TimeEngine {
       // wrap or clip grain position and duration into buffer duration
       if (grainPosition < 0 || grainPosition >= bufferDuration) {
         if (this.cyclic) {
-          var phase = grainPosition / bufferDuration;
-          grainPosition = (phase - Math.floor(phase)) * bufferDuration;
+          var cycles = grainPosition / bufferDuration;
+          grainPosition = (cycles - Math.floor(cycles)) * bufferDuration;
 
           if (grainPosition + grainDuration > this.buffer.duration)
             grainDuration = this.buffer.duration - grainPosition;

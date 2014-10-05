@@ -11,9 +11,16 @@ var TimeEngine = _dereq_("time-engine");
 
 /**
  * @class GranularEngine
- * @param {AudioBuffer} buffer audio buffer initial for granular synthesis
  */
 var GranularEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};MIXIN$0(GranularEngine, super$0);var $proto$0={};
+  /**
+   * @constructor
+   * @param {AudioBuffer} buffer initial audio buffer for granular synthesis
+   *
+   * The engine implements the "scheduled" interface.
+   * The grain position (grain onset or center time in the audio buffer) is optionally 
+   * determined by the engine's currentPosition attribute.
+   */
   function GranularEngine() {var buffer = arguments[0];if(buffer === void 0)buffer = null;
     super$0.call(this);
 
@@ -113,9 +120,6 @@ var GranularEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIX
      */
     this.cyclic = false;
 
-    this.__phase = 0;
-    this.__aligned = true;
-
     this.outputNode = this.__gainNode = audioContext.createGain();
   }GranularEngine.prototype = Object.create(super$0.prototype, {"constructor": {"value": GranularEngine, "configurable": true, "writable": true}, bufferDuration: {"get": bufferDuration$get$0, "configurable": true, "enumerable": true}, playbackLength: {"get": playbackLength$get$0, "configurable": true, "enumerable": true}, gain: {"get": gain$get$0, "set": gain$set$0, "configurable": true, "enumerable": true} });DP$0(GranularEngine, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
@@ -196,8 +200,8 @@ var GranularEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIX
       // wrap or clip grain position and duration into buffer duration
       if (grainPosition < 0 || grainPosition >= bufferDuration) {
         if (this.cyclic) {
-          var phase = grainPosition / bufferDuration;
-          grainPosition = (phase - Math.floor(phase)) * bufferDuration;
+          var cycles = grainPosition / bufferDuration;
+          grainPosition = (cycles - Math.floor(cycles)) * bufferDuration;
 
           if (grainPosition + grainDuration > this.buffer.duration)
             grainDuration = this.buffer.duration - grainPosition;

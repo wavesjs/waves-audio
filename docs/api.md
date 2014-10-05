@@ -8,9 +8,14 @@ Author: Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
 
 # GranularEngine
 
+## constructor(buffer)
+
 ### Params: 
 
-* **AudioBuffer** *buffer* audio buffer initial for granular synthesis
+* **AudioBuffer** *buffer* initial audio buffer for granular synthesis 
+The engine implements the "scheduled" interface.
+The grain position (grain onset or center time in the audio buffer) is optionally 
+determined by the engine's currentPosition attribute.
 
 ## buffer
 
