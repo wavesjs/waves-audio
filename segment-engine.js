@@ -9,9 +9,8 @@
 var audioContext = _dereq_("audio-context");
 var TimeEngine = _dereq_("time-engine");
 
-function getCurrentOrPreviousIndex(sortedArray, value) {
+function getCurrentOrPreviousIndex(sortedArray, value) {var index = arguments[2];if(index === void 0)index = 0;
   var size = sortedArray.length;
-  var index = 0;
 
   if (size > 0) {
     var firstVal = sortedArray[0];
@@ -36,9 +35,8 @@ function getCurrentOrPreviousIndex(sortedArray, value) {
   return index;
 }
 
-function getCurrentOrNextIndex(sortedArray, value) {
+function getCurrentOrNextIndex(sortedArray, value) {var index = arguments[2];if(index === void 0)index = 0;
   var size = sortedArray.length;
-  var index = 0;
 
   if (size > 0) {
     var firstVal = sortedArray[0];
