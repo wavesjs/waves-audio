@@ -28,7 +28,7 @@ var SimpleScheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a"
      * @type {Number}
      */
     this.lookahead = 0.1;
-  }DPS$0(SimpleScheduler.prototype,{currentTime: {"get": currentTime$get$0, "configurable":true,"enumerable":true}});DP$0(SimpleScheduler,"prototype",{"configurable":false,"enumerable":false,"writable":false});
+  }DPS$0(SimpleScheduler.prototype,{currentTime: {"get": $currentTime_get$0, "configurable":true,"enumerable":true}});DP$0(SimpleScheduler,"prototype",{"configurable":false,"enumerable":false,"writable":false});
 
   proto$0.__insertEngine = function(engine, time) {
     this.__engines.push(engine);
@@ -100,7 +100,7 @@ var SimpleScheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a"
    * Get scheduler time
    * @return {Number} current scheduler time including lookahead
    */
-  function currentTime$get$0() {
+  function $currentTime_get$0() {
     return this.__currentTime || audioContext.currentTime + this.lookahead;
   }
 
@@ -111,19 +111,19 @@ var SimpleScheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a"
    * @param {Number} period callback period (default is 0 for one-shot)
    * @return {Object} scheduled object that can be used to call remove and reset
    */
-  proto$0.callback = function(callback) {var delay = arguments[1];if(delay === void 0)delay = 0;var period = arguments[2];if(period === void 0)period = 0;
-    var engine = {
+  proto$0.callback = function(callbackFunction) {var delay = arguments[1];if(delay === void 0)delay = 0;var period = arguments[2];if(period === void 0)period = 0;
+    var engineWrapper = {
       period: period || Infinity,
       advanceTime: function(time) {
-        callback(time);
+        callbackFunction(time);
         return time + this.period;
       }
     };
 
-    this.__insertEngine(engine, this.currentTime + delay);
+    this.__insertEngine(engineWrapper, this.currentTime + delay);
     this.__reschedule();
 
-    return engine;
+    return engineWrapper;
   };
 
   /**
@@ -135,7 +135,7 @@ var SimpleScheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a"
     if (!engine.interface) {
       if (TimeEngine.implementsScheduled(engine)) {
 
-        engine.setScheduled(function(time)  {
+        TimeEngine.setScheduled(engine, function(time)  {
           this$0.__nextTime = this$0.__queue.move(engine, time);
           this$0.__reschedule();
         }, function()  {
@@ -144,12 +144,16 @@ var SimpleScheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a"
 
         this.__insertEngine(engine, this.currentTime + delay);
         this.__reschedule();
+
+        return engine;
       } else {
         throw new Error("object cannot be added to scheduler");
       }
     } else {
       throw new Error("object has already been added to a master");
     }
+
+    return null;
   };
 
   /**
@@ -158,7 +162,7 @@ var SimpleScheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a"
    */
   proto$0.remove = function(engine) {
     if (this.__engines.indexOf(engine) >= 0) {
-      engine.resetInterface();
+      TimeEngine.resetInterface(engine);
       this.__withdrawEngine(engine);
       this.__reschedule();
     } else {
@@ -177,4 +181,4 @@ var SimpleScheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a"
   };
 MIXIN$0(SimpleScheduler.prototype,proto$0);proto$0=void 0;return SimpleScheduler;})();
 
-module.exports = new SimpleScheduler; // export scheduler singleton
+module.exports = new SimpleScheduler(); // export scheduler singleton

@@ -111,19 +111,19 @@ class SimpleScheduler {
    * @param {Number} period callback period (default is 0 for one-shot)
    * @return {Object} scheduled object that can be used to call remove and reset
    */
-  callback(callback, delay = 0, period = 0) {
-    var engine = {
+  callback(callbackFunction, delay = 0, period = 0) {
+    var engineWrapper = {
       period: period || Infinity,
       advanceTime: function(time) {
-        callback(time);
+        callbackFunction(time);
         return time + this.period;
       }
     };
 
-    this.__insertEngine(engine, this.currentTime + delay);
+    this.__insertEngine(engineWrapper, this.currentTime + delay);
     this.__reschedule();
 
-    return engine;
+    return engineWrapper;
   }
 
   /**
@@ -135,7 +135,7 @@ class SimpleScheduler {
     if (!engine.interface) {
       if (TimeEngine.implementsScheduled(engine)) {
 
-        engine.setScheduled((time) => {
+        TimeEngine.setScheduled(engine, (time) => {
           this.__nextTime = this.__queue.move(engine, time);
           this.__reschedule();
         }, () => {
@@ -144,12 +144,16 @@ class SimpleScheduler {
 
         this.__insertEngine(engine, this.currentTime + delay);
         this.__reschedule();
+
+        return engine;
       } else {
         throw new Error("object cannot be added to scheduler");
       }
     } else {
       throw new Error("object has already been added to a master");
     }
+
+    return null;
   }
 
   /**
@@ -158,7 +162,7 @@ class SimpleScheduler {
    */
   remove(engine) {
     if (this.__engines.indexOf(engine) >= 0) {
-      engine.resetInterface();
+      TimeEngine.resetInterface(engine);
       this.__withdrawEngine(engine);
       this.__reschedule();
     } else {
@@ -177,4 +181,4 @@ class SimpleScheduler {
   }
 }
 
-module.exports = new SimpleScheduler; // export scheduler singleton
+module.exports = new SimpleScheduler(); // export scheduler singleton
