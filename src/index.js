@@ -128,7 +128,7 @@ class GranularEngine extends TimeEngine {
     if (this.buffer.wrapAroundExtention)
       bufferDuration -= this.buffer.wrapAroundExtention;
 
-    return bufferDuration
+    return bufferDuration;
   }
 
   // TimeEngine method (scheduled interface)
