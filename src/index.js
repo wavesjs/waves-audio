@@ -23,7 +23,7 @@ function arrayRemove(array, value) {
 class Scheduler {
   constructor() {
     this.__queue = new PriorityQueue();
-    this.__scheduledEngines = [];
+    this.__engines = [];
 
     this.__currentTime = null;
     this.__nextTime = Infinity;
@@ -88,11 +88,11 @@ class Scheduler {
    * @param {Number} period callback period (default is 0 for one-shot)
    * @return {Object} scheduled object that can be used to call remove and reset
    */
-  callback(callback, delay = 0, period = 0) {
+  callback(callbackFunction, delay = 0, period = 0) {
     var engine = {
       period: period || Infinity,
       advanceTime: function(time) {
-        callback(time);
+        callbackFunction(time);
         return time + this.period;
       }
     };
@@ -112,9 +112,9 @@ class Scheduler {
   add(engine, delay = 0, getCurrentPosition = null) {
     if (!engine.interface) {
       if (TimeEngine.implementsScheduled(engine)) {
-        this.__scheduledEngines.push(engine);
+        this.__engines.push(engine);
 
-        engine.setScheduled((time) => {
+        TimeEngine.setScheduled(engine, (time) => {
           this.__nextTime = this.__queue.move(engine, time);
           this.__reschedule();
         }, () => {
@@ -129,6 +129,8 @@ class Scheduler {
     } else {
       throw new Error("object has already been added to a master");
     }
+
+    return engine;
   }
 
   /**
@@ -136,8 +138,8 @@ class Scheduler {
    * @param {Object} engine time engine or callback to be removed from the scheduler
    */
   remove(engine) {
-    if (arrayRemove(this.__scheduledEngines, engine)) {
-      engine.resetInterface();
+    if (arrayRemove(this.__engines, engine)) {
+      TimeEngine.resetInterface(engine);
 
       this.__nextTime = this.__queue.remove(engine);
       this.__reschedule();
@@ -157,4 +159,4 @@ class Scheduler {
   }
 }
 
-module.exports = new Scheduler; // export scheduler singleton
+module.exports = new Scheduler(); // export scheduler singleton

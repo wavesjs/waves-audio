@@ -23,7 +23,7 @@ function arrayRemove(array, value) {
 var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};return o["a"]===t})({},{});var DP$0 = Object.defineProperty;var GOPD$0 = Object.getOwnPropertyDescriptor;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,GOPD$0(s,p));}}return t};var DPS$0 = Object.defineProperties;var proto$0={};
   function Scheduler() {
     this.__queue = new PriorityQueue();
-    this.__scheduledEngines = [];
+    this.__engines = [];
 
     this.__currentTime = null;
     this.__nextTime = Infinity;
@@ -40,7 +40,7 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
      * @type {Number}
      */
     this.lookahead = 0.1;
-  }DPS$0(Scheduler.prototype,{currentTime: {"get": currentTime$get$0, "configurable":true,"enumerable":true}});DP$0(Scheduler,"prototype",{"configurable":false,"enumerable":false,"writable":false});
+  }DPS$0(Scheduler.prototype,{currentTime: {"get": $currentTime_get$0, "configurable":true,"enumerable":true}});DP$0(Scheduler,"prototype",{"configurable":false,"enumerable":false,"writable":false});
 
   // global setTimeout scheduling loop
   proto$0.__tick = function() {var this$0 = this;
@@ -77,7 +77,7 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
    * Get scheduler time
    * @return {Number} current scheduler time including lookahead
    */
-  function currentTime$get$0() {
+  function $currentTime_get$0() {
     return this.__currentTime || audioContext.currentTime + this.lookahead;
   }
 
@@ -88,11 +88,11 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
    * @param {Number} period callback period (default is 0 for one-shot)
    * @return {Object} scheduled object that can be used to call remove and reset
    */
-  proto$0.callback = function(callback) {var delay = arguments[1];if(delay === void 0)delay = 0;var period = arguments[2];if(period === void 0)period = 0;
+  proto$0.callback = function(callbackFunction) {var delay = arguments[1];if(delay === void 0)delay = 0;var period = arguments[2];if(period === void 0)period = 0;
     var engine = {
       period: period || Infinity,
       advanceTime: function(time) {
-        callback(time);
+        callbackFunction(time);
         return time + this.period;
       }
     };
@@ -112,9 +112,9 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
   proto$0.add = function(engine) {var delay = arguments[1];if(delay === void 0)delay = 0;var getCurrentPosition = arguments[2];if(getCurrentPosition === void 0)getCurrentPosition = null;var this$0 = this;
     if (!engine.interface) {
       if (TimeEngine.implementsScheduled(engine)) {
-        this.__scheduledEngines.push(engine);
+        this.__engines.push(engine);
 
-        engine.setScheduled(function(time)  {
+        TimeEngine.setScheduled(engine, function(time)  {
           this$0.__nextTime = this$0.__queue.move(engine, time);
           this$0.__reschedule();
         }, function()  {
@@ -129,6 +129,8 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
     } else {
       throw new Error("object has already been added to a master");
     }
+
+    return engine;
   };
 
   /**
@@ -136,8 +138,8 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
    * @param {Object} engine time engine or callback to be removed from the scheduler
    */
   proto$0.remove = function(engine) {
-    if (arrayRemove(this.__scheduledEngines, engine)) {
-      engine.resetInterface();
+    if (arrayRemove(this.__engines, engine)) {
+      TimeEngine.resetInterface(engine);
 
       this.__nextTime = this.__queue.remove(engine);
       this.__reschedule();
@@ -157,4 +159,4 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
   };
 MIXIN$0(Scheduler.prototype,proto$0);proto$0=void 0;return Scheduler;})();
 
-module.exports = new Scheduler; // export scheduler singleton
+module.exports = new Scheduler(); // export scheduler singleton
