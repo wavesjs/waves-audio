@@ -15,11 +15,11 @@ var PlayControlScheduledCell = (function(super$0){if(!PRS$0)MIXIN$0(PlayControlS
     this.__playControl = playControl;
   }if(super$0!==null)SP$0(PlayControlScheduledCell,super$0);PlayControlScheduledCell.prototype = OC$0(super$0!==null?super$0.prototype:null,{"constructor":{"value":PlayControlScheduledCell,"configurable":true,"writable":true}});DP$0(PlayControlScheduledCell,"prototype",{"configurable":false,"enumerable":false,"writable":false});
 
-  // TimeEngine method scheduled interface)
+  // TimeEngine method (scheduled interface)
   proto$0.advanceTime = function(time) {
     var playControl = this.__playControl;
     var position = playControl.__getPositionAtTime(time);
-    var nextPosition = playControl.__transportedEngine.advancePosition(time, position, this.__speed);
+    var nextPosition = playControl.__engine.advancePosition(time, position, this.__speed);
     return playControl.__getTimeAtPosition(nextPosition);
   };
 MIXIN$0(PlayControlScheduledCell.prototype,proto$0);proto$0=void 0;return PlayControlScheduledCell;})(TimeEngine);
@@ -55,20 +55,20 @@ var PlayControl = (function(super$0){if(!PRS$0)MIXIN$0(PlayControl, super$0);var
       if (TimeEngine.implementsSpeedControlled(engine)) {
         // add time engine with speed-controlled interface
         this.__engine = engine;
-        engine.setSpeedControlled(getCurrentTime, getCurrentPosition);
+        TimeEngine.setSpeedControlled(engine, getCurrentTime, getCurrentPosition);
       } else if (TimeEngine.implementsTransported(engine)) {
         // add time engine with transported interface
         this.__engine = engine;
 
-        engine.setTransported(0, function()  {var nextPosition = arguments[0];if(nextPosition === void 0)nextPosition = null;
+        TimeEngine.setTransported(engine, 0, function()  {var nextEnginePosition = arguments[0];if(nextEnginePosition === void 0)nextEnginePosition = null;
           // resetNextPosition
-          if (nextPosition === null) {
+          if (nextEnginePosition === null) {
             var time = scheduler.currentTime;
             var position = this$0.__getPositionAtTime(time);
-            nextPosition = engine.syncPosition(time, position, this$0.__speed);
+            nextEnginePosition = engine.syncPosition(time, position, this$0.__speed);
           }
 
-          this$0.__resetNextPosition(nextPosition);
+          this$0.__resetNextPosition(nextEnginePosition);
         }, getCurrentTime, getCurrentPosition);
       } else if (TimeEngine.implementsScheduled(engine)) {
         // add time engine with scheduled interface
@@ -225,7 +225,7 @@ var PlayControl = (function(super$0){if(!PRS$0)MIXIN$0(PlayControl, super$0);var
         speed = 16;
     } else {
       if (speed < -16)
-        speed = -16
+        speed = -16;
       else if (speed > -0.0625)
         speed = -0.0625;
     }
@@ -293,7 +293,7 @@ function arrayRemove(array, value) {
 var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};return o["a"]===t})({},{});var DP$0 = Object.defineProperty;var GOPD$0 = Object.getOwnPropertyDescriptor;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,GOPD$0(s,p));}}return t};var DPS$0 = Object.defineProperties;var proto$0={};
   function Scheduler() {
     this.__queue = new PriorityQueue();
-    this.__scheduledEngines = [];
+    this.__engines = [];
 
     this.__currentTime = null;
     this.__nextTime = Infinity;
@@ -310,7 +310,7 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
      * @type {Number}
      */
     this.lookahead = 0.1;
-  }DPS$0(Scheduler.prototype,{currentTime: {"get": currentTime$get$0, "configurable":true,"enumerable":true}});DP$0(Scheduler,"prototype",{"configurable":false,"enumerable":false,"writable":false});
+  }DPS$0(Scheduler.prototype,{currentTime: {"get": $currentTime_get$0, "configurable":true,"enumerable":true}});DP$0(Scheduler,"prototype",{"configurable":false,"enumerable":false,"writable":false});
 
   // global setTimeout scheduling loop
   proto$0.__tick = function() {var this$0 = this;
@@ -347,7 +347,7 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
    * Get scheduler time
    * @return {Number} current scheduler time including lookahead
    */
-  function currentTime$get$0() {
+  function $currentTime_get$0() {
     return this.__currentTime || audioContext.currentTime + this.lookahead;
   }
 
@@ -358,11 +358,11 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
    * @param {Number} period callback period (default is 0 for one-shot)
    * @return {Object} scheduled object that can be used to call remove and reset
    */
-  proto$0.callback = function(callback) {var delay = arguments[1];if(delay === void 0)delay = 0;var period = arguments[2];if(period === void 0)period = 0;
+  proto$0.callback = function(callbackFunction) {var delay = arguments[1];if(delay === void 0)delay = 0;var period = arguments[2];if(period === void 0)period = 0;
     var engine = {
       period: period || Infinity,
       advanceTime: function(time) {
-        callback(time);
+        callbackFunction(time);
         return time + this.period;
       }
     };
@@ -382,9 +382,9 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
   proto$0.add = function(engine) {var delay = arguments[1];if(delay === void 0)delay = 0;var getCurrentPosition = arguments[2];if(getCurrentPosition === void 0)getCurrentPosition = null;var this$0 = this;
     if (!engine.interface) {
       if (TimeEngine.implementsScheduled(engine)) {
-        this.__scheduledEngines.push(engine);
+        this.__engines.push(engine);
 
-        engine.setScheduled(function(time)  {
+        TimeEngine.setScheduled(engine, function(time)  {
           this$0.__nextTime = this$0.__queue.move(engine, time);
           this$0.__reschedule();
         }, function()  {
@@ -399,6 +399,8 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
     } else {
       throw new Error("object has already been added to a master");
     }
+
+    return engine;
   };
 
   /**
@@ -406,8 +408,8 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
    * @param {Object} engine time engine or callback to be removed from the scheduler
    */
   proto$0.remove = function(engine) {
-    if (arrayRemove(this.__scheduledEngines, engine)) {
-      engine.resetInterface();
+    if (arrayRemove(this.__engines, engine)) {
+      TimeEngine.resetInterface(engine);
 
       this.__nextTime = this.__queue.remove(engine);
       this.__reschedule();
@@ -427,7 +429,7 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
   };
 MIXIN$0(Scheduler.prototype,proto$0);proto$0=void 0;return Scheduler;})();
 
-module.exports = new Scheduler; // export scheduler singleton
+module.exports = new Scheduler(); // export scheduler singleton
 },{"audio-context":3,"priority-queue":4,"time-engine":5}],3:[function(_dereq_,module,exports){
 /* Generated by es6-transpiler v 0.7.14-2 */
 // instantiates an audio context in the global scope if not there already
@@ -565,18 +567,18 @@ var audioContext = _dereq_("audio-context");
  * Time engines are components that generate more or less regular audio events and/or playback a media stream.
  * They implement one or multiple imterfaces to be synchronized by a master such as a scheduler, a transport or a play-control.
  * The provided interfaces are "scheduled", "transported", and "play-controlled".
- * 
- * In the "scheduled" interface the engine implements a method "advanceTime" that is called by the master (usually teh scheduler) 
- * and returns the delay until the next call of "advanceTime". The master provides the engien with a function "resetNextTime" 
+ *
+ * In the "scheduled" interface the engine implements a method "advanceTime" that is called by the master (usually teh scheduler)
+ * and returns the delay until the next call of "advanceTime". The master provides the engien with a function "resetNextTime"
  * to reschedule the next call to another time.
  *
  * In the "transported" interface the master (usually a transport) first calls the method "syncPosition" that returns the position
- * of the first event generated by the engine regarding the playing direction (sign of the speed argument). Events are generated 
+ * of the first event generated by the engine regarding the playing direction (sign of the speed argument). Events are generated
  * through the method "advancePosition" that returns the position of the next event generated through "advancePosition".
  *
  * In the "speed-controlled" interface the engine is controlled by the method "syncSpeed".
  *
- * For all interfaces the engine is provided with the attribute getters "currentTime" and "currentPosition" (for the case that the master 
+ * For all interfaces the engine is provided with the attribute getters "currentTime" and "currentPosition" (for the case that the master
  * does not implement these attributte getters, the base class provides default implementations).
  */
 var TimeEngine = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};return o["a"]===t})({},{});var DP$0 = Object.defineProperty;var GOPD$0 = Object.getOwnPropertyDescriptor;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,GOPD$0(s,p));}}return t};var DPS$0 = Object.defineProperties;var proto$0={};
@@ -591,12 +593,6 @@ var TimeEngine = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};r
      * @type {String}
      */
     this.interface = null;
-
-    /**
-     * Transport start position of the engine (handled by )
-     * @type {Object}
-     */
-    this.transportStartPosition = 0;
 
     /**
      * Output audio node
@@ -623,7 +619,7 @@ var TimeEngine = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};r
    */
   function $currentPosition_get$0() {
     return 0;
-  };
+  }
 
   /**
    * Advance engine time (scheduled interface)
@@ -681,19 +677,18 @@ var TimeEngine = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};r
    * Function provided by the transport to reset the next position or to request resynchronizing the engine's position
    * @param {Number} position new engine position (will call syncPosition with the current position if not specified)
    */
-  proto$0.resetNextPosition = function() {var position = arguments[0];if(position === void 0)position = null;};;
+  proto$0.resetNextPosition = function() {var position = arguments[0];if(position === void 0)position = null;};
 
   /**
    * Set engine speed (speed-controlled interface)
    * @param {Number} time current scheduler time (based on audio time)
-   * @param {Number} position current transport position
    * @param {Number} speed current transport speed
    *
    * This function is called by the transport to propagate the transport speed to the engine.
-   * The speed can be of any bewteen -16 and 16.
+   * The speed can be of any value bewteen -16 and 16.
    * With a speed of 0 the engine is halted.
    */
-  // syncSpeed(time, position, speed) {
+  // syncSpeed(time, speed) {
   // }
 
   proto$0.__setGetters = function(getCurrentTime, getCurrentPosition) {
@@ -717,34 +712,6 @@ var TimeEngine = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};r
   proto$0.__deleteGetters = function() {
     delete this.currentTime;
     delete this.currentPosition;
-  };
-
-  proto$0.setScheduled = function(resetNextTime, getCurrentTime, getCurrentPosition) {
-    this.interface = "scheduled";
-    this.__setGetters(getCurrentTime, getCurrentPosition);
-    if (resetNextTime)
-      this.resetNextTime = resetNextTime;
-  };
-
-  proto$0.setTransported = function(startPosition, resetNextPosition, getCurrentTime, getCurrentPosition) {
-    this.interface = "transported";
-    this.transportStartPosition = startPosition;
-    this.__setGetters(getCurrentTime, getCurrentPosition);
-    if (resetNextPosition)
-      this.resetNextPosition = resetNextPosition;
-  };
-
-  proto$0.setSpeedControlled = function(getCurrentTime, getCurrentPosition) {
-    this.interface = "speed-controlled";
-    this.__setGetters(getCurrentTime, getCurrentPosition);
-  };
-
-  proto$0.resetInterface = function() {
-    this.__deleteGetters();
-    delete this.resetNextTime;
-    delete this.resetNextPosition;
-    this.transportStartPosition = 0;
-    this.interface = null;
   };
 
   /**
@@ -771,7 +738,7 @@ MIXIN$0(TimeEngine.prototype,proto$0);proto$0=void 0;return TimeEngine;})();
  **/
 TimeEngine.implementsScheduled = function(engine) {
   return (engine.advanceTime && engine.advanceTime instanceof Function);
-}
+};
 
 /**
  * Check whether the time engine implements the transported interface
@@ -781,14 +748,40 @@ TimeEngine.implementsTransported = function(engine) {
     engine.syncPosition && engine.syncPosition instanceof Function &&
     engine.advancePosition && engine.advancePosition instanceof Function
   );
-}
+};
 
 /**
  * Check whether the time engine implements the speed-controlled interface
  **/
 TimeEngine.implementsSpeedControlled = function(engine) {
   return (engine.syncSpeed && engine.syncSpeed instanceof Function);
-}
+};
+
+TimeEngine.setScheduled = function(engine, resetNextTime, getCurrentTime, getCurrentPosition) {
+  engine.interface = "scheduled";
+  engine.__setGetters(getCurrentTime, getCurrentPosition);
+  if (resetNextTime)
+    engine.resetNextTime = resetNextTime;
+};
+
+TimeEngine.setTransported = function(engine, resetNextPosition, getCurrentTime, getCurrentPosition) {
+  engine.interface = "transported";
+  engine.__setGetters(getCurrentTime, getCurrentPosition);
+  if (resetNextPosition)
+    engine.resetNextPosition = resetNextPosition;
+};
+
+TimeEngine.setSpeedControlled = function(engine, getCurrentTime, getCurrentPosition) {
+  engine.interface = "speed-controlled";
+  engine.__setGetters(getCurrentTime, getCurrentPosition);
+};
+
+TimeEngine.resetInterface = function(engine) {
+  engine.__deleteGetters();
+  delete engine.resetNextTime;
+  delete engine.resetNextPosition;
+  engine.interface = null;
+};
 
 module.exports = TimeEngine;
 },{"audio-context":6}],6:[function(_dereq_,module,exports){

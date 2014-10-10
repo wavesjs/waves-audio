@@ -14,11 +14,11 @@ var PlayControlScheduledCell = (function(super$0){if(!PRS$0)MIXIN$0(PlayControlS
     this.__playControl = playControl;
   }if(super$0!==null)SP$0(PlayControlScheduledCell,super$0);PlayControlScheduledCell.prototype = OC$0(super$0!==null?super$0.prototype:null,{"constructor":{"value":PlayControlScheduledCell,"configurable":true,"writable":true}});DP$0(PlayControlScheduledCell,"prototype",{"configurable":false,"enumerable":false,"writable":false});
 
-  // TimeEngine method scheduled interface)
+  // TimeEngine method (scheduled interface)
   proto$0.advanceTime = function(time) {
     var playControl = this.__playControl;
     var position = playControl.__getPositionAtTime(time);
-    var nextPosition = playControl.__transportedEngine.advancePosition(time, position, this.__speed);
+    var nextPosition = playControl.__engine.advancePosition(time, position, this.__speed);
     return playControl.__getTimeAtPosition(nextPosition);
   };
 MIXIN$0(PlayControlScheduledCell.prototype,proto$0);proto$0=void 0;return PlayControlScheduledCell;})(TimeEngine);
@@ -54,20 +54,20 @@ var PlayControl = (function(super$0){if(!PRS$0)MIXIN$0(PlayControl, super$0);var
       if (TimeEngine.implementsSpeedControlled(engine)) {
         // add time engine with speed-controlled interface
         this.__engine = engine;
-        engine.setSpeedControlled(getCurrentTime, getCurrentPosition);
+        TimeEngine.setSpeedControlled(engine, getCurrentTime, getCurrentPosition);
       } else if (TimeEngine.implementsTransported(engine)) {
         // add time engine with transported interface
         this.__engine = engine;
 
-        engine.setTransported(0, function()  {var nextPosition = arguments[0];if(nextPosition === void 0)nextPosition = null;
+        TimeEngine.setTransported(engine, 0, function()  {var nextEnginePosition = arguments[0];if(nextEnginePosition === void 0)nextEnginePosition = null;
           // resetNextPosition
-          if (nextPosition === null) {
+          if (nextEnginePosition === null) {
             var time = scheduler.currentTime;
             var position = this$0.__getPositionAtTime(time);
-            nextPosition = engine.syncPosition(time, position, this$0.__speed);
+            nextEnginePosition = engine.syncPosition(time, position, this$0.__speed);
           }
 
-          this$0.__resetNextPosition(nextPosition);
+          this$0.__resetNextPosition(nextEnginePosition);
         }, getCurrentTime, getCurrentPosition);
       } else if (TimeEngine.implementsScheduled(engine)) {
         // add time engine with scheduled interface
@@ -224,7 +224,7 @@ var PlayControl = (function(super$0){if(!PRS$0)MIXIN$0(PlayControl, super$0);var
         speed = 16;
     } else {
       if (speed < -16)
-        speed = -16
+        speed = -16;
       else if (speed > -0.0625)
         speed = -0.0625;
     }

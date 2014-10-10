@@ -1,6 +1,6 @@
 {
   "name": "play-control",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "description": "WAVE audio play control class (time-engine master)",
   "authors": [
     "Norbert Schnell",

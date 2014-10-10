@@ -14,11 +14,11 @@ class PlayControlScheduledCell extends TimeEngine {
     this.__playControl = playControl;
   }
 
-  // TimeEngine method scheduled interface)
+  // TimeEngine method (scheduled interface)
   advanceTime(time) {
     var playControl = this.__playControl;
     var position = playControl.__getPositionAtTime(time);
-    var nextPosition = playControl.__transportedEngine.advancePosition(time, position, this.__speed);
+    var nextPosition = playControl.__engine.advancePosition(time, position, this.__speed);
     return playControl.__getTimeAtPosition(nextPosition);
   }
 }
@@ -54,20 +54,20 @@ class PlayControl extends TimeEngine {
       if (TimeEngine.implementsSpeedControlled(engine)) {
         // add time engine with speed-controlled interface
         this.__engine = engine;
-        engine.setSpeedControlled(getCurrentTime, getCurrentPosition);
+        TimeEngine.setSpeedControlled(engine, getCurrentTime, getCurrentPosition);
       } else if (TimeEngine.implementsTransported(engine)) {
         // add time engine with transported interface
         this.__engine = engine;
 
-        engine.setTransported(0, (nextPosition = null) => {
+        TimeEngine.setTransported(engine, 0, (nextEnginePosition = null) => {
           // resetNextPosition
-          if (nextPosition === null) {
+          if (nextEnginePosition === null) {
             var time = scheduler.currentTime;
             var position = this.__getPositionAtTime(time);
-            nextPosition = engine.syncPosition(time, position, this.__speed);
+            nextEnginePosition = engine.syncPosition(time, position, this.__speed);
           }
 
-          this.__resetNextPosition(nextPosition);
+          this.__resetNextPosition(nextEnginePosition);
         }, getCurrentTime, getCurrentPosition);
       } else if (TimeEngine.implementsScheduled(engine)) {
         // add time engine with scheduled interface
@@ -224,7 +224,7 @@ class PlayControl extends TimeEngine {
         speed = 16;
     } else {
       if (speed < -16)
-        speed = -16
+        speed = -16;
       else if (speed > -0.0625)
         speed = -0.0625;
     }
