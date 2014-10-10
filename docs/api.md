@@ -6,6 +6,8 @@ written in ECMAscript 6
 
 Author: Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
 
+xxx
+
 ## currentTime
 
 Get current master time
@@ -42,13 +44,13 @@ Add a time engine to the transport
 * **Object** *engine* engine to be added to the transport
 * **Number** *position* start position
 
-## remove(engine)
+## remove(engineOrTransported)
 
 Remove a time engine from the transport
 
 ### Params: 
 
-* **object** *engine* engine to be removed from the transport
+* **object** *engineOrTransported* engine or transported to be removed from the transport
 
 ## clear()
 
