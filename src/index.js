@@ -215,7 +215,12 @@ class SegmentEngine extends TimeEngine {
     if (this.buffer.wrapAroundExtention)
       bufferDuration -= this.buffer.wrapAroundExtention;
 
-    return bufferDuration
+    return bufferDuration;
+  }
+
+  // TimeEngine method (transported interface)
+  advanceTime(time, position, speed) {
+    return time + this.trigger(time);
   }
 
   // TimeEngine method (transported interface)
@@ -241,7 +246,7 @@ class SegmentEngine extends TimeEngine {
         if (!this.cyclic)
           return Infinity;
       }
-    } else {
+    } else if (speed < 0) {
       index = getCurrentOrPreviousIndex(this.positionArray, position);
 
       if (index < 0) {
@@ -251,6 +256,8 @@ class SegmentEngine extends TimeEngine {
         if (!this.cyclic)
           return -Infinity;
       }
+    } else {
+      return Infinity;
     }
 
     this.segmentIndex = index;
@@ -291,12 +298,7 @@ class SegmentEngine extends TimeEngine {
     this.segmentIndex = index;
     this.__cyclicOffset = cyclicOffset;
 
-    return this.__cyclicOffset + this.positionArray[index];
-  }
-
-  // TimeEngine method (transported interface)
-  advanceTime(time, position, speed) {
-    return time + this.trigger(time);
+    return cyclicOffset + this.positionArray[index];
   }
 
   /**
@@ -320,7 +322,7 @@ class SegmentEngine extends TimeEngine {
    * @param {Number} audioTime segment synthesis audio time
    * @return {Number} period to next segment
    *
-   * This function can be called at any time (whether the engine is scheduled or not)
+   * This function can be called at any time (whether the engine is scheduled/transported or not)
    * to generate a single segment according to the current segment parameters.
    */
   trigger(audioTime) {
