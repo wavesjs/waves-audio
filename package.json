@@ -17,10 +17,10 @@
     "url": "https://github.com/Ircam-RnD/granular-engine"
   },
   "dependencies": {
+    "audio-context": "git://github.com/Ircam-RnD/audio-context.git#master",
+    "time-engine": "git://github.com/Ircam-RnD/time-engine.git#master"
   },
   "devDependencies": {
-    "audio-context": "git://github.com/Ircam-RnD/audio-context.git#master",
-    "time-engine": "git://github.com/Ircam-RnD/time-engine.git#master",
     "module-boilerplate": "git://github.com/Ircam-RnD/module-boilerplate.git#master",
     "fs-utils": "0.4.3",
     "browserify": "~4.1.2",
