@@ -17,10 +17,10 @@
     "url": "https://github.com/Ircam-RnD/play-control"
   },
   "dependencies": {
+    "time-engine": "git://github.com/Ircam-RnD/time-engine.git#master",
+    "scheduler": "git://github.com/Ircam-RnD/scheduler.git#master"
   },
   "devDependencies": {
-    "time-engine": "git://github.com/Ircam-RnD/time-engine.git#master",
-    "scheduler": "git://github.com/Ircam-RnD/scheduler.git#master",
     "module-boilerplate": "git://github.com/Ircam-RnD/module-boilerplate.git#master",
     "fs-utils" : "0.4.3",
     "browserify": "~4.1.2",
