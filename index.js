@@ -400,8 +400,11 @@ var Transport = (function(super$0){if(!PRS$0)MIXIN$0(Transport, super$0);var pro
    * @param {Object} engine engine to be added to the transport
    * @param {Number} position start position
    */
-  proto$0.add = function(engine) {var startPosition = arguments[1];if(startPosition === void 0)startPosition = 0;var endPosition = arguments[2];if(endPosition === void 0)endPosition = Infinity;var offsetPosition = arguments[3];if(offsetPosition === void 0)offsetPosition = startPosition;
+  proto$0.add = function(engine) {var startPosition = arguments[1];if(startPosition === void 0)startPosition = -Infinity;var endPosition = arguments[2];if(endPosition === void 0)endPosition = Infinity;var offsetPosition = arguments[3];if(offsetPosition === void 0)offsetPosition = startPosition;
     var transported = null;
+
+    if(offsetPosition === -Infinity)
+      offsetPosition = 0;
 
     if (!engine.interface) {
       if (TimeEngine.implementsTransported(engine))

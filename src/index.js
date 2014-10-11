@@ -400,8 +400,11 @@ class Transport extends TimeEngine {
    * @param {Object} engine engine to be added to the transport
    * @param {Number} position start position
    */
-  add(engine, startPosition = 0, endPosition = Infinity, offsetPosition = startPosition) {
+  add(engine, startPosition = -Infinity, endPosition = Infinity, offsetPosition = startPosition) {
     var transported = null;
+
+    if(offsetPosition === -Infinity)
+      offsetPosition = 0;
 
     if (!engine.interface) {
       if (TimeEngine.implementsTransported(engine))
