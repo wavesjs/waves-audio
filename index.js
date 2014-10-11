@@ -8,7 +8,7 @@
 var audioContext = require("audio-context");
 var TimeEngine = require("time-engine");
 
-var Metronome = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};MIXIN$0(Metronome, super$0);var $proto$0={};
+var Metronome = (function(super$0){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};return o["a"]===t})({},{});var DP$0 = Object.defineProperty;var GOPD$0 = Object.getOwnPropertyDescriptor;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,GOPD$0(s,p));}}return t};var SP$0 = Object.setPrototypeOf||function(o,p){if(PRS$0){o["__proto__"]=p;}else {DP$0(o,"__proto__",{"value":p,"configurable":true,"enumerable":false,"writable":true});}return o};var OC$0 = Object.create;if(!PRS$0)MIXIN$0(Metronome, super$0);var proto$0={};
   function Metronome() {var period = arguments[0];if(period === void 0)period = 1;
     super$0.call(this);
 
@@ -39,16 +39,16 @@ var Metronome = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
     this.__phase = 0;
 
     this.outputNode = this.__gainNode = audioContext.createGain();
-  }Metronome.prototype = Object.create(super$0.prototype, {"constructor": {"value": Metronome, "configurable": true, "writable": true}, gain: {"get": gain$get$0, "set": gain$set$0, "configurable": true, "enumerable": true}, phase: {"get": phase$get$0, "set": phase$set$0, "configurable": true, "enumerable": true} });DP$0(Metronome, "prototype", {"configurable": false, "enumerable": false, "writable": false});
+  }if(super$0!==null)SP$0(Metronome,super$0);Metronome.prototype = OC$0(super$0!==null?super$0.prototype:null,{"constructor":{"value":Metronome,"configurable":true,"writable":true}, gain: {"get": $gain_get$0, "set": $gain_set$0, "configurable":true,"enumerable":true}, phase: {"get": $phase_get$0, "set": $phase_set$0, "configurable":true,"enumerable":true}});DP$0(Metronome,"prototype",{"configurable":false,"enumerable":false,"writable":false});
 
   // TimeEngine method (scheduled interface)
-  $proto$0.advanceTime = function(time) {
+  proto$0.advanceTime = function(time) {
     this.trigger(time);
     return time + this.period;
   };
 
   // TimeEngine method (transported interface)
-  $proto$0.syncPosition = function(time, position, speed) {
+  proto$0.syncPosition = function(time, position, speed) {
     var nextPosition = (Math.floor(position / this.period) + this.__phase) * this.period;
 
     if (speed > 0 && nextPosition < position)
@@ -60,7 +60,7 @@ var Metronome = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
   };
 
   // TimeEngine method (transported interface)
-  $proto$0.advancePosition = function(time, position, speed) {
+  proto$0.advancePosition = function(time, position, speed) {
     this.trigger(time);
 
     if (speed < 0)
@@ -73,7 +73,7 @@ var Metronome = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
    * Trigger metronome click
    * @param {Number} time metronome click synthesis audio time
    */
-  $proto$0.trigger = function(time) {
+  proto$0.trigger = function(time) {
     var clickAttack = this.clickAttack;
     var clickRelease = this.clickRelease;
     var period = this.period;
@@ -103,7 +103,7 @@ var Metronome = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
    * Set gain
    * @param {Number} value linear gain factor
    */
-  function gain$set$0(value) {
+  function $gain_set$0(value) {
     this.__gainNode.gain.value = value;
   }
 
@@ -111,7 +111,7 @@ var Metronome = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
    * Get gain
    * @return {Number} current gain
    */
-  function gain$get$0() {
+  function $gain_get$0() {
     return this.__gainNode.gain.value;
   }
 
@@ -119,7 +119,7 @@ var Metronome = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
    * Set phase parameter
    * @param {Number} phase metronome phase (0...1)
    */
-  function phase$set$0(phase) {
+  function $phase_set$0(phase) {
     this.__phase = phase - Math.floor(phase);
     this.resetNextPosition();
   }
@@ -128,9 +128,9 @@ var Metronome = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
    * Get phase parameter
    * @return {Number} value of phase parameter
    */
-  function phase$get$0() {
+  function $phase_get$0() {
     return this.__phase;
   }
-MIXIN$0(Metronome.prototype,$proto$0);$proto$0=void 0;return Metronome;})(TimeEngine);
+MIXIN$0(Metronome.prototype,proto$0);proto$0=void 0;return Metronome;})(TimeEngine);
 
 module.exports = Metronome;
