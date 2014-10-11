@@ -12,7 +12,7 @@ var PriorityQueue = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t
   function PriorityQueue() {
     this.__objects = [];
     this.reverse = false;
-  }DPS$0(PriorityQueue.prototype,{head: {"get": head$get$0, "configurable":true,"enumerable":true}});DP$0(PriorityQueue,"prototype",{"configurable":false,"enumerable":false,"writable":false});
+  }DPS$0(PriorityQueue.prototype,{head: {"get": $head_get$0, "configurable":true,"enumerable":true}});DP$0(PriorityQueue,"prototype",{"configurable":false,"enumerable":false,"writable":false});
 
   /* Get the index of an object in the object list */
   proto$0.__objectIndex = function(object) {
@@ -105,7 +105,7 @@ var PriorityQueue = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t
   /**
    * Get first object in queue
    */
-  function head$get$0() {
+  function $head_get$0() {
     return this.__objects[0][0];
   }
 MIXIN$0(PriorityQueue.prototype,proto$0);proto$0=void 0;return PriorityQueue;})();
