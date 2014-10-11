@@ -31,7 +31,7 @@ var Transported = (function(super$0){if(!PRS$0)MIXIN$0(Transported, super$0);var
     this.__startPosition = startPosition;
     this.__endPosition = endPosition;
     this.__offsetPosition = offsetPosition;
-    this.__haltPosition = null;
+    this.__haltPosition = Infinity; // haltPosition === null: engine is active
   }if(super$0!==null)SP$0(Transported,super$0);Transported.prototype = OC$0(super$0!==null?super$0.prototype:null,{"constructor":{"value":Transported,"configurable":true,"writable":true}});DP$0(Transported,"prototype",{"configurable":false,"enumerable":false,"writable":false});
 
   proto$0.setBoundaries = function(startPosition, endPosition) {var offsetPosition = arguments[2];if(offsetPosition === void 0)offsetPosition = startPosition;
@@ -52,7 +52,7 @@ var Transported = (function(super$0){if(!PRS$0)MIXIN$0(Transported, super$0);var
         return this.__startPosition;
       } else if (position <= this.__endPosition) {
         this.start(time, position, speed);
-        this.__haltPosition = null;
+        this.__haltPosition = null; // engine is active
         return this.__endPosition;
       }
     } else {
@@ -62,7 +62,7 @@ var Transported = (function(super$0){if(!PRS$0)MIXIN$0(Transported, super$0);var
         return this.__endPosition;
       } else if (position > this.__startPosition) {
         this.start(time, position, speed);
-        this.__haltPosition = null;
+        this.__haltPosition = null; // engine is active
         return this.__startPosition;
       }
     }
@@ -186,7 +186,7 @@ var TransportedSpeedControlled = (function(super$0){if(!PRS$0)MIXIN$0(Transporte
   };
 
   proto$0.syncSpeed = function(time, position, speed) {
-    if(this.__haltPosition === null)
+    if(this.__haltPosition === null) // engine is active
       this.__engine.syncSpeed(time, position, speed);
   };
 

@@ -17,11 +17,11 @@
     "url": "https://github.com/Ircam-RnD/transport"
   },
   "dependencies": {
-  },
-  "devDependencies": {
     "time-engine": "git://github.com/Ircam-RnD/time-engine.git#master",
     "priority-queue": "git://github.com/Ircam-RnD/priority-queue.git#master",
-    "scheduler": "git://github.com/Ircam-RnD/scheduler.git#master",
+    "scheduler": "git://github.com/Ircam-RnD/scheduler.git#master"
+  },
+  "devDependencies": {
     "module-boilerplate": "git://github.com/Ircam-RnD/module-boilerplate.git#master",
     "fs-utils" : "0.4.3",
     "browserify": "~4.1.2",
