@@ -63,7 +63,7 @@ function getCurrentOrNextIndex(sortedArray, value) {var index = arguments[2];if(
 /**
  * @class SegmentEngine
  */
-var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};MIXIN$0(SegmentEngine, super$0);var $proto$0={};
+var SegmentEngine = (function(super$0){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};return o["a"]===t})({},{});var DP$0 = Object.defineProperty;var GOPD$0 = Object.getOwnPropertyDescriptor;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,GOPD$0(s,p));}}return t};var SP$0 = Object.setPrototypeOf||function(o,p){if(PRS$0){o["__proto__"]=p;}else {DP$0(o,"__proto__",{"value":p,"configurable":true,"enumerable":false,"writable":true});}return o};var OC$0 = Object.create;if(!PRS$0)MIXIN$0(SegmentEngine, super$0);var proto$0={};
   /**
    * @constructor
    * @param {AudioBuffer} buffer initial audio buffer for granular synthesis
@@ -207,19 +207,24 @@ var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXI
     this.__cyclicOffset = 0;
 
     this.outputNode = this.__gainNode = audioContext.createGain();
-  }SegmentEngine.prototype = Object.create(super$0.prototype, {"constructor": {"value": SegmentEngine, "configurable": true, "writable": true}, bufferDuration: {"get": bufferDuration$get$0, "configurable": true, "enumerable": true}, gain: {"get": gain$get$0, "set": gain$set$0, "configurable": true, "enumerable": true} });DP$0(SegmentEngine, "prototype", {"configurable": false, "enumerable": false, "writable": false});
+  }if(super$0!==null)SP$0(SegmentEngine,super$0);SegmentEngine.prototype = OC$0(super$0!==null?super$0.prototype:null,{"constructor":{"value":SegmentEngine,"configurable":true,"writable":true}, bufferDuration: {"get": $bufferDuration_get$0, "configurable":true,"enumerable":true}, gain: {"get": $gain_get$0, "set": $gain_set$0, "configurable":true,"enumerable":true}});DP$0(SegmentEngine,"prototype",{"configurable":false,"enumerable":false,"writable":false});
 
-  function bufferDuration$get$0() {
+  function $bufferDuration_get$0() {
     var bufferDuration = this.buffer.duration;
 
     if (this.buffer.wrapAroundExtention)
       bufferDuration -= this.buffer.wrapAroundExtention;
 
-    return bufferDuration
+    return bufferDuration;
   }
 
   // TimeEngine method (transported interface)
-  $proto$0.syncPosition = function(time, position, speed) {
+  proto$0.advanceTime = function(time, position, speed) {
+    return time + this.trigger(time);
+  };
+
+  // TimeEngine method (transported interface)
+  proto$0.syncPosition = function(time, position, speed) {
     var index = this.segmentIndex;
     var cyclicOffset = 0;
     var bufferDuration = this.bufferDuration;
@@ -241,7 +246,7 @@ var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXI
         if (!this.cyclic)
           return Infinity;
       }
-    } else {
+    } else if (speed < 0) {
       index = getCurrentOrPreviousIndex(this.positionArray, position);
 
       if (index < 0) {
@@ -251,6 +256,8 @@ var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXI
         if (!this.cyclic)
           return -Infinity;
       }
+    } else {
+      return Infinity;
     }
 
     this.segmentIndex = index;
@@ -260,7 +267,7 @@ var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXI
   };
 
   // TimeEngine method (transported interface)
-  $proto$0.advancePosition = function(time, position, speed) {
+  proto$0.advancePosition = function(time, position, speed) {
     var index = this.segmentIndex;
     var cyclicOffset = this.__cyclicOffset;
 
@@ -291,19 +298,14 @@ var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXI
     this.segmentIndex = index;
     this.__cyclicOffset = cyclicOffset;
 
-    return this.__cyclicOffset + this.positionArray[index];
-  };
-
-  // TimeEngine method (transported interface)
-  $proto$0.advanceTime = function(time, position, speed) {
-    return time + this.trigger(time);
+    return cyclicOffset + this.positionArray[index];
   };
 
   /**
    * Set gain
    * @param {Number} value linear gain factor
    */
-  function gain$set$0(value) {
+  function $gain_set$0(value) {
     this.__gainNode.gain.value = value;
   }
 
@@ -311,7 +313,7 @@ var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXI
    * Get gain
    * @return {Number} current gain
    */
-  function gain$get$0() {
+  function $gain_get$0() {
     return this.__gainNode.gain.value;
   }
 
@@ -320,10 +322,10 @@ var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXI
    * @param {Number} audioTime segment synthesis audio time
    * @return {Number} period to next segment
    *
-   * This function can be called at any time (whether the engine is scheduled or not)
+   * This function can be called at any time (whether the engine is scheduled/transported or not)
    * to generate a single segment according to the current segment parameters.
    */
-  $proto$0.trigger = function(audioTime) {
+  proto$0.trigger = function(audioTime) {
     var segmentTime = audioTime || audioContext.currentTime + this.delay;
     var segmentPeriod = this.periodAbs;
     var segmentIndex = this.segmentIndex;
@@ -469,6 +471,6 @@ var SegmentEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXI
 
     return segmentPeriod;
   };
-MIXIN$0(SegmentEngine.prototype,$proto$0);$proto$0=void 0;return SegmentEngine;})(TimeEngine);
+MIXIN$0(SegmentEngine.prototype,proto$0);proto$0=void 0;return SegmentEngine;})(TimeEngine);
 
 module.exports = SegmentEngine;
