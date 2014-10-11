@@ -44,23 +44,29 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
 
   // global setTimeout scheduling loop
   proto$0.__tick = function() {var this$0 = this;
-    while (this.__nextTime <= audioContext.currentTime + this.lookahead) {
-      this.__currentTime = this.__nextTime;
+    var nextTime = this.__nextTime;
+
+    while (nextTime <= audioContext.currentTime + this.lookahead) {
+      this.__currentTime = nextTime;
 
       var nextEngine = this.__queue.head;
       var nextEngineTime = Math.max(nextEngine.advanceTime(this.__currentTime), this.__currentTime);
 
-      this.__nextTime = this.__queue.move(nextEngine, nextEngineTime);
+      nextTime = this.__queue.move(nextEngine, nextEngineTime);
     }
 
     this.__currentTime = null;
     this.__timeout = null;
 
-    if (this.__nextTime !== Infinity) {
+    if (nextTime !== Infinity) {
+      var timeOutDelay = Math.max((nextTime - audioContext.currentTime - this.lookahead), this.period);
+
       this.__timeout = setTimeout(function()  {
         this$0.__tick();
-      }, this.period * 1000);
+      }, timeOutDelay * 1000);
     }
+
+    this.__nextTime = nextTime;
   };
 
   proto$0.__reschedule = function(time) {

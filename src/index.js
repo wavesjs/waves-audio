@@ -44,23 +44,29 @@ class Scheduler {
 
   // global setTimeout scheduling loop
   __tick() {
-    while (this.__nextTime <= audioContext.currentTime + this.lookahead) {
-      this.__currentTime = this.__nextTime;
+    var nextTime = this.__nextTime;
+
+    while (nextTime <= audioContext.currentTime + this.lookahead) {
+      this.__currentTime = nextTime;
 
       var nextEngine = this.__queue.head;
       var nextEngineTime = Math.max(nextEngine.advanceTime(this.__currentTime), this.__currentTime);
 
-      this.__nextTime = this.__queue.move(nextEngine, nextEngineTime);
+      nextTime = this.__queue.move(nextEngine, nextEngineTime);
     }
 
     this.__currentTime = null;
     this.__timeout = null;
 
-    if (this.__nextTime !== Infinity) {
+    if (nextTime !== Infinity) {
+      var timeOutDelay = Math.max((nextTime - audioContext.currentTime - this.lookahead), this.period);
+
       this.__timeout = setTimeout(() => {
         this.__tick();
-      }, this.period * 1000);
+      }, timeOutDelay * 1000);
     }
+
+    this.__nextTime = nextTime;
   }
 
   __reschedule(time) {
