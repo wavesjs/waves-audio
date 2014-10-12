@@ -114,8 +114,8 @@ class TransportedTransported extends Transported {
         if (nextEnginePosition === null)
           nextEnginePosition = this.__offsetPosition + engine.syncPosition(time, position - this.__offsetPosition, speed);
 
-        var nextPosition = this.__transportQueue.move(engine, nextEnginePosition);
-        this.resetNextPosition(nextPosition);
+        var nextPosition = transport.__transportQueue.move(this, nextEnginePosition);
+        transport.resetNextPosition(nextPosition);
       }
     }, () => {
       // getCurrentTime

@@ -114,8 +114,8 @@ var TransportedTransported = (function(super$0){if(!PRS$0)MIXIN$0(TransportedTra
         if (nextEnginePosition === null)
           nextEnginePosition = this$0.__offsetPosition + engine.syncPosition(time, position - this$0.__offsetPosition, speed);
 
-        var nextPosition = this$0.__transportQueue.move(engine, nextEnginePosition);
-        this$0.resetNextPosition(nextPosition);
+        var nextPosition = transport.__transportQueue.move(this$0, nextEnginePosition);
+        transport.resetNextPosition(nextPosition);
       }
     }, function()  {
       // getCurrentTime
