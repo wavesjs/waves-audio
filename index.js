@@ -42,8 +42,8 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
     this.lookahead = 0.1;
   }DPS$0(Scheduler.prototype,{currentTime: {"get": $currentTime_get$0, "configurable":true,"enumerable":true}});DP$0(Scheduler,"prototype",{"configurable":false,"enumerable":false,"writable":false});
 
-  // global setTimeout scheduling loop
-  proto$0.__tick = function() {var this$0 = this;
+  // setTimeout scheduling loop
+  proto$0.__tick = function() {
     var nextTime = this.__nextTime;
 
     while (nextTime <= audioContext.currentTime + this.lookahead) {
@@ -58,24 +58,23 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
     this.__currentTime = null;
     this.__timeout = null;
 
+    this.__reschedule(nextTime);
+  };
+
+  proto$0.__reschedule = function(nextTime) {var this$0 = this;
+    if (this.__timeout) {
+      clearTimeout(this.__timeout);
+      this.__timeout = null;
+    }
+
     if (nextTime !== Infinity) {
+      this.__nextTime = nextTime;
+
       var timeOutDelay = Math.max((nextTime - audioContext.currentTime - this.lookahead), this.period);
 
       this.__timeout = setTimeout(function()  {
         this$0.__tick();
       }, timeOutDelay * 1000);
-    }
-
-    this.__nextTime = nextTime;
-  };
-
-  proto$0.__reschedule = function(time) {
-    if (this.__nextTime !== Infinity) {
-      if (!this.__timeout)
-        this.__tick();
-    } else if (this.__timeout) {
-      clearTimeout(this.__timeout);
-      this.__timeout = null;
     }
   };
 
@@ -103,8 +102,8 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
       }
     };
 
-    this.__nextTime = this.__queue.insert(engine, this.currentTime + delay);
-    this.__reschedule();
+    var nextTime = this.__queue.insert(engine, this.currentTime + delay);
+    this.__reschedule(nextTime);
 
     return engine;
   };
@@ -121,14 +120,14 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
         this.__engines.push(engine);
 
         TimeEngine.setScheduled(engine, function(time)  {
-          this$0.__nextTime = this$0.__queue.move(engine, time);
-          this$0.__reschedule();
+          var nextTime = this$0.__queue.move(engine, time);
+          this$0.__reschedule(nextTime);
         }, function()  {
           return this$0.currentTime;
         }, getCurrentPosition);
 
-        this.__nextTime = this.__queue.insert(engine, this.currentTime + delay);
-        this.__reschedule();
+        var nextTime = this.__queue.insert(engine, this.currentTime + delay);
+        this.__reschedule(nextTime);
       } else {
         throw new Error("object cannot be added to scheduler");
       }
@@ -147,8 +146,8 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
     if (arrayRemove(this.__engines, engine)) {
       TimeEngine.resetInterface(engine);
 
-      this.__nextTime = this.__queue.remove(engine);
-      this.__reschedule();
+      var nextTime = this.__queue.remove(engine);
+      this.__reschedule(nextTime);
     } else {
       throw new Error("object has not been added to this scheduler");
     }
@@ -160,8 +159,8 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
    * @param {Number} time time when to reschedule
    */
   proto$0.reset = function(engine, time) {
-    this.__nextTime = this.__queue.move(engine, time);
-    this.__reschedule();
+    var nextTime = this.__queue.move(engine, time);
+    this.__reschedule(nextTime);
   };
 MIXIN$0(Scheduler.prototype,proto$0);proto$0=void 0;return Scheduler;})();
 

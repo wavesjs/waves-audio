@@ -42,7 +42,7 @@ class Scheduler {
     this.lookahead = 0.1;
   }
 
-  // global setTimeout scheduling loop
+  // setTimeout scheduling loop
   __tick() {
     var nextTime = this.__nextTime;
 
@@ -58,24 +58,23 @@ class Scheduler {
     this.__currentTime = null;
     this.__timeout = null;
 
+    this.__reschedule(nextTime);
+  }
+
+  __reschedule(nextTime) {
+    if (this.__timeout) {
+      clearTimeout(this.__timeout);
+      this.__timeout = null;
+    }
+
     if (nextTime !== Infinity) {
+      this.__nextTime = nextTime;
+
       var timeOutDelay = Math.max((nextTime - audioContext.currentTime - this.lookahead), this.period);
 
       this.__timeout = setTimeout(() => {
         this.__tick();
       }, timeOutDelay * 1000);
-    }
-
-    this.__nextTime = nextTime;
-  }
-
-  __reschedule(time) {
-    if (this.__nextTime !== Infinity) {
-      if (!this.__timeout)
-        this.__tick();
-    } else if (this.__timeout) {
-      clearTimeout(this.__timeout);
-      this.__timeout = null;
     }
   }
 
@@ -103,8 +102,8 @@ class Scheduler {
       }
     };
 
-    this.__nextTime = this.__queue.insert(engine, this.currentTime + delay);
-    this.__reschedule();
+    var nextTime = this.__queue.insert(engine, this.currentTime + delay);
+    this.__reschedule(nextTime);
 
     return engine;
   }
@@ -121,14 +120,14 @@ class Scheduler {
         this.__engines.push(engine);
 
         TimeEngine.setScheduled(engine, (time) => {
-          this.__nextTime = this.__queue.move(engine, time);
-          this.__reschedule();
+          var nextTime = this.__queue.move(engine, time);
+          this.__reschedule(nextTime);
         }, () => {
           return this.currentTime;
         }, getCurrentPosition);
 
-        this.__nextTime = this.__queue.insert(engine, this.currentTime + delay);
-        this.__reschedule();
+        var nextTime = this.__queue.insert(engine, this.currentTime + delay);
+        this.__reschedule(nextTime);
       } else {
         throw new Error("object cannot be added to scheduler");
       }
@@ -147,8 +146,8 @@ class Scheduler {
     if (arrayRemove(this.__engines, engine)) {
       TimeEngine.resetInterface(engine);
 
-      this.__nextTime = this.__queue.remove(engine);
-      this.__reschedule();
+      var nextTime = this.__queue.remove(engine);
+      this.__reschedule(nextTime);
     } else {
       throw new Error("object has not been added to this scheduler");
     }
@@ -160,8 +159,8 @@ class Scheduler {
    * @param {Number} time time when to reschedule
    */
   reset(engine, time) {
-    this.__nextTime = this.__queue.move(engine, time);
-    this.__reschedule();
+    var nextTime = this.__queue.move(engine, time);
+    this.__reschedule(nextTime);
   }
 }
 
