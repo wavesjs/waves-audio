@@ -186,7 +186,7 @@ class TransportedSpeedControlled extends Transported {
   }
 
   syncSpeed(time, position, speed) {
-    if(this.__haltPosition === null) // engine is active
+    if (this.__haltPosition === null) // engine is active
       this.__engine.syncSpeed(time, position, speed);
   }
 
@@ -403,7 +403,7 @@ class Transport extends TimeEngine {
   add(engine, startPosition = -Infinity, endPosition = Infinity, offsetPosition = startPosition) {
     var transported = null;
 
-    if(offsetPosition === -Infinity)
+    if (offsetPosition === -Infinity)
       offsetPosition = 0;
 
     if (!engine.interface) {
@@ -421,6 +421,27 @@ class Transport extends TimeEngine {
 
         this.__engines.push(engine);
         this.__transported.push(transported);
+
+        TimeEngine.setTransported(transported, (nextEnginePosition = null) => {
+          // resetNextPosition
+          var time = this.currentTime;
+          var position = this.currentPosition;
+          var speed = this.__speed;
+
+          if (speed !== 0) {
+            if (nextEnginePosition === null)
+              nextEnginePosition = this.__offsetPosition + engine.syncPosition(time, position - this.__offsetPosition, speed);
+
+            var nextPosition = this.transport.__transportQueue.move(this, nextEnginePosition);
+            this.transport.resetNextPosition(nextPosition);
+          }
+        }, () => {
+          // getCurrentTime
+          return scheduler.currentTime;
+        }, () => {
+          // getCurrentPosition
+          return this.__transport.currentPosition - this.__offsetPosition;
+        });
 
         if (speed !== 0) {
           // sync and start
@@ -453,6 +474,7 @@ class Transport extends TimeEngine {
     if (engine && transported) {
       var nextPosition = this.__transportQueue.remove(transported);
 
+      TimeEngine.resetInterface(transported);
       transported.destroy();
 
       if (this.__speed !== 0)
@@ -466,14 +488,12 @@ class Transport extends TimeEngine {
    * Remove all time engines from the transport
    */
   clear() {
-    var time = this.currentTime;
-    var position = this.currentPosition;
+    this.syncSpeed(this.currentTime, this.currentPosition, 0);
 
-    this.syncSpeed(time, position, 0);
-
-    // CLEAR
-
-    this.resetNextPosition(Infinity);
+    for (var transported of this.__transported) {
+      TimeEngine.resetInterface(transported);
+      transported.destroy();
+    }
   }
 }
 

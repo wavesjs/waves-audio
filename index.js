@@ -186,7 +186,7 @@ var TransportedSpeedControlled = (function(super$0){if(!PRS$0)MIXIN$0(Transporte
   };
 
   proto$0.syncSpeed = function(time, position, speed) {
-    if(this.__haltPosition === null) // engine is active
+    if (this.__haltPosition === null) // engine is active
       this.__engine.syncSpeed(time, position, speed);
   };
 
@@ -247,7 +247,7 @@ MIXIN$0(TransportScheduledCell.prototype,proto$0);proto$0=void 0;return Transpor
  *
  *
  */
-var Transport = (function(super$0){if(!PRS$0)MIXIN$0(Transport, super$0);var proto$0={};
+var Transport = (function(super$0){if(!PRS$0)MIXIN$0(Transport, super$0);var proto$0={};var S_ITER$0 = typeof Symbol!=='undefined'&&Symbol&&Symbol.iterator||'@@iterator';var S_MARK$0 = typeof Symbol!=='undefined'&&Symbol&&Symbol["__setObjectSetter__"];function GET_ITER$0(v){if(v){if(Array.isArray(v))return 0;var f;if(S_MARK$0)S_MARK$0(v);if(typeof v==='object'&&typeof (f=v[S_ITER$0])==='function'){if(S_MARK$0)S_MARK$0(void 0);return f.call(v);}if(S_MARK$0)S_MARK$0(void 0);if((v+'')==='[object Generator]')return v;}throw new Error(v+' is not iterable')};
   function Transport() {
     super$0.call(this);
 
@@ -297,7 +297,7 @@ var Transport = (function(super$0){if(!PRS$0)MIXIN$0(Transport, super$0);var pro
     return nextPosition;
   };
 
-  proto$0.__syncTransportedSpeed = function(time, position, speed) {var S_ITER$0 = typeof Symbol!=='undefined'&&Symbol&&Symbol.iterator||'@@iterator';var S_MARK$0 = typeof Symbol!=='undefined'&&Symbol&&Symbol["__setObjectSetter__"];function GET_ITER$0(v){if(v){if(Array.isArray(v))return 0;var f;if(S_MARK$0)S_MARK$0(v);if(typeof v==='object'&&typeof (f=v[S_ITER$0])==='function'){if(S_MARK$0)S_MARK$0(void 0);return f.call(v);}if(S_MARK$0)S_MARK$0(void 0);if((v+'')==='[object Generator]')return v;}throw new Error(v+' is not iterable')};var $D$0;var $D$1;var $D$2;var $D$3;
+  proto$0.__syncTransportedSpeed = function(time, position, speed) {var $D$0;var $D$1;var $D$2;var $D$3;
     $D$3 = (this.__transported);$D$0 = GET_ITER$0($D$3);$D$2 = $D$0 === 0;$D$1 = ($D$2 ? $D$3.length : void 0);for (var transported ;$D$2 ? ($D$0 < $D$1) : !($D$1 = $D$0["next"]())["done"];)
 {transported = ($D$2 ? $D$3[$D$0++] : $D$1["value"]);transported.syncSpeed(time, position, speed);};$D$0 = $D$1 = $D$2 = $D$3 = void 0;
   };
@@ -400,10 +400,10 @@ var Transport = (function(super$0){if(!PRS$0)MIXIN$0(Transport, super$0);var pro
    * @param {Object} engine engine to be added to the transport
    * @param {Number} position start position
    */
-  proto$0.add = function(engine) {var startPosition = arguments[1];if(startPosition === void 0)startPosition = -Infinity;var endPosition = arguments[2];if(endPosition === void 0)endPosition = Infinity;var offsetPosition = arguments[3];if(offsetPosition === void 0)offsetPosition = startPosition;
+  proto$0.add = function(engine) {var startPosition = arguments[1];if(startPosition === void 0)startPosition = -Infinity;var endPosition = arguments[2];if(endPosition === void 0)endPosition = Infinity;var offsetPosition = arguments[3];if(offsetPosition === void 0)offsetPosition = startPosition;var this$0 = this;
     var transported = null;
 
-    if(offsetPosition === -Infinity)
+    if (offsetPosition === -Infinity)
       offsetPosition = 0;
 
     if (!engine.interface) {
@@ -421,6 +421,27 @@ var Transport = (function(super$0){if(!PRS$0)MIXIN$0(Transport, super$0);var pro
 
         this.__engines.push(engine);
         this.__transported.push(transported);
+
+        TimeEngine.setTransported(transported, function()  {var nextEnginePosition = arguments[0];if(nextEnginePosition === void 0)nextEnginePosition = null;
+          // resetNextPosition
+          var time = this$0.currentTime;
+          var position = this$0.currentPosition;
+          var speed = this$0.__speed;
+
+          if (speed !== 0) {
+            if (nextEnginePosition === null)
+              nextEnginePosition = this$0.__offsetPosition + engine.syncPosition(time, position - this$0.__offsetPosition, speed);
+
+            var nextPosition = this$0.transport.__transportQueue.move(this$0, nextEnginePosition);
+            this$0.transport.resetNextPosition(nextPosition);
+          }
+        }, function()  {
+          // getCurrentTime
+          return scheduler.currentTime;
+        }, function()  {
+          // getCurrentPosition
+          return this$0.__transport.currentPosition - this$0.__offsetPosition;
+        });
 
         if (speed !== 0) {
           // sync and start
@@ -453,6 +474,7 @@ var Transport = (function(super$0){if(!PRS$0)MIXIN$0(Transport, super$0);var pro
     if (engine && transported) {
       var nextPosition = this.__transportQueue.remove(transported);
 
+      TimeEngine.resetInterface(transported);
       transported.destroy();
 
       if (this.__speed !== 0)
@@ -465,15 +487,13 @@ var Transport = (function(super$0){if(!PRS$0)MIXIN$0(Transport, super$0);var pro
   /**
    * Remove all time engines from the transport
    */
-  proto$0.clear = function() {
-    var time = this.currentTime;
-    var position = this.currentPosition;
+  proto$0.clear = function() {var $D$4;var $D$5;var $D$6;var $D$7;
+    this.syncSpeed(this.currentTime, this.currentPosition, 0);
 
-    this.syncSpeed(time, position, 0);
-
-    // CLEAR
-
-    this.resetNextPosition(Infinity);
+    $D$7 = (this.__transported);$D$4 = GET_ITER$0($D$7);$D$6 = $D$4 === 0;$D$5 = ($D$6 ? $D$7.length : void 0);for (var transported ;$D$6 ? ($D$4 < $D$5) : !($D$5 = $D$4["next"]())["done"];){transported = ($D$6 ? $D$7[$D$4++] : $D$5["value"]);
+      TimeEngine.resetInterface(transported);
+      transported.destroy();
+    };$D$4 = $D$5 = $D$6 = $D$7 = void 0;
   };
 MIXIN$0(Transport.prototype,proto$0);proto$0=void 0;return Transport;})(TimeEngine);
 
