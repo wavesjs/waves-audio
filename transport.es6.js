@@ -47,25 +47,39 @@ class Transported extends TimeEngine {
   syncPosition(time, position, speed) {
     if (speed > 0) {
       if (position < this.__startPosition) {
-        this.stop(time, position - this.__startPosition);
+
+        if (this.__haltPosition === null)
+          this.stop(time, position - this.__startPosition);
+
         this.__haltPosition = this.__endPosition;
+
         return this.__startPosition;
       } else if (position <= this.__endPosition) {
         this.start(time, position - this.__startPosition, speed);
+
         this.__haltPosition = null; // engine is active
+
         return this.__endPosition;
       }
     } else {
       if (position >= this.__endPosition) {
-        this.stop(time, position - this.__startPosition);
+        if (this.__haltPosition === null)
+          this.stop(time, position - this.__startPosition);
+
         this.__haltPosition = this.__startPosition;
+
         return this.__endPosition;
       } else if (position > this.__startPosition) {
         this.start(time, position - this.__startPosition, speed);
+
         this.__haltPosition = null; // engine is active
+
         return this.__startPosition;
       }
     }
+
+    if (this.__haltPosition === null)
+      this.stop(time, position);
 
     this.__haltPosition = Infinity;
 
@@ -77,13 +91,18 @@ class Transported extends TimeEngine {
 
     if (haltPosition !== null) {
       this.start(time, position - this.__offsetPosition, speed);
+
       this.__haltPosition = null;
+
       return haltPosition;
     }
 
     // stop engine
-    this.stop(time, position - this.__offsetPosition);
+    if (this.__haltPosition === null)
+      this.stop(time, position - this.__offsetPosition);
+
     this.__haltPosition = Infinity;
+
     return Infinity;
   }
 
@@ -122,7 +141,7 @@ class TransportedTransported extends Transported {
     else if (speed < 0 && position >= this.__startPosition)
       position = Math.min(position, this.__endPosition);
 
-    return  this.__offsetPosition + this.__engine.syncPosition(time, position - this.__offsetPosition, speed);
+    return this.__offsetPosition + this.__engine.syncPosition(time, position - this.__offsetPosition, speed);
   }
 
   advancePosition(time, position, speed) {
