@@ -106,17 +106,7 @@ class TransportedTransported extends Transported {
 
     TimeEngine.setTransported(engine, (nextEnginePosition = null) => {
       // resetNextPosition
-      var time = this.currentTime;
-      var position = this.currentPosition;
-      var speed = this.__speed;
-
-      if (speed !== 0) {
-        if (nextEnginePosition === null)
-          nextEnginePosition = this.__offsetPosition + engine.syncPosition(time, position - this.__offsetPosition, speed);
-
-        var nextPosition = transport.__transportQueue.move(this, nextEnginePosition);
-        transport.resetNextPosition(nextPosition);
-      }
+      this.resetNextPosition(nextEnginePosition + this.__offsetPosition);
     }, () => {
       // getCurrentTime
       return scheduler.currentTime;
@@ -132,14 +122,7 @@ class TransportedTransported extends Transported {
     else if (speed < 0 && position >= this.__startPosition)
       position = Math.min(position, this.__endPosition);
 
-    position = this.__offsetPosition + this.__engine.syncPosition(time, position - this.__offsetPosition, speed);
-
-    if (speed > 0 && position < this.__endPosition)
-      return Math.max(position, this.__startPosition);
-    else if (speed < 0 && position >= this.__startPosition)
-      return Math.min(position, this.__endPosition);
-
-    return Infinity;
+    return  this.__offsetPosition + this.__engine.syncPosition(time, position - this.__offsetPosition, speed);
   }
 
   advancePosition(time, position, speed) {
@@ -424,16 +407,14 @@ class Transport extends TimeEngine {
 
         TimeEngine.setTransported(transported, (nextEnginePosition = null) => {
           // resetNextPosition
-          var time = this.currentTime;
-          var position = this.currentPosition;
           var speed = this.__speed;
 
           if (speed !== 0) {
             if (nextEnginePosition === null)
-              nextEnginePosition = this.__offsetPosition + engine.syncPosition(time, position - this.__offsetPosition, speed);
+              nextEnginePosition = transported.syncPosition(this.currentTime, this.currentPosition, speed);
 
-            var nextPosition = this.transport.__transportQueue.move(this, nextEnginePosition);
-            this.transport.resetNextPosition(nextPosition);
+            var nextPosition = this.__transportQueue.move(transported, nextEnginePosition);
+            this.resetNextPosition(nextPosition);
           }
         }, () => {
           // getCurrentTime
