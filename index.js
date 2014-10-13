@@ -47,21 +47,21 @@ var Transported = (function(super$0){MIXIN$0(Transported, super$0);
   Transported.prototype.syncPosition = function(time, position, speed) {
     if (speed > 0) {
       if (position < this.__startPosition) {
-        this.stop(time, position);
+        this.stop(time, position - this.__startPosition);
         this.__haltPosition = this.__endPosition;
         return this.__startPosition;
       } else if (position <= this.__endPosition) {
-        this.start(time, position, speed);
+        this.start(time, position - this.__startPosition, speed);
         this.__haltPosition = null; // engine is active
         return this.__endPosition;
       }
     } else {
       if (position >= this.__endPosition) {
-        this.stop(time, position);
+        this.stop(time, position - this.__startPosition);
         this.__haltPosition = this.__startPosition;
         return this.__endPosition;
       } else if (position > this.__startPosition) {
-        this.start(time, position, speed);
+        this.start(time, position - this.__startPosition, speed);
         this.__haltPosition = null; // engine is active
         return this.__startPosition;
       }
@@ -161,7 +161,7 @@ var TransportedSpeedControlled = (function(super$0){MIXIN$0(TransportedSpeedCont
   }TransportedSpeedControlled.prototype = Object.create(super$0.prototype, {"constructor": {"value": TransportedSpeedControlled, "configurable": true, "writable": true} });DP$0(TransportedSpeedControlled, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
   TransportedSpeedControlled.prototype.start = function(time, position, speed) {
-    this.__engine.syncSpeed(time, position, speed);
+    this.__engine.syncSpeed(time, position, speed, true);
   }
 
   TransportedSpeedControlled.prototype.stop = function(time, position) {

@@ -47,21 +47,21 @@ class Transported extends TimeEngine {
   syncPosition(time, position, speed) {
     if (speed > 0) {
       if (position < this.__startPosition) {
-        this.stop(time, position);
+        this.stop(time, position - this.__startPosition);
         this.__haltPosition = this.__endPosition;
         return this.__startPosition;
       } else if (position <= this.__endPosition) {
-        this.start(time, position, speed);
+        this.start(time, position - this.__startPosition, speed);
         this.__haltPosition = null; // engine is active
         return this.__endPosition;
       }
     } else {
       if (position >= this.__endPosition) {
-        this.stop(time, position);
+        this.stop(time, position - this.__startPosition);
         this.__haltPosition = this.__startPosition;
         return this.__endPosition;
       } else if (position > this.__startPosition) {
-        this.start(time, position, speed);
+        this.start(time, position - this.__startPosition, speed);
         this.__haltPosition = null; // engine is active
         return this.__startPosition;
       }
@@ -161,7 +161,7 @@ class TransportedSpeedControlled extends Transported {
   }
 
   start(time, position, speed) {
-    this.__engine.syncSpeed(time, position, speed);
+    this.__engine.syncSpeed(time, position, speed, true);
   }
 
   stop(time, position) {
