@@ -1,0 +1,18 @@
+
+{
+  "cdn" : "http://raw.ircam.fr/",
+  "css" : {
+    "external" : [],
+    "internal": []
+  },
+  "js" : {
+  	"external" : [
+      {"cdn": true, "ircamlib" : true, "url": "audio-context"},
+      {"cdn": true, "ircamlib" : true, "url": "loaders"},
+      {"cdn": true, "ircamlib" : true, "url": "scheduler"},
+      {"cdn": true, "ircamlib" : true, "url": "transport"},
+      {"cdn": true, "ircamlib" : true, "url": "play-control"}
+    ],
+    "internal": []
+  }
+}
