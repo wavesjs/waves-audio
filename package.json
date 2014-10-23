@@ -7,7 +7,7 @@
     "Victor Saiz",
     "Karim Barkati"
   ],
-  "main": "index.js",
+  "main": "time-engine.js",
   "exports": "TimeEngine",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -21,11 +21,6 @@
   },
   "devDependencies": {
     "module-boilerplate": "git://github.com/Ircam-RnD/module-boilerplate.git#master",
-    "fs-utils" : "0.4.3",
-    "browserify": "~4.1.2",
-    "mocha": "~1.17.1",
-    "chai": "~1.9.0",
-    "blanket": "~1.1.6",
     "gulp": "~3.8.2"
   }
 }
