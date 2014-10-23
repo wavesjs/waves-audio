@@ -31,13 +31,15 @@ class Transported extends TimeEngine {
     this.__startPosition = startPosition;
     this.__endPosition = endPosition;
     this.__offsetPosition = offsetPosition;
-    this.__haltPosition = Infinity; // haltPosition === null: engine is active
+    this.__scalePosition = 1;
+    this.__haltPosition = Infinity; // engine's next halt position when not running (is null when engine hes been started)
   }
 
-  setBoundaries(startPosition, endPosition, offsetPosition = startPosition) {
+  setBoundaries(startPosition, endPosition, offsetPosition = startPosition, scalePosition = 1) {
     this.__startPosition = startPosition;
     this.__endPosition = endPosition;
     this.__offsetPosition = offsetPosition;
+    this.__scalePosition = scalePosition;
     this.resetNextPosition();
   }
 
@@ -207,7 +209,7 @@ class TransportedScheduled extends Transported {
 
     scheduler.add(engine, Infinity, () => {
       // getCurrentPosition
-      return this.__transport.currentPosition - this.__offsetPosition;
+      return (this.__transport.currentPosition - this.__offsetPosition) * this.__scalePosition;
     });
   }
 
