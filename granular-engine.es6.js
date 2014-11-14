@@ -131,6 +131,11 @@ class GranularEngine extends TimeEngine {
     return bufferDuration;
   }
 
+  // TimeEngine attribute
+  get currentPosition() {
+    return this.position;
+  }
+
   // TimeEngine method (scheduled interface)
   advanceTime(time) {
     return time + this.trigger(time);
@@ -167,7 +172,7 @@ class GranularEngine extends TimeEngine {
   trigger(time) {
     var grainTime = time || audioContext.currentTime;
     var grainPeriod = this.periodAbs;
-    var grainPosition = this.position + this.currentPosition;
+    var grainPosition = this.currentPosition;
     var grainDuration = this.durationAbs;
 
     if (this.buffer) {
