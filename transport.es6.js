@@ -51,13 +51,13 @@ class Transported extends TimeEngine {
       if (position < this.__startPosition) {
 
         if (this.__haltPosition === null)
-          this.stop(time, position - this.__startPosition);
+          this.stop(time, position - this.__offsetPosition);
 
         this.__haltPosition = this.__endPosition;
 
         return this.__startPosition;
       } else if (position <= this.__endPosition) {
-        this.start(time, position - this.__startPosition, speed);
+        this.start(time, position - this.__offsetPosition, speed);
 
         this.__haltPosition = null; // engine is active
 
@@ -66,13 +66,13 @@ class Transported extends TimeEngine {
     } else {
       if (position >= this.__endPosition) {
         if (this.__haltPosition === null)
-          this.stop(time, position - this.__startPosition);
+          this.stop(time, position - this.__offsetPosition);
 
         this.__haltPosition = this.__startPosition;
 
         return this.__endPosition;
       } else if (position > this.__startPosition) {
-        this.start(time, position - this.__startPosition, speed);
+        this.start(time, position - this.__offsetPosition, speed);
 
         this.__haltPosition = null; // engine is active
 
@@ -132,7 +132,7 @@ class TransportedTransported extends Transported {
       // getCurrentTime
       return scheduler.currentTime;
     }, () => {
-      // getCurrentPosition
+      // get currentPosition
       return this.__transport.currentPosition - this.__offsetPosition;
     });
   }
@@ -176,7 +176,7 @@ class TransportedSpeedControlled extends Transported {
       // getCurrentTime
       return scheduler.currentTime;
     }, () => {
-      // getCurrentPosition
+      // get currentPosition
       return this.__transport.currentPosition - this.__offsetPosition;
     });
   }
@@ -208,7 +208,7 @@ class TransportedScheduled extends Transported {
     super(transport, engine, startPosition, endPosition, offsetPosition);
 
     scheduler.add(engine, Infinity, () => {
-      // getCurrentPosition
+      // get currentPosition
       return (this.__transport.currentPosition - this.__offsetPosition) * this.__scalePosition;
     });
   }
@@ -227,7 +227,7 @@ class TransportedScheduled extends Transported {
   }
 }
 
-class TransportScheduledCell extends TimeEngine {
+class TransportSchedulerHook extends TimeEngine {
   constructor(transport) {
     super();
     this.__transport = transport;
@@ -258,7 +258,7 @@ class Transport extends TimeEngine {
     this.__engines = [];
     this.__transported = [];
 
-    this.__scheduledCell = null;
+    this.__schedulerHook = null;
     this.__transportQueue = new PriorityQueue();
 
     // syncronized time, position, and speed
@@ -333,8 +333,8 @@ class Transport extends TimeEngine {
    * This function will be replaced when the transport is added to a master (i.e. transport or player).
    */
   resetNextPosition(nextPosition) {
-    if (this.__scheduledCell)
-      this.__scheduledCell.resetNextTime(this.__getTimeAtPosition(nextPosition));
+    if (this.__schedulerHook)
+      this.__schedulerHook.resetNextTime(this.__getTimeAtPosition(nextPosition));
 
     this.__nextPosition = nextPosition;
   }
@@ -379,8 +379,8 @@ class Transport extends TimeEngine {
         nextPosition = this.__syncTransportedPosition(time, position, speed);
 
         // schedule transport itself
-        this.__scheduledCell = new TransportScheduledCell(this);
-        scheduler.add(this.__scheduledCell, Infinity);
+        this.__schedulerHook = new TransportSchedulerHook(this);
+        scheduler.add(this.__schedulerHook, Infinity);
       } else if (speed === 0) {
         // stop
         nextPosition = Infinity;
@@ -388,8 +388,8 @@ class Transport extends TimeEngine {
         this.__syncTransportedSpeed(time, position, 0);
 
         // unschedule transport itself
-        scheduler.remove(this.__scheduledCell);
-        delete this.__scheduledCell;
+        scheduler.remove(this.__schedulerHook);
+        delete this.__schedulerHook;
       } else {
         // change speed without reversing direction
         this.__syncTransportedSpeed(time, position, speed);
@@ -441,7 +441,7 @@ class Transport extends TimeEngine {
           // getCurrentTime
           return scheduler.currentTime;
         }, () => {
-          // getCurrentPosition
+          // get currentPosition
           return this.__transport.currentPosition - this.__offsetPosition;
         });
 
