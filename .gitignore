@@ -1,2 +1,2 @@
-/node_modules/*
-/gh-pages/*
+node_modules
+gh-pages
