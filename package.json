@@ -2,7 +2,7 @@
   "name": "audio-context",
   "version": "0.1.0",
   "description": "Tiny module that makes an instance of the AudioContext globally available",
-  "main": "index.js",
+  "main": "audio-context.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
