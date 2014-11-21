@@ -6,6 +6,7 @@
 "use strict";
 
 var audioContext = require("audio-context");
+console.log(audioContext.bli);
 
 /**
  * @class TimeEngine

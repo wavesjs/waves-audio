@@ -6,6 +6,7 @@
 "use strict";
 
 var audioContext = require("audio-context");
+console.log(audioContext.bli);
 
 /**
  * @class TimeEngine
@@ -28,7 +29,7 @@ var audioContext = require("audio-context");
  * For all interfaces the engine is provided with the attribute getters "currentTime" and "currentPosition" (for the case that the master
  * does not implement these attributte getters, the base class provides default implementations).
  */
-var TimeEngine = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};return o["a"]===t})({},{});var DP$0 = Object.defineProperty;var GOPD$0 = Object.getOwnPropertyDescriptor;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,GOPD$0(s,p));}}return t};var DPS$0 = Object.defineProperties;var proto$0={};
+var TimeEngine = (function(){var DP$0 = Object.defineProperty;
 
   /**
    * @constructor
@@ -46,7 +47,7 @@ var TimeEngine = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};r
      * @type {Object}
      */
     this.outputNode = null;
-  }DPS$0(TimeEngine.prototype,{currentTime: {"get": $currentTime_get$0, "configurable":true,"enumerable":true}, currentPosition: {"get": $currentPosition_get$0, "configurable":true,"enumerable":true}});DP$0(TimeEngine,"prototype",{"configurable":false,"enumerable":false,"writable":false});
+  }Object.defineProperties(TimeEngine.prototype, {currentTime: {"get": currentTime$get$0, "configurable": true, "enumerable": true}, currentPosition: {"get": currentPosition$get$0, "configurable": true, "enumerable": true}});DP$0(TimeEngine, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
   /**
    * Get the time engine's current master time
@@ -54,7 +55,7 @@ var TimeEngine = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};r
    *
    * This function provided by the master.
    */
-  function $currentTime_get$0() {
+  function currentTime$get$0() {
     return audioContext.currentTime;
   }
 
@@ -64,7 +65,7 @@ var TimeEngine = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};r
    *
    * This function provided by the master.
    */
-  function $currentPosition_get$0() {
+  function currentPosition$get$0() {
     return 0;
   }
 
@@ -86,7 +87,7 @@ var TimeEngine = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};r
    * Function provided by the scheduler to reset the engine's next time
    * @param {Number} time new engine time (immediately if not specified)
    */
-  proto$0.resetNextTime = function() {var time = arguments[0];if(time === void 0)time = null;};
+  TimeEngine.prototype.resetNextTime = function() {var time = arguments[0];if(time === void 0)time = null;}
 
   /**
    * Synchronize engine to transport position (transported interface)
@@ -124,7 +125,7 @@ var TimeEngine = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};r
    * Function provided by the transport to reset the next position or to request resynchronizing the engine's position
    * @param {Number} position new engine position (will call syncPosition with the current position if not specified)
    */
-  proto$0.resetNextPosition = function() {var position = arguments[0];if(position === void 0)position = null;};
+  TimeEngine.prototype.resetNextPosition = function() {var position = arguments[0];if(position === void 0)position = null;}
 
   /**
    * Set engine speed (speed-controlled interface)
@@ -138,7 +139,7 @@ var TimeEngine = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};r
   // syncSpeed(time, speed) {
   // }
 
-  proto$0.__setGetters = function(getCurrentTime, getCurrentPosition) {
+  TimeEngine.prototype.__setGetters = function(getCurrentTime, getCurrentPosition) {
     if (getCurrentTime) {
       Object.defineProperty(this, 'currentTime', {
         configurable: true,
@@ -154,31 +155,31 @@ var TimeEngine = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};r
         set: function(position) {}
       });
     }
-  };
+  }
 
-  proto$0.__deleteGetters = function() {
+  TimeEngine.prototype.__deleteGetters = function() {
     delete this.currentTime;
     delete this.currentPosition;
-  };
+  }
 
   /**
    * Connect audio node
    * @param {Object} target audio node
    */
-  proto$0.connect = function(target) {
+  TimeEngine.prototype.connect = function(target) {
     this.outputNode.connect(target);
     return this;
-  };
+  }
 
   /**
    * Disconnect audio node
    * @param {Number} connection connection to be disconnected
    */
-  proto$0.disconnect = function(connection) {
+  TimeEngine.prototype.disconnect = function(connection) {
     this.outputNode.disconnect(connection);
     return this;
-  };
-MIXIN$0(TimeEngine.prototype,proto$0);proto$0=void 0;return TimeEngine;})();
+  }
+;return TimeEngine;})();
 
 /**
  * Check whether the time engine implements the scheduled interface
