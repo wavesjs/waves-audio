@@ -120,7 +120,7 @@ var GranularEngine = (function(super$0){var PRS$0 = (function(o,t){o["__proto__"
     this.cyclic = false;
 
     this.outputNode = this.__gainNode = audioContext.createGain();
-  }if(super$0!==null)SP$0(GranularEngine,super$0);GranularEngine.prototype = OC$0(super$0!==null?super$0.prototype:null,{"constructor":{"value":GranularEngine,"configurable":true,"writable":true}, bufferDuration: {"get": $bufferDuration_get$0, "configurable":true,"enumerable":true}, playbackLength: {"get": $playbackLength_get$0, "configurable":true,"enumerable":true}, gain: {"get": $gain_get$0, "set": $gain_set$0, "configurable":true,"enumerable":true}});DP$0(GranularEngine,"prototype",{"configurable":false,"enumerable":false,"writable":false});
+  }if(super$0!==null)SP$0(GranularEngine,super$0);GranularEngine.prototype = OC$0(super$0!==null?super$0.prototype:null,{"constructor":{"value":GranularEngine,"configurable":true,"writable":true}, bufferDuration: {"get": $bufferDuration_get$0, "configurable":true,"enumerable":true}, currentPosition: {"get": $currentPosition_get$0, "configurable":true,"enumerable":true}, playbackLength: {"get": $playbackLength_get$0, "configurable":true,"enumerable":true}, gain: {"get": $gain_get$0, "set": $gain_set$0, "configurable":true,"enumerable":true}});DP$0(GranularEngine,"prototype",{"configurable":false,"enumerable":false,"writable":false});
 
   function $bufferDuration_get$0() {
     var bufferDuration = this.buffer.duration;
@@ -129,6 +129,11 @@ var GranularEngine = (function(super$0){var PRS$0 = (function(o,t){o["__proto__"
       bufferDuration -= this.buffer.wrapAroundExtention;
 
     return bufferDuration;
+  }
+
+  // TimeEngine attribute
+  function $currentPosition_get$0() {
+    return this.position;
   }
 
   // TimeEngine method (scheduled interface)
@@ -167,7 +172,7 @@ var GranularEngine = (function(super$0){var PRS$0 = (function(o,t){o["__proto__"
   proto$0.trigger = function(time) {
     var grainTime = time || audioContext.currentTime;
     var grainPeriod = this.periodAbs;
-    var grainPosition = this.position + this.currentPosition;
+    var grainPosition = this.currentPosition;
     var grainDuration = this.durationAbs;
 
     if (this.buffer) {
