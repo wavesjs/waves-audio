@@ -46,6 +46,8 @@ class Scheduler {
   __tick() {
     var nextTime = this.__nextTime;
 
+    this.__timeout = null;
+
     while (nextTime <= audioContext.currentTime + this.lookahead) {
       this.__currentTime = nextTime;
 
@@ -56,7 +58,6 @@ class Scheduler {
     }
 
     this.__currentTime = null;
-    this.__timeout = null;
 
     this.__reschedule(nextTime);
   }
@@ -164,4 +165,5 @@ class Scheduler {
   }
 }
 
-module.exports = new Scheduler(); // export scheduler singleton
+// export scheduler singleton
+module.exports = new Scheduler();

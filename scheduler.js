@@ -46,6 +46,8 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
   proto$0.__tick = function() {
     var nextTime = this.__nextTime;
 
+    this.__timeout = null;
+
     while (nextTime <= audioContext.currentTime + this.lookahead) {
       this.__currentTime = nextTime;
 
@@ -56,7 +58,6 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
     }
 
     this.__currentTime = null;
-    this.__timeout = null;
 
     this.__reschedule(nextTime);
   };
@@ -164,4 +165,5 @@ var Scheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};re
   };
 MIXIN$0(Scheduler.prototype,proto$0);proto$0=void 0;return Scheduler;})();
 
-module.exports = new Scheduler(); // export scheduler singleton
+// export scheduler singleton
+module.exports = new Scheduler();
