@@ -181,4 +181,5 @@ var SimpleScheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a"
   };
 MIXIN$0(SimpleScheduler.prototype,proto$0);proto$0=void 0;return SimpleScheduler;})();
 
-module.exports = new SimpleScheduler(); // export scheduler singleton
+// export scheduler singleton
+module.exports = new SimpleScheduler();

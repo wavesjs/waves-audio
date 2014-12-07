@@ -181,4 +181,5 @@ class SimpleScheduler {
   }
 }
 
-module.exports = new SimpleScheduler(); // export scheduler singleton
+// export scheduler singleton
+module.exports = new SimpleScheduler();
