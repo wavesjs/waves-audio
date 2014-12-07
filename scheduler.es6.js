@@ -52,9 +52,12 @@ class Scheduler {
       this.__currentTime = nextTime;
 
       var nextEngine = this.__queue.head;
-      var nextEngineTime = Math.max(nextEngine.advanceTime(this.__currentTime), this.__currentTime);
+      var nextEngineTime = nextEngine.advanceTime(this.__currentTime);
 
-      nextTime = this.__queue.move(nextEngine, nextEngineTime);
+      if(nextEngineTime)
+        nextTime = this.__queue.move(nextEngine, Math.max(nextEngineTime, this.__currentTime));
+      else
+        nextTime = this.__queue.time;
     }
 
     this.__currentTime = null;
