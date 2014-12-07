@@ -110,7 +110,7 @@ class PriorityQueue {
   }
 
   /**
-   * Get first object in queue
+   * Get time of first object in queue
    */
   get time() {
     return this.__objects[0][1];

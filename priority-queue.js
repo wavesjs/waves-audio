@@ -110,7 +110,7 @@ var PriorityQueue = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t
   }
 
   /**
-   * Get first object in queue
+   * Get time of first object in queue
    */
   function $time_get$0() {
     return this.__objects[0][1];
