@@ -51,13 +51,13 @@ var Transported = (function(super$0){if(!PRS$0)MIXIN$0(Transported, super$0);var
       if (position < this.__startPosition) {
 
         if (this.__haltPosition === null)
-          this.stop(time, position - this.__startPosition);
+          this.stop(time, position - this.__offsetPosition);
 
         this.__haltPosition = this.__endPosition;
 
         return this.__startPosition;
       } else if (position <= this.__endPosition) {
-        this.start(time, position - this.__startPosition, speed);
+        this.start(time, position - this.__offsetPosition, speed);
 
         this.__haltPosition = null; // engine is active
 
@@ -66,13 +66,13 @@ var Transported = (function(super$0){if(!PRS$0)MIXIN$0(Transported, super$0);var
     } else {
       if (position >= this.__endPosition) {
         if (this.__haltPosition === null)
-          this.stop(time, position - this.__startPosition);
+          this.stop(time, position - this.__offsetPosition);
 
         this.__haltPosition = this.__startPosition;
 
         return this.__endPosition;
       } else if (position > this.__startPosition) {
-        this.start(time, position - this.__startPosition, speed);
+        this.start(time, position - this.__offsetPosition, speed);
 
         this.__haltPosition = null; // engine is active
 
@@ -132,7 +132,7 @@ var TransportedTransported = (function(super$0){if(!PRS$0)MIXIN$0(TransportedTra
       // getCurrentTime
       return scheduler.currentTime;
     }, function()  {
-      // getCurrentPosition
+      // get currentPosition
       return this$0.__transport.currentPosition - this$0.__offsetPosition;
     });
   }if(super$0!==null)SP$0(TransportedTransported,super$0);TransportedTransported.prototype = OC$0(super$0!==null?super$0.prototype:null,{"constructor":{"value":TransportedTransported,"configurable":true,"writable":true}});DP$0(TransportedTransported,"prototype",{"configurable":false,"enumerable":false,"writable":false});
@@ -176,7 +176,7 @@ var TransportedSpeedControlled = (function(super$0){if(!PRS$0)MIXIN$0(Transporte
       // getCurrentTime
       return scheduler.currentTime;
     }, function()  {
-      // getCurrentPosition
+      // get currentPosition
       return this$0.__transport.currentPosition - this$0.__offsetPosition;
     });
   }if(super$0!==null)SP$0(TransportedSpeedControlled,super$0);TransportedSpeedControlled.prototype = OC$0(super$0!==null?super$0.prototype:null,{"constructor":{"value":TransportedSpeedControlled,"configurable":true,"writable":true}});DP$0(TransportedSpeedControlled,"prototype",{"configurable":false,"enumerable":false,"writable":false});
@@ -208,7 +208,7 @@ var TransportedScheduled = (function(super$0){if(!PRS$0)MIXIN$0(TransportedSched
     super$0.call(this, transport, engine, startPosition, endPosition, offsetPosition);
 
     scheduler.add(engine, Infinity, function()  {
-      // getCurrentPosition
+      // get currentPosition
       return (this$0.__transport.currentPosition - this$0.__offsetPosition) * this$0.__scalePosition;
     });
   }if(super$0!==null)SP$0(TransportedScheduled,super$0);TransportedScheduled.prototype = OC$0(super$0!==null?super$0.prototype:null,{"constructor":{"value":TransportedScheduled,"configurable":true,"writable":true}});DP$0(TransportedScheduled,"prototype",{"configurable":false,"enumerable":false,"writable":false});
@@ -227,11 +227,11 @@ var TransportedScheduled = (function(super$0){if(!PRS$0)MIXIN$0(TransportedSched
   };
 MIXIN$0(TransportedScheduled.prototype,proto$0);proto$0=void 0;return TransportedScheduled;})(Transported);
 
-var TransportScheduledCell = (function(super$0){if(!PRS$0)MIXIN$0(TransportScheduledCell, super$0);var proto$0={};
-  function TransportScheduledCell(transport) {
+var TransportSchedulerHook = (function(super$0){if(!PRS$0)MIXIN$0(TransportSchedulerHook, super$0);var proto$0={};
+  function TransportSchedulerHook(transport) {
     super$0.call(this);
     this.__transport = transport;
-  }if(super$0!==null)SP$0(TransportScheduledCell,super$0);TransportScheduledCell.prototype = OC$0(super$0!==null?super$0.prototype:null,{"constructor":{"value":TransportScheduledCell,"configurable":true,"writable":true}});DP$0(TransportScheduledCell,"prototype",{"configurable":false,"enumerable":false,"writable":false});
+  }if(super$0!==null)SP$0(TransportSchedulerHook,super$0);TransportSchedulerHook.prototype = OC$0(super$0!==null?super$0.prototype:null,{"constructor":{"value":TransportSchedulerHook,"configurable":true,"writable":true}});DP$0(TransportSchedulerHook,"prototype",{"configurable":false,"enumerable":false,"writable":false});
 
   // TimeEngine method (scheduled interface)
   proto$0.advanceTime = function(time) {
@@ -244,7 +244,7 @@ var TransportScheduledCell = (function(super$0){if(!PRS$0)MIXIN$0(TransportSched
 
     return Infinity;
   };
-MIXIN$0(TransportScheduledCell.prototype,proto$0);proto$0=void 0;return TransportScheduledCell;})(TimeEngine);
+MIXIN$0(TransportSchedulerHook.prototype,proto$0);proto$0=void 0;return TransportSchedulerHook;})(TimeEngine);
 
 /**
  * xxx
@@ -258,7 +258,7 @@ var Transport = (function(super$0){if(!PRS$0)MIXIN$0(Transport, super$0);var pro
     this.__engines = [];
     this.__transported = [];
 
-    this.__scheduledCell = null;
+    this.__schedulerHook = null;
     this.__transportQueue = new PriorityQueue();
 
     // syncronized time, position, and speed
@@ -310,7 +310,7 @@ var Transport = (function(super$0){if(!PRS$0)MIXIN$0(Transport, super$0);var pro
    * Get current master time
    * @return {Number} current time
    *
-   * This function will be replaced when the transport is added to a master (i.e. transport or player).
+   * This function will be replaced when the transport is added to a master (i.e. transport or play-control).
    */
   function $currentTime_get$0() {
     return scheduler.currentTime;
@@ -320,7 +320,7 @@ var Transport = (function(super$0){if(!PRS$0)MIXIN$0(Transport, super$0);var pro
    * Get current master position
    * @return {Number} current playing position
    *
-   * This function will be replaced when the transport is added to a master (i.e. transport or player).
+   * This function will be replaced when the transport is added to a master (i.e. transport or play-control).
    */
   function $currentPosition_get$0() {
     return this.__position + (scheduler.currentTime - this.__time) * this.__speed;
@@ -330,11 +330,11 @@ var Transport = (function(super$0){if(!PRS$0)MIXIN$0(Transport, super$0);var pro
    * Reset next transport position
    * @param {Number} next transport position
    *
-   * This function will be replaced when the transport is added to a master (i.e. transport or player).
+   * This function will be replaced when the transport is added to a master (i.e. transport or play-control).
    */
   proto$0.resetNextPosition = function(nextPosition) {
-    if (this.__scheduledCell)
-      this.__scheduledCell.resetNextTime(this.__getTimeAtPosition(nextPosition));
+    if (this.__schedulerHook)
+      this.__schedulerHook.resetNextTime(this.__getTimeAtPosition(nextPosition));
 
     this.__nextPosition = nextPosition;
   };
@@ -379,8 +379,8 @@ var Transport = (function(super$0){if(!PRS$0)MIXIN$0(Transport, super$0);var pro
         nextPosition = this.__syncTransportedPosition(time, position, speed);
 
         // schedule transport itself
-        this.__scheduledCell = new TransportScheduledCell(this);
-        scheduler.add(this.__scheduledCell, Infinity);
+        this.__schedulerHook = new TransportSchedulerHook(this);
+        scheduler.add(this.__schedulerHook, Infinity);
       } else if (speed === 0) {
         // stop
         nextPosition = Infinity;
@@ -388,8 +388,8 @@ var Transport = (function(super$0){if(!PRS$0)MIXIN$0(Transport, super$0);var pro
         this.__syncTransportedSpeed(time, position, 0);
 
         // unschedule transport itself
-        scheduler.remove(this.__scheduledCell);
-        delete this.__scheduledCell;
+        scheduler.remove(this.__schedulerHook);
+        delete this.__schedulerHook;
       } else {
         // change speed without reversing direction
         this.__syncTransportedSpeed(time, position, speed);
@@ -441,7 +441,7 @@ var Transport = (function(super$0){if(!PRS$0)MIXIN$0(Transport, super$0);var pro
           // getCurrentTime
           return scheduler.currentTime;
         }, function()  {
-          // getCurrentPosition
+          // get currentPosition
           return this$0.__transport.currentPosition - this$0.__offsetPosition;
         });
 

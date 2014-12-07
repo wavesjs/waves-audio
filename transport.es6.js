@@ -310,7 +310,7 @@ class Transport extends TimeEngine {
    * Get current master time
    * @return {Number} current time
    *
-   * This function will be replaced when the transport is added to a master (i.e. transport or player).
+   * This function will be replaced when the transport is added to a master (i.e. transport or play-control).
    */
   get currentTime() {
     return scheduler.currentTime;
@@ -320,7 +320,7 @@ class Transport extends TimeEngine {
    * Get current master position
    * @return {Number} current playing position
    *
-   * This function will be replaced when the transport is added to a master (i.e. transport or player).
+   * This function will be replaced when the transport is added to a master (i.e. transport or play-control).
    */
   get currentPosition() {
     return this.__position + (scheduler.currentTime - this.__time) * this.__speed;
@@ -330,7 +330,7 @@ class Transport extends TimeEngine {
    * Reset next transport position
    * @param {Number} next transport position
    *
-   * This function will be replaced when the transport is added to a master (i.e. transport or player).
+   * This function will be replaced when the transport is added to a master (i.e. transport or play-control).
    */
   resetNextPosition(nextPosition) {
     if (this.__schedulerHook)
