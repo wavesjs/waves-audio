@@ -66,6 +66,13 @@ describe("PriorityQueue", function(){
         pq.insert(obj, time);
         assert.deepEqual(pq.head, obj);
     });
+    it("should get time properly", function(){
+        var pq = new PriorityQueue();
+        var obj = {foo: 'bar'};
+        var time = 1;
+        pq.insert(obj, time);
+        assert.deepEqual(pq.time, time);
+    });
     it("should clear properly", function(){
         var pq = new PriorityQueue();
         var obj = {foo: 'bar'};

@@ -25,7 +25,7 @@
     "connect": "^3.3.3",
     "es6ify": "^1.5.1",
     "istanbul": "^0.3.2",
-    "istanbul-traceur": "git://github.com/ouhouhsami/istanbul-traceur",
+    "istanbul-traceur": "git://github.com/ouhouhsami/istanbul-traceur#patch-1",
     "mocha": "^2.0.1",
     "mocha-traceur": "^2.0.0",
     "open": "0.0.5",
