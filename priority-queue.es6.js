@@ -1,7 +1,7 @@
 /* written in ECMAscript 6 */
 /**
  * @fileoverview WAVE audio priority queue used by scheduler and transports
- * @author Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
+ * @author Norbert Schnell <Norbert.Schnell@ircam.fr>
  *
  * First rather stupid implementation to be optimized...
  */

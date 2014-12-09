@@ -10,16 +10,26 @@
   "main": "priority-queue.js",
   "exports": "PriorityQueue",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node scripts/testsAndCoverage.js"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/Ircam-RnD/priority-queue"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
-    "module-boilerplate": "git://github.com/Ircam-RnD/module-boilerplate.git#master",
-    "gulp": "~3.8.2"
+    "body-parser": "^1.9.3",
+    "browserify": "^6.3.3",
+    "browserify-istanbul": "git://github.com/ouhouhsami/browserify-istanbul#master",
+    "chai": "^1.10.0",
+    "connect": "^3.3.3",
+    "es6ify": "^1.5.1",
+    "istanbul": "^0.3.2",
+    "istanbul-traceur": "git://github.com/ouhouhsami/istanbul-traceur",
+    "mocha": "^2.0.1",
+    "mocha-traceur": "^2.0.0",
+    "open": "0.0.5",
+    "serve-static": "^1.7.1",
+    "traceur": "0.0.74"
   }
 }
