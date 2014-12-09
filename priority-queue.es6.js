@@ -108,6 +108,13 @@ class PriorityQueue {
   get head() {
     return this.__objects[0][0];
   }
+
+  /**
+   * Get time of first object in queue
+   */
+  get time() {
+    return this.__objects[0][1];
+  }
 }
 
 module.exports = PriorityQueue;
