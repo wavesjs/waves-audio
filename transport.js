@@ -195,7 +195,7 @@ var TransportedSpeedControlled = (function(super$0){if(!PRS$0)MIXIN$0(Transporte
   };
 
   proto$0.destroy = function() {
-    this.__engine.syncSpeed(this.__transport.time, this.__transport.position - this.__offsetPosition, 0);
+    this.__engine.syncSpeed(this.__transport.currentTime, this.__transport.currentPosition - this.__offsetPosition, 0);
     TimeEngine.resetInterface(this.__engine);
     super$0.prototype.destroy.call(this);
   };

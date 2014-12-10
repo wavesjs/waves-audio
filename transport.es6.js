@@ -195,7 +195,7 @@ class TransportedSpeedControlled extends Transported {
   }
 
   destroy() {
-    this.__engine.syncSpeed(this.__transport.time, this.__transport.position - this.__offsetPosition, 0);
+    this.__engine.syncSpeed(this.__transport.currentTime, this.__transport.currentPosition - this.__offsetPosition, 0);
     TimeEngine.resetInterface(this.__engine);
     super.destroy();
   }
