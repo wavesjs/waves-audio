@@ -8,18 +8,37 @@
 var TimeEngine = require("time-engine");
 var scheduler = require("scheduler");
 
-class PlayControlScheduledCell extends TimeEngine {
+class PlayControlSchedulerHook extends TimeEngine {
   constructor(playControl) {
     super();
     this.__playControl = playControl;
   }
 
-  // TimeEngine method (scheduled interface)
   advanceTime(time) {
     var playControl = this.__playControl;
     var position = playControl.__getPositionAtTime(time);
-    var nextPosition = playControl.__engine.advancePosition(time, position, this.__speed);
-    return playControl.__getTimeAtPosition(nextPosition);
+    var nextPosition = playControl.__engine.advancePosition(time, position, playControl.__speed);
+
+    if (nextPosition !== Infinity)
+      return playControl.__getTimeAtPosition(nextPosition);
+
+    return Infinity;
+  }
+}
+
+class PlayControlLoopControl extends TimeEngine {
+  constructor(playControl) {
+    super();
+    this.__playControl = playControl;
+    this.position = null;
+    this.speed = null;
+    this.seek = false;
+  }
+
+  // TimeEngine method (scheduled interface)
+  advanceTime(time) {
+    this.__playControl.syncSpeed(time, this.position, this.speed, this.seek);
+    return null;
   }
 }
 
@@ -28,7 +47,11 @@ class PlayControl extends TimeEngine {
     super();
 
     this.__engine = null;
-    this.__scheduledCell = null;
+    this.__schedulerHook = null;
+
+    this.__loopControl = null;
+    this.__loopStart = 0;
+    this.__loopEnd = Infinity;
 
     // synchronized tie, position, and speed
     this.__time = 0;
@@ -111,8 +134,8 @@ class PlayControl extends TimeEngine {
    * @return {Number} current playing position
    */
   __resetNextPosition(nextPosition) {
-    if (this.__scheduledCell)
-      this.__scheduledCell.resetNextTime(this.__getTimeAtPosition(nextPosition));
+    if (this.__schedulerHook)
+      this.__schedulerHook.resetNextTime(this.__getTimeAtPosition(nextPosition));
 
     this.__nextPosition = nextPosition;
   }
@@ -137,15 +160,91 @@ class PlayControl extends TimeEngine {
     return this.__position + (scheduler.currentTime - this.__time) * this.__speed;
   }
 
+  set loop(enable) {
+    if (enable) {
+      if (this.__loopStart > -Infinity && this.__loopSEnd < Infinity) {
+        this.__loopControl = new PlayControlLoopControl(this);
+        scheduler.add(this.__loopControl, Infinity);
+      }
+    } else if (this.__loopControl) {
+      scheduler.remove(this.__loopControl);
+      this.__loopControl = null;
+    }
+  }
+
+  get loop() {
+    return (!!this.__loopControl);
+  }
+
+  setLoopBoundaries(start, end) {
+    if (end >= start) {
+      this.__loopStart = start;
+      this.__loopEnd = end;
+    } else {
+      this.__loopStart = end;
+      this.__loopEnd = start;
+    }
+
+    this.loop = this.loop;
+  }
+
+  set loopStart(startTime) {
+    this.setLoopBoundaries(startTime, this.__loopEnd);
+  }
+
+  get loopStart() {
+    return this.__loopStart;
+  }
+
+  set loopEnd(endTime) {
+    this.setLoopBoundaries(this.__loopStart, endTime);
+  }
+
+  get loopEnd() {
+    return this.__loopEnd;
+  }
+
+  __applyLoopBoundaries(position, speed, seek) {
+    if (this.__loopControl) {
+      if (speed > 0 && position >= this.__loopEnd)
+        return this.__loopStart + (position - this.__loopStart) % (this.__loopEnd - this.__loopStart);
+      else if (speed < 0 && position < this.__loopStart)
+        return this.__loopEnd - (this.__loopEnd - position) % (this.__loopEnd - this.__loopStart);
+    }
+
+    return position;
+  }
+
+  __rescheduleLoopControl(position, speed) {
+    if (this.__loopControl) {
+      if (speed > 0) {
+        this.__loopControl.position = this.__loopStart;
+        this.__loopControl.speed = speed;
+        this.__loopControl.seek = true;
+        scheduler.reset(this.__loopControl, this.__getTimeAtPosition(this.__loopEnd));
+      } else if (speed < 0) {
+        this.__loopControl.position = this.__loopEnd;
+        this.__loopControl.speed = speed;
+        this.__loopControl.seek = true;
+        scheduler.reset(this.__loopControl, this.__getTimeAtPosition(this.__loopStart));
+      } else {
+        scheduler.reset(this.__loopControl, Infinity);
+      }
+    }
+  }
+
   // TimeEngine method (speed-controlled interface)
   syncSpeed(time, position, speed, seek = false) {
     var lastSpeed = this.__speed;
 
-    this.__time = time;
-    this.__position = position;
-    this.__speed = speed;
-
     if (speed !== lastSpeed || seek) {
+      if (seek || lastSpeed === 0)
+        position = this.__applyLoopBoundaries(position, speed);
+
+      this.__time = time;
+      this.__position = position;
+      this.__speed = speed;
+
       switch (this.__engine.interface) {
         case "speed-controlled":
           this.__engine.syncSpeed(time, position, speed, seek);
@@ -155,21 +254,28 @@ class PlayControl extends TimeEngine {
           var nextPosition = this.__nextPosition;
 
           if (seek) {
-            nextPosition = this.__transportedEngine.syncPosition(this.__time, this.__position, speed);
-          } else if (lastSpeed === 0) { // start or seek
-            nextPosition = this.__transportedEngine.syncPosition(this.__time, this.__position, speed);
+            nextPosition = this.__engine.syncPosition(time, position, speed);
+          } else if (lastSpeed === 0) {
+            // start
+            nextPosition = this.__engine.syncPosition(time, position, speed);
 
-            // add scheduled cell to scheduler (will be rescheduled to appropriate time below)
-            this.__scheduledCell = new PlayControlScheduledCell(this);
-            scheduler.add(this.__scheduledCell, Infinity);
-          } else if (speed === 0) { // stop
+            // add scheduler hook to scheduler (will be rescheduled to appropriate time below)
+            this.__schedulerHook = new PlayControlSchedulerHook(this);
+            scheduler.add(this.__schedulerHook, Infinity);
+          } else if (speed === 0) {
+            // stop
             nextPosition = Infinity;
 
-            // remove scheduled cell from scheduler            
-            scheduler.remove(this.__scheduledCell);
-            this.__scheduledCell = null;
+            if (this.__engine.syncSpeed)
+              this.__engine.syncSpeed(time, position, 0);
+
+            // remove scheduler hook from scheduler            
+            scheduler.remove(this.__schedulerHook);
+            this.__schedulerHook = null;
           } else if (speed * lastSpeed < 0) { // change transport direction
-            nextPosition = this.__transportedEngine.syncPosition(time, position, speed);
+            nextPosition = this.__engine.syncPosition(time, position, speed);
+          } else if (this.__engine.syncSpeed) {
+            this.__engine.syncSpeed(time, position, speed);
           }
 
           this.__resetNextPosition(nextPosition);
@@ -182,6 +288,8 @@ class PlayControl extends TimeEngine {
             this.__scheduledEngine.resetNextTime(Infinity);
           break;
       }
+
+      this.__rescheduleLoopControl(position, speed);
     }
   }
 
