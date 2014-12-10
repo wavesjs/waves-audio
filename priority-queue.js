@@ -106,14 +106,20 @@ var PriorityQueue = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t
    * Get first object in queue
    */
   function $head_get$0() {
-    return this.__objects[0][0];
+    if(this.__objects.length > 0)
+      return this.__objects[0][0];
+
+    return null;
   }
 
   /**
    * Get time of first object in queue
    */
   function $time_get$0() {
-    return this.__objects[0][1];
+    if(this.__objects.length > 0)
+      return this.__objects[0][1];
+
+    return Infinity;
   }
 MIXIN$0(PriorityQueue.prototype,proto$0);proto$0=void 0;return PriorityQueue;})();
 
