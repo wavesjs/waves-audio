@@ -21,7 +21,5 @@
     "time-engine": "git://github.com/Ircam-RnD/time-engine.git#master"
   },
   "devDependencies": {
-    "module-boilerplate": "git://github.com/Ircam-RnD/module-boilerplate.git#master",
-    "gulp": "~3.8.2"
   }
 }
