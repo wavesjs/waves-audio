@@ -20,7 +20,5 @@
     "audio-context": "git://github.com/Ircam-RnD/audio-context.git#master"
   },
   "devDependencies": {
-    "module-boilerplate": "git://github.com/Ircam-RnD/module-boilerplate.git#master",
-    "gulp": "~3.8.2"
   }
 }

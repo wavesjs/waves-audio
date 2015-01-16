@@ -12,11 +12,11 @@ var audioContext = require("audio-context");
  * @classdesc Base class for time engines
  *
  * Time engines are components that generate more or less regular audio events and/or playback a media stream.
- * They implement one or multiple imterfaces to be synchronized by a master such as a scheduler, a transport or a play-control.
+ * They implement one or multiple interfaces to be synchronized by a master such as a scheduler, a transport or a play-control.
  * The provided interfaces are "scheduled", "transported", and "play-controlled".
  *
- * In the "scheduled" interface the engine implements a method "advanceTime" that is called by the master (usually teh scheduler)
- * and returns the delay until the next call of "advanceTime". The master provides the engien with a function "resetNextTime"
+ * In the "scheduled" interface the engine implements a method "advanceTime" that is called by the master (usually the scheduler)
+ * and returns the delay until the next call of "advanceTime". The master provides the engine with a function "resetNextTime"
  * to reschedule the next call to another time.
  *
  * In the "transported" interface the master (usually a transport) first calls the method "syncPosition" that returns the position
@@ -26,7 +26,7 @@ var audioContext = require("audio-context");
  * In the "speed-controlled" interface the engine is controlled by the method "syncSpeed".
  *
  * For all interfaces the engine is provided with the attribute getters "currentTime" and "currentPosition" (for the case that the master
- * does not implement these attributte getters, the base class provides default implementations).
+ * does not implement these attribute getters, the base class provides default implementations).
  */
 var TimeEngine = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};return o["a"]===t})({},{});var DP$0 = Object.defineProperty;var GOPD$0 = Object.getOwnPropertyDescriptor;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,GOPD$0(s,p));}}return t};var DPS$0 = Object.defineProperties;var proto$0={};
 
