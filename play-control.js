@@ -50,7 +50,7 @@ var PlayControl = (function(super$0){if(!PRS$0)MIXIN$0(PlayControl, super$0);var
     this.__schedulerHook = null;
 
     this.__loopControl = null;
-    this.__loopStart = -Infinity;
+    this.__loopStart = 0;
     this.__loopEnd = Infinity;
 
     // synchronized tie, position, and speed
@@ -102,7 +102,7 @@ var PlayControl = (function(super$0){if(!PRS$0)MIXIN$0(PlayControl, super$0);var
     } else {
       throw new Error("object has already been added to a master");
     }
-  }if(super$0!==null)SP$0(PlayControl,super$0);PlayControl.prototype = OC$0(super$0!==null?super$0.prototype:null,{"constructor":{"value":PlayControl,"configurable":true,"writable":true}, currentTime: {"get": $currentTime_get$0, "configurable":true,"enumerable":true}, currentPosition: {"get": $currentPosition_get$0, "configurable":true,"enumerable":true}, loop: {"get": $loop_get$0, "set": $loop_set$0, "configurable":true,"enumerable":true}, speed: {"get": $speed_get$0, "set": $speed_set$0, "configurable":true,"enumerable":true}});DP$0(PlayControl,"prototype",{"configurable":false,"enumerable":false,"writable":false});
+  }if(super$0!==null)SP$0(PlayControl,super$0);PlayControl.prototype = OC$0(super$0!==null?super$0.prototype:null,{"constructor":{"value":PlayControl,"configurable":true,"writable":true}, currentTime: {"get": $currentTime_get$0, "configurable":true,"enumerable":true}, currentPosition: {"get": $currentPosition_get$0, "configurable":true,"enumerable":true}, loop: {"get": $loop_get$0, "set": $loop_set$0, "configurable":true,"enumerable":true}, loopStart: {"get": $loopStart_get$0, "set": $loopStart_set$0, "configurable":true,"enumerable":true}, loopEnd: {"get": $loopEnd_get$0, "set": $loopEnd_set$0, "configurable":true,"enumerable":true}, speed: {"get": $speed_get$0, "set": $speed_set$0, "configurable":true,"enumerable":true}});DP$0(PlayControl,"prototype",{"configurable":false,"enumerable":false,"writable":false});
 
   /**
    * Extrapolate transport time for given position
@@ -160,16 +160,9 @@ var PlayControl = (function(super$0){if(!PRS$0)MIXIN$0(PlayControl, super$0);var
     return this.__position + (scheduler.currentTime - this.__time) * this.__speed;
   }
 
-  proto$0.setLoopBoundaries = function(start, end) {
-    this.__loopStart = start;
-    this.__loopEnd = end;
-
-    this.loop = this.loop;
-  };
-
   function $loop_set$0(enable) {
     if (enable) {
-      if (this.__loopStart < this.__loopEnd) {
+      if (this.__loopStart > -Infinity && this.__loopSEnd < Infinity) {
         this.__loopControl = new PlayControlLoopControl(this);
         scheduler.add(this.__loopControl, Infinity);
       }
@@ -181,6 +174,34 @@ var PlayControl = (function(super$0){if(!PRS$0)MIXIN$0(PlayControl, super$0);var
 
   function $loop_get$0() {
     return (!!this.__loopControl);
+  }
+
+  proto$0.setLoopBoundaries = function(start, end) {
+    if (end >= start) {
+      this.__loopStart = start;
+      this.__loopEnd = end;
+    } else {
+      this.__loopStart = end;
+      this.__loopEnd = start;
+    }
+
+    this.loop = this.loop;
+  };
+
+  function $loopStart_set$0(startTime) {
+    this.setLoopBoundaries(startTime, this.__loopEnd);
+  }
+
+  function $loopStart_get$0() {
+    return this.__loopStart;
+  }
+
+  function $loopEnd_set$0(endTime) {
+    this.setLoopBoundaries(this.__loopStart, endTime);
+  }
+
+  function $loopEnd_get$0() {
+    return this.__loopEnd;
   }
 
   proto$0.__applyLoopBoundaries = function(position, speed, seek) {
