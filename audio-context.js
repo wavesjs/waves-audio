@@ -1,3 +1,4 @@
 /*globals AudioContext*/
 require('./ac-monkeypatch');
-module.exports = new AudioContext();
+window.waves = window.waves || {};
+module.exports = window.waves.audioContext = window.waves.audioContext || new AudioContext();
