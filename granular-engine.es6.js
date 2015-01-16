@@ -245,7 +245,7 @@ class GranularEngine extends TimeEngine {
           envelopeNode.gain.setValueAtTime(1.0, releaseStartTime);
 
         envelopeNode.gain.linearRampToValueAtTime(0.0, grainEndTime);
-        envelopeNode.connect(this.__gainNode);
+        envelopeNode.connect(this.outputNode);
 
         // make source
         var source = audioContext.createBufferSource();
@@ -253,7 +253,6 @@ class GranularEngine extends TimeEngine {
         source.buffer = this.buffer;
         source.playbackRate.value = resamplingRate;
         source.connect(envelopeNode);
-        envelopeNode.connect(this.__gainNode);
 
         source.start(grainTime, grainPosition);
         source.stop(grainTime + grainDuration / resamplingRate);
