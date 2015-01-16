@@ -51,17 +51,21 @@ class Scheduler {
     while (nextTime <= audioContext.currentTime + this.lookahead) {
       this.__currentTime = nextTime;
 
-      var nextEngine = this.__queue.head;
-      var nextEngineTime = nextEngine.advanceTime(this.__currentTime);
+      var engine = this.__queue.head;
+      var time = engine.advanceTime(this.__currentTime);
 
-      if(nextEngineTime)
-        nextTime = this.__queue.move(nextEngine, Math.max(nextEngineTime, this.__currentTime));
-      else
-        nextTime = this.__queue.time;
+      if (time && time < Infinity) {
+        nextTime = this.__queue.move(engine, Math.max(time, this.__currentTime));
+      } else {
+        nextTime = this.__queue.remove(engine);
+
+        // remove engine from scheduler
+        if(!time && arrayRemove(this.__engines, engine))
+          TimeEngine.resetInterface(engine);
+      }
     }
 
     this.__currentTime = null;
-
     this.__reschedule(nextTime);
   }
 
@@ -92,21 +96,16 @@ class Scheduler {
 
   /**
    * Add a callback to the scheduler
-   * @param {Function} callback function(time, audioTime) to be called
-   * @param {Number} delay of first callback (default is 0)
-   * @param {Number} period callback period (default is 0 for one-shot)
+   * @param {Function} callbackFunction callback function(time) to be called
+   * @param {Number} time time of first callback (default is 0)
    * @return {Object} scheduled object that can be used to call remove and reset
    */
-  callback(callbackFunction, delay = 0, period = 0) {
+  callback(callbackFunction, time = this.currentTime) {
     var engine = {
-      period: period || Infinity,
-      advanceTime: function(time) {
-        callbackFunction(time);
-        return time + this.period;
-      }
+      advanceTime: callbackFunction
     };
 
-    var nextTime = this.__queue.insert(engine, this.currentTime + delay);
+    var nextTime = this.__queue.insert(engine, this.currentTime + time);
     this.__reschedule(nextTime);
 
     return engine;
@@ -115,12 +114,12 @@ class Scheduler {
   /**
    * Add a time engine to the scheduler
    * @param {Object} engine time engine to be added to the scheduler
-   * @param {Number} delay scheduling delay time
+   * @param {Number} time scheduling time
    * @param {Function} function to get current position
    */
-  add(engine, delay = 0, getCurrentPosition = null) {
-    if (!engine.interface) {
-      if (TimeEngine.implementsScheduled(engine)) {
+  add(engine, time = this.currentTime, getCurrentPosition = null) {
+    if (TimeEngine.implementsScheduled(engine)) {
+      if (!engine.interface) {
         this.__engines.push(engine);
 
         TimeEngine.setScheduled(engine, (time) => {
@@ -130,13 +129,13 @@ class Scheduler {
           return this.currentTime;
         }, getCurrentPosition);
 
-        var nextTime = this.__queue.insert(engine, this.currentTime + delay);
+        var nextTime = this.__queue.insert(engine, time);
         this.__reschedule(nextTime);
       } else {
-        throw new Error("object cannot be added to scheduler");
+        throw new Error("object has already been added to a master");
       }
     } else {
-      throw new Error("object has already been added to a master");
+      throw new Error("object cannot be added to scheduler");
     }
 
     return engine;
@@ -166,7 +165,21 @@ class Scheduler {
     var nextTime = this.__queue.move(engine, time);
     this.__reschedule(nextTime);
   }
+
+  /**
+   * Remove all schdeduled callbacks and engines from the scheduler
+   */
+  clear() {
+    if (this.__timeout) {
+      clearTimeout(this.__timeout);
+      this.__timeout = null;
+    }
+
+    this.__queue.clear();
+    this.__engines.length = 0;
+  }
 }
 
 // export scheduler singleton
-module.exports = new Scheduler();
+window.waves = window.waves || {};
+module.exports = window.waves.scheduler = window.waves.scheduler || new Scheduler();
