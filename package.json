@@ -22,7 +22,5 @@
     "scheduler": "git://github.com/Ircam-RnD/scheduler.git#master"
   },
   "devDependencies": {
-    "module-boilerplate": "git://github.com/Ircam-RnD/module-boilerplate.git#master",
-    "gulp": "~3.8.2"
   }
 }
