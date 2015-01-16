@@ -8,11 +8,24 @@
 var audioContext = require("audio-context");
 var TimeEngine = require("time-engine");
 
+function arrayRemove(array, value) {
+  var index = array.indexOf(value);
+
+  if (index >= 0) {
+    array.splice(index, 1);
+    return true;
+  }
+
+  return false;
+}
+
 class SimpleScheduler {
 
   constructor() {
     this.__engines = [];
-    this.__times = [];
+
+    this.__schedEngines = [];
+    this.__schedTimes = [];
 
     this.__currentTime = null;
     this.__timeout = null;
@@ -30,35 +43,35 @@ class SimpleScheduler {
     this.lookahead = 0.1;
   }
 
-  __insertEngine(engine, time) {
-    this.__engines.push(engine);
-    this.__times.push(time);
+  __scheduleEngine(engine, time) {
+    this.__schedEngines.push(engine);
+    this.__schedTimes.push(time);
   }
 
-  __moveEngine(engine, time) {
-    var index = this.__engines.indexOf(engine);
+  __rescheduleEngine(engine, time) {
+    var index = this.__schedEngines.indexOf(engine);
 
     if (index >= 0) {
       if (time !== Infinity) {
-        this.__times[index] = time;
+        this.__schedTimes[index] = time;
       } else {
-        this.__engines.splice(index, 1);
-        this.__times.splice(index, 1);
+        this.__schedEngines.splice(index, 1);
+        this.__schedTimes.splice(index, 1);
       }
     }
   }
 
-  __withdrawEngine(engine) {
-    var index = this.__engines.indexOf(engine);
+  __unscheduleEngine(engine) {
+    var index = this.__schedEngines.indexOf(engine);
 
     if (index >= 0) {
-      this.__engines.splice(index, 1);
-      this.__times.splice(index, 1);
+      this.__schedEngines.splice(index, 1);
+      this.__schedTimes.splice(index, 1);
     }
   }
 
-  __reschedule() {
-    if (this.__engines.length > 0) {
+  __resetTick() {
+    if (this.__schedEngines.length > 0) {
       if (!this.__timeout)
         this.__tick();
     } else if (this.__timeout) {
@@ -70,26 +83,31 @@ class SimpleScheduler {
   __tick() {
     var i = 0;
 
-    while (i < this.__engines.length) {
-      var engine = this.__engines[i];
-      var time = this.__times[i];
+    while (i < this.__schedEngines.length) {
+      var engine = this.__schedEngines[i];
+      var time = this.__schedTimes[i];
 
-      while (time <= audioContext.currentTime + this.lookahead) {
+      while (time && time <= audioContext.currentTime + this.lookahead) {
         time = Math.max(time, audioContext.currentTime);
         this.__currentTime = time;
         time = engine.advanceTime(time);
       }
 
-      if (time !== Infinity)
-        this.__times[i++] = time;
-      else
-        this.__withdrawEngine(engine);
+      if (time && time < Infinity) {
+        this.__schedTimes[i++] = time;
+      } else {
+        this.__unscheduleEngine(engine);
+
+        // remove engine from scheduler
+        if (!time && arrayRemove(this.__engines, engine))
+          TimeEngine.resetInterface(engine);
+      }
     }
 
     this.__currentTime = null;
     this.__timeout = null;
 
-    if (this.__engines.length > 0) {
+    if (this.__schedEngines.length > 0) {
       this.__timeout = setTimeout(() => {
         this.__tick();
       }, this.period * 1000);
@@ -107,21 +125,17 @@ class SimpleScheduler {
   /**
    * Add a callback to the scheduler
    * @param {Function} callback function(time) to be called
-   * @param {Number} delay of first callback (default is 0)
+   * @param {Number} time of first callback (default is now)
    * @param {Number} period callback period (default is 0 for one-shot)
    * @return {Object} scheduled object that can be used to call remove and reset
    */
-  callback(callbackFunction, delay = 0, period = 0) {
+  callback(callbackFunction, time = this.currentTime) {
     var engineWrapper = {
-      period: period || Infinity,
-      advanceTime: function(time) {
-        callbackFunction(time);
-        return time + this.period;
-      }
+      advanceTime: callbackFunction
     };
 
-    this.__insertEngine(engineWrapper, this.currentTime + delay);
-    this.__reschedule();
+    this.__scheduleEngine(engineWrapper, time);
+    this.__resetTick();
 
     return engineWrapper;
   }
@@ -129,28 +143,30 @@ class SimpleScheduler {
   /**
    * Add a time engine to the scheduler
    * @param {Object} engine time engine to be added to the scheduler
-   * @param {Number} delay scheduling delay time
+   * @param {Number} time scheduling time
    */
-  add(engine, delay = 0, getCurrentPosition = null) {
-    if (!engine.interface) {
-      if (TimeEngine.implementsScheduled(engine)) {
+  add(engine, time = this.currentTime, getCurrentPosition = null) {
+    if (TimeEngine.implementsScheduled(engine)) {
+      if (!engine.interface) {
 
         TimeEngine.setScheduled(engine, (time) => {
-          this.__nextTime = this.__queue.move(engine, time);
-          this.__reschedule();
+          this.__rescheduleEngine(engine, time);
+          this.__resetTick();
         }, () => {
           return this.currentTime;
         }, getCurrentPosition);
 
-        this.__insertEngine(engine, this.currentTime + delay);
-        this.__reschedule();
+        this.__engines.push(engine);
+
+        this.__scheduleEngine(engine, time);
+        this.__resetTick();
 
         return engine;
       } else {
-        throw new Error("object cannot be added to scheduler");
+        throw new Error("object has already been added to a master");
       }
     } else {
-      throw new Error("object has already been added to a master");
+      throw new Error("object cannot be added to scheduler");
     }
 
     return null;
@@ -161,10 +177,12 @@ class SimpleScheduler {
    * @param {Object} engine time engine or callback to be removed from the scheduler
    */
   remove(engine) {
-    if (this.__engines.indexOf(engine) >= 0) {
-      TimeEngine.resetInterface(engine);
-      this.__withdrawEngine(engine);
-      this.__reschedule();
+    if (arrayRemove(this.__engines, engine)) {
+      if (engine.interface)
+        TimeEngine.resetInterface(engine);
+
+      this.__unscheduleEngine(engine);
+      this.__resetTick();
     } else {
       throw new Error("object has not been added to this scheduler");
     }
@@ -176,10 +194,21 @@ class SimpleScheduler {
    * @param {Number} time time when to reschedule
    */
   reset(engine, time) {
-    this.__moveEngine(engine, time);
-    this.__reschedule();
+    this.__rescheduleEngine(engine, time);
+    this.__resetTick();
+  }
+
+  clear() {
+    if (this.__timeout) {
+      clearTimeout(this.__timeout);
+      this.__timeout = null;
+    }
+
+    this.__schedEngines.length = 0;
+    this.__schedTimes.length = 0;
   }
 }
 
 // export scheduler singleton
-module.exports = new SimpleScheduler();
+window.waves = window.waves || {};
+module.exports = window.waves.scheduler = window.waves.scheduler || new SimpleScheduler();

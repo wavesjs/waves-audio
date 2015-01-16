@@ -8,11 +8,24 @@
 var audioContext = require("audio-context");
 var TimeEngine = require("time-engine");
 
+function arrayRemove(array, value) {
+  var index = array.indexOf(value);
+
+  if (index >= 0) {
+    array.splice(index, 1);
+    return true;
+  }
+
+  return false;
+}
+
 var SimpleScheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};return o["a"]===t})({},{});var DP$0 = Object.defineProperty;var GOPD$0 = Object.getOwnPropertyDescriptor;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,GOPD$0(s,p));}}return t};var DPS$0 = Object.defineProperties;var proto$0={};
 
   function SimpleScheduler() {
     this.__engines = [];
-    this.__times = [];
+
+    this.__schedEngines = [];
+    this.__schedTimes = [];
 
     this.__currentTime = null;
     this.__timeout = null;
@@ -30,35 +43,35 @@ var SimpleScheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a"
     this.lookahead = 0.1;
   }DPS$0(SimpleScheduler.prototype,{currentTime: {"get": $currentTime_get$0, "configurable":true,"enumerable":true}});DP$0(SimpleScheduler,"prototype",{"configurable":false,"enumerable":false,"writable":false});
 
-  proto$0.__insertEngine = function(engine, time) {
-    this.__engines.push(engine);
-    this.__times.push(time);
+  proto$0.__scheduleEngine = function(engine, time) {
+    this.__schedEngines.push(engine);
+    this.__schedTimes.push(time);
   };
 
-  proto$0.__moveEngine = function(engine, time) {
-    var index = this.__engines.indexOf(engine);
+  proto$0.__rescheduleEngine = function(engine, time) {
+    var index = this.__schedEngines.indexOf(engine);
 
     if (index >= 0) {
       if (time !== Infinity) {
-        this.__times[index] = time;
+        this.__schedTimes[index] = time;
       } else {
-        this.__engines.splice(index, 1);
-        this.__times.splice(index, 1);
+        this.__schedEngines.splice(index, 1);
+        this.__schedTimes.splice(index, 1);
       }
     }
   };
 
-  proto$0.__withdrawEngine = function(engine) {
-    var index = this.__engines.indexOf(engine);
+  proto$0.__unscheduleEngine = function(engine) {
+    var index = this.__schedEngines.indexOf(engine);
 
     if (index >= 0) {
-      this.__engines.splice(index, 1);
-      this.__times.splice(index, 1);
+      this.__schedEngines.splice(index, 1);
+      this.__schedTimes.splice(index, 1);
     }
   };
 
-  proto$0.__reschedule = function() {
-    if (this.__engines.length > 0) {
+  proto$0.__resetTick = function() {
+    if (this.__schedEngines.length > 0) {
       if (!this.__timeout)
         this.__tick();
     } else if (this.__timeout) {
@@ -70,26 +83,31 @@ var SimpleScheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a"
   proto$0.__tick = function() {var this$0 = this;
     var i = 0;
 
-    while (i < this.__engines.length) {
-      var engine = this.__engines[i];
-      var time = this.__times[i];
+    while (i < this.__schedEngines.length) {
+      var engine = this.__schedEngines[i];
+      var time = this.__schedTimes[i];
 
-      while (time <= audioContext.currentTime + this.lookahead) {
+      while (time && time <= audioContext.currentTime + this.lookahead) {
         time = Math.max(time, audioContext.currentTime);
         this.__currentTime = time;
         time = engine.advanceTime(time);
       }
 
-      if (time !== Infinity)
-        this.__times[i++] = time;
-      else
-        this.__withdrawEngine(engine);
+      if (time && time < Infinity) {
+        this.__schedTimes[i++] = time;
+      } else {
+        this.__unscheduleEngine(engine);
+
+        // remove engine from scheduler
+        if (!time && arrayRemove(this.__engines, engine))
+          TimeEngine.resetInterface(engine);
+      }
     }
 
     this.__currentTime = null;
     this.__timeout = null;
 
-    if (this.__engines.length > 0) {
+    if (this.__schedEngines.length > 0) {
       this.__timeout = setTimeout(function()  {
         this$0.__tick();
       }, this.period * 1000);
@@ -107,21 +125,17 @@ var SimpleScheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a"
   /**
    * Add a callback to the scheduler
    * @param {Function} callback function(time) to be called
-   * @param {Number} delay of first callback (default is 0)
+   * @param {Number} time of first callback (default is now)
    * @param {Number} period callback period (default is 0 for one-shot)
    * @return {Object} scheduled object that can be used to call remove and reset
    */
-  proto$0.callback = function(callbackFunction) {var delay = arguments[1];if(delay === void 0)delay = 0;var period = arguments[2];if(period === void 0)period = 0;
+  proto$0.callback = function(callbackFunction) {var time = arguments[1];if(time === void 0)time = this.currentTime;
     var engineWrapper = {
-      period: period || Infinity,
-      advanceTime: function(time) {
-        callbackFunction(time);
-        return time + this.period;
-      }
+      advanceTime: callbackFunction
     };
 
-    this.__insertEngine(engineWrapper, this.currentTime + delay);
-    this.__reschedule();
+    this.__scheduleEngine(engineWrapper, time);
+    this.__resetTick();
 
     return engineWrapper;
   };
@@ -129,28 +143,30 @@ var SimpleScheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a"
   /**
    * Add a time engine to the scheduler
    * @param {Object} engine time engine to be added to the scheduler
-   * @param {Number} delay scheduling delay time
+   * @param {Number} time scheduling time
    */
-  proto$0.add = function(engine) {var delay = arguments[1];if(delay === void 0)delay = 0;var getCurrentPosition = arguments[2];if(getCurrentPosition === void 0)getCurrentPosition = null;var this$0 = this;
-    if (!engine.interface) {
-      if (TimeEngine.implementsScheduled(engine)) {
+  proto$0.add = function(engine) {var time = arguments[1];if(time === void 0)time = this.currentTime;var getCurrentPosition = arguments[2];if(getCurrentPosition === void 0)getCurrentPosition = null;var this$0 = this;
+    if (TimeEngine.implementsScheduled(engine)) {
+      if (!engine.interface) {
 
         TimeEngine.setScheduled(engine, function(time)  {
-          this$0.__nextTime = this$0.__queue.move(engine, time);
-          this$0.__reschedule();
+          this$0.__rescheduleEngine(engine, time);
+          this$0.__resetTick();
         }, function()  {
           return this$0.currentTime;
         }, getCurrentPosition);
 
-        this.__insertEngine(engine, this.currentTime + delay);
-        this.__reschedule();
+        this.__engines.push(engine);
+
+        this.__scheduleEngine(engine, time);
+        this.__resetTick();
 
         return engine;
       } else {
-        throw new Error("object cannot be added to scheduler");
+        throw new Error("object has already been added to a master");
       }
     } else {
-      throw new Error("object has already been added to a master");
+      throw new Error("object cannot be added to scheduler");
     }
 
     return null;
@@ -161,10 +177,12 @@ var SimpleScheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a"
    * @param {Object} engine time engine or callback to be removed from the scheduler
    */
   proto$0.remove = function(engine) {
-    if (this.__engines.indexOf(engine) >= 0) {
-      TimeEngine.resetInterface(engine);
-      this.__withdrawEngine(engine);
-      this.__reschedule();
+    if (arrayRemove(this.__engines, engine)) {
+      if (engine.interface)
+        TimeEngine.resetInterface(engine);
+
+      this.__unscheduleEngine(engine);
+      this.__resetTick();
     } else {
       throw new Error("object has not been added to this scheduler");
     }
@@ -176,8 +194,18 @@ var SimpleScheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a"
    * @param {Number} time time when to reschedule
    */
   proto$0.reset = function(engine, time) {
-    this.__moveEngine(engine, time);
-    this.__reschedule();
+    this.__rescheduleEngine(engine, time);
+    this.__resetTick();
+  };
+
+  proto$0.clear = function() {
+    if (this.__timeout) {
+      clearTimeout(this.__timeout);
+      this.__timeout = null;
+    }
+
+    this.__schedEngines.length = 0;
+    this.__schedTimes.length = 0;
   };
 MIXIN$0(SimpleScheduler.prototype,proto$0);proto$0=void 0;return SimpleScheduler;})();
 
