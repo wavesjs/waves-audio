@@ -127,7 +127,10 @@ class TransportedTransported extends Transported {
 
     TimeEngine.setTransported(engine, (nextEnginePosition = null) => {
       // resetNextPosition
-      this.resetNextPosition(nextEnginePosition + this.__offsetPosition);
+      if(nextEnginePosition !== null)
+         nextEnginePosition += this.__offsetPosition;
+
+      this.resetNextPosition(nextEnginePosition);
     }, () => {
       // getCurrentTime
       return scheduler.currentTime;
@@ -366,9 +369,8 @@ class Transport extends TimeEngine {
     this.__position = position;
     this.__speed = speed;
 
-    if (speed !== lastSpeed || seek) {
+    if (speed !== lastSpeed || (seek && speed !== 0)) {
       var nextPosition = this.__nextPosition;
-      var scheduledEngine;
 
       // resync transported engines
       if (seek || speed * lastSpeed < 0) {

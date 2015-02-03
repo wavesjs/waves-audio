@@ -127,7 +127,10 @@ var TransportedTransported = (function(super$0){if(!PRS$0)MIXIN$0(TransportedTra
 
     TimeEngine.setTransported(engine, function()  {var nextEnginePosition = arguments[0];if(nextEnginePosition === void 0)nextEnginePosition = null;
       // resetNextPosition
-      this$0.resetNextPosition(nextEnginePosition + this$0.__offsetPosition);
+      if(nextEnginePosition !== null)
+         nextEnginePosition += this$0.__offsetPosition;
+
+      this$0.resetNextPosition(nextEnginePosition);
     }, function()  {
       // getCurrentTime
       return scheduler.currentTime;
@@ -366,9 +369,8 @@ var Transport = (function(super$0){if(!PRS$0)MIXIN$0(Transport, super$0);var pro
     this.__position = position;
     this.__speed = speed;
 
-    if (speed !== lastSpeed || seek) {
+    if (speed !== lastSpeed || (seek && speed !== 0)) {
       var nextPosition = this.__nextPosition;
-      var scheduledEngine;
 
       // resync transported engines
       if (seek || speed * lastSpeed < 0) {
