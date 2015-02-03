@@ -30,15 +30,20 @@ class PlayControlLoopControl extends TimeEngine {
   constructor(playControl) {
     super();
     this.__playControl = playControl;
-    this.position = null;
     this.speed = null;
-    this.seek = false;
   }
 
   // TimeEngine method (scheduled interface)
   advanceTime(time) {
-    this.__playControl.syncSpeed(time, this.position, this.speed, this.seek);
-    return null;
+    if (this.speed > 0) {
+      this.__playControl.syncSpeed(time, this.__playControl.__loopStart, this.speed, true);
+      return this.__playControl.__getTimeAtPosition(this.__playControl.__loopEnd);
+    } else if (this.speed < 0) {
+      this.__playControl.syncSpeed(time, this.__playControl.__loopEnd, this.speed, true);
+      return this.__playControl.__getTimeAtPosition(this.__playControl.__loopStart);
+    }
+
+    return Infinity;
   }
 }
 
@@ -162,7 +167,7 @@ class PlayControl extends TimeEngine {
 
   set loop(enable) {
     if (enable) {
-      if (this.__loopStart > -Infinity && this.__loopSEnd < Infinity) {
+      if (this.__loopStart > -Infinity && this.__loopEnd < Infinity) {
         this.__loopControl = new PlayControlLoopControl(this);
         scheduler.add(this.__loopControl, Infinity);
       }
@@ -218,14 +223,10 @@ class PlayControl extends TimeEngine {
   __rescheduleLoopControl(position, speed) {
     if (this.__loopControl) {
       if (speed > 0) {
-        this.__loopControl.position = this.__loopStart;
         this.__loopControl.speed = speed;
-        this.__loopControl.seek = true;
         scheduler.reset(this.__loopControl, this.__getTimeAtPosition(this.__loopEnd));
       } else if (speed < 0) {
-        this.__loopControl.position = this.__loopEnd;
         this.__loopControl.speed = speed;
-        this.__loopControl.seek = true;
         scheduler.reset(this.__loopControl, this.__getTimeAtPosition(this.__loopStart));
       } else {
         scheduler.reset(this.__loopControl, Infinity);

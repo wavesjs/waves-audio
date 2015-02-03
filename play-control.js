@@ -30,15 +30,20 @@ var PlayControlLoopControl = (function(super$0){if(!PRS$0)MIXIN$0(PlayControlLoo
   function PlayControlLoopControl(playControl) {
     super$0.call(this);
     this.__playControl = playControl;
-    this.position = null;
     this.speed = null;
-    this.seek = false;
   }if(super$0!==null)SP$0(PlayControlLoopControl,super$0);PlayControlLoopControl.prototype = OC$0(super$0!==null?super$0.prototype:null,{"constructor":{"value":PlayControlLoopControl,"configurable":true,"writable":true}});DP$0(PlayControlLoopControl,"prototype",{"configurable":false,"enumerable":false,"writable":false});
 
   // TimeEngine method (scheduled interface)
   proto$0.advanceTime = function(time) {
-    this.__playControl.syncSpeed(time, this.position, this.speed, this.seek);
-    return null;
+    if (this.speed > 0) {
+      this.__playControl.syncSpeed(time, this.__playControl.__loopStart, this.speed, true);
+      return this.__playControl.__getTimeAtPosition(this.__playControl.__loopEnd);
+    } else if (this.speed < 0) {
+      this.__playControl.syncSpeed(time, this.__playControl.__loopEnd, this.speed, true);
+      return this.__playControl.__getTimeAtPosition(this.__playControl.__loopStart);
+    }
+
+    return Infinity;
   };
 MIXIN$0(PlayControlLoopControl.prototype,proto$0);proto$0=void 0;return PlayControlLoopControl;})(TimeEngine);
 
@@ -162,7 +167,7 @@ var PlayControl = (function(super$0){if(!PRS$0)MIXIN$0(PlayControl, super$0);var
 
   function $loop_set$0(enable) {
     if (enable) {
-      if (this.__loopStart > -Infinity && this.__loopSEnd < Infinity) {
+      if (this.__loopStart > -Infinity && this.__loopEnd < Infinity) {
         this.__loopControl = new PlayControlLoopControl(this);
         scheduler.add(this.__loopControl, Infinity);
       }
@@ -218,14 +223,10 @@ var PlayControl = (function(super$0){if(!PRS$0)MIXIN$0(PlayControl, super$0);var
   proto$0.__rescheduleLoopControl = function(position, speed) {
     if (this.__loopControl) {
       if (speed > 0) {
-        this.__loopControl.position = this.__loopStart;
         this.__loopControl.speed = speed;
-        this.__loopControl.seek = true;
         scheduler.reset(this.__loopControl, this.__getTimeAtPosition(this.__loopEnd));
       } else if (speed < 0) {
-        this.__loopControl.position = this.__loopEnd;
         this.__loopControl.speed = speed;
-        this.__loopControl.seek = true;
         scheduler.reset(this.__loopControl, this.__getTimeAtPosition(this.__loopStart));
       } else {
         scheduler.reset(this.__loopControl, Infinity);
