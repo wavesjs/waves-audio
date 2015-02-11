@@ -9,9 +9,6 @@
   ],
   "main": "priority-queue.js",
   "exports": "PriorityQueue",
-  "scripts": {
-    "test": "node scripts/testsAndCoverage.js"
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/Ircam-RnD/priority-queue"
