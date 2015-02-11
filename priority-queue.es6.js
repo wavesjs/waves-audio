@@ -5,7 +5,6 @@
  *
  * First rather stupid implementation to be optimized...
  */
-'use strict';
 
 class PriorityQueue {
 
@@ -21,7 +20,6 @@ class PriorityQueue {
         return i;
       }
     }
-
     return -1;
   }
 

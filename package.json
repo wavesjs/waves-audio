@@ -18,18 +18,13 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "body-parser": "^1.9.3",
-    "browserify": "^6.3.3",
-    "browserify-istanbul": "git://github.com/ouhouhsami/browserify-istanbul#master",
-    "chai": "^1.10.0",
-    "connect": "^3.3.3",
-    "es6ify": "^1.5.1",
-    "istanbul": "^0.3.2",
-    "istanbul-traceur": "git://github.com/ouhouhsami/istanbul-traceur#patch-1",
-    "mocha": "^2.0.1",
-    "mocha-traceur": "^2.0.0",
-    "open": "0.0.5",
-    "serve-static": "^1.7.1",
-    "traceur": "0.0.74"
+    "tac6": "git://github.com/ircam-rnd/tac6.git#master"
+  },
+  "browserify": {
+    "transforms": ["es6ify"]
+  },
+  "scripts": {
+    "bundle": "browserify priority-queue.es6.js > priority-queue.js -s 'PriorityQueue' -d -t es6ify",
+    "test": "tac6"
   }
 }
