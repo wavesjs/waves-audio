@@ -10,7 +10,7 @@
   "main": "time-engine.js",
   "exports": "TimeEngine",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node scripts/testsAndCoverage.js"
   },
   "repository": {
     "type": "git",
@@ -19,8 +19,14 @@
   "dependencies": {
     "audio-context": "git://github.com/Ircam-RnD/audio-context.git#master"
   },
+  "browserify": {
+    "transforms": ["es6ify"]
+  },
+  "scripts": {
+    "bundle": "browserify time-engine.es6.js > time-engine.js -s 'TimeEngine' -d -t es6ify",
+    "test": "tac6"
+  },
   "devDependencies": {
-    "module-boilerplate": "git://github.com/Ircam-RnD/module-boilerplate.git#master",
-    "gulp": "~3.8.2"
+    "tac6": "git://github.com/ircam-rnd/tac6.git#master"
   }
 }
