@@ -9,9 +9,6 @@
   ],
   "main": "time-engine.js",
   "exports": "TimeEngine",
-  "scripts": {
-    "test": "node scripts/testsAndCoverage.js"
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/Ircam-RnD/time-engine"
