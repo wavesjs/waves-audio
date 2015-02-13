@@ -69,56 +69,10 @@ class TimeEngine {
   }
 
   /**
-   * Advance engine time (scheduled interface)
-   * @param {Number} time current scheduler time (based on audio time)
-   * @return {Number} next engine time
-   *
-   * This function is called by the scheduler to let the engine do its work
-   * synchronized to the scheduler time.
-   * If the engine returns Infinity, it is not called again until it is restarted by
-   * the scheduler or it calls resetNextPosition with a valid position.
-   */
-  // advanceTime(time) {
-  //   return time;
-  // }
-
-  /**
    * Function provided by the scheduler to reset the engine's next time
    * @param {Number} time new engine time (immediately if not specified)
    */
   resetNextTime(time = null) {}
-
-  /**
-   * Synchronize engine to transport position (transported interface)
-   * @param {Number} position current transport position to synchronize to
-   * @param {Number} time current scheduler time (based on audio time)
-   * @param {Number} speed current speed
-   * @return {Number} next position (given the playing direction)
-   *
-   * This function is called by the msater and allows the engine for synchronizing
-   * (seeking) to the current transport position and to return its next position.
-   * If the engine returns Infinity or -Infinity, it is not called again until it is
-   * resynchronized by the transport or it calls resetNextPosition.
-   */
-  // syncPosition(time, position, speed) {
-  //   return position;
-  // }
-
-  /**
-   * Advance engine position (transported interface)
-   * @param {Number} time current scheduler time (based on audio time)
-   * @param {Number} position current transport position
-   * @param {Number} speed current speed
-   * @return {Number} next engine position (given the playing direction)
-   *
-   * This function is called by the transport to let the engine do its work
-   * aligned to the transport's position.
-   * If the engine returns Infinity or -Infinity, it is not called again until it is
-   * resynchronized by the transport or it calls resetNextPosition.
-   */
-  // advancePosition(time, position, speed) {
-  //   return position;
-  // }
 
   /**
    * Function provided by the transport to reset the next position or to request resynchronizing the engine's position
@@ -126,32 +80,18 @@ class TimeEngine {
    */
   resetNextPosition(position = null) {}
 
-  /**
-   * Set engine speed (speed-controlled interface)
-   * @param {Number} time current scheduler time (based on audio time)
-   * @param {Number} speed current transport speed
-   *
-   * This function is called by the transport to propagate the transport speed to the engine.
-   * The speed can be of any value bewteen -16 and 16.
-   * With a speed of 0 the engine is halted.
-   */
-  // syncSpeed(time, speed) {
-  // }
-
   __setGetters(getCurrentTime, getCurrentPosition) {
     if (getCurrentTime) {
       Object.defineProperty(this, 'currentTime', {
         configurable: true,
-        get: getCurrentTime,
-        set: function(time) {}
+        get: getCurrentTime
       });
     }
 
     if (getCurrentPosition) {
       Object.defineProperty(this, 'currentPosition', {
         configurable: true,
-        get: getCurrentPosition,
-        set: function(position) {}
+        get: getCurrentPosition
       });
     }
   }
