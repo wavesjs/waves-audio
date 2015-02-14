@@ -1,4 +1,5 @@
 var assert = require('assert');
+var sinon = require('sinon');
 
 var simpleScheduler = require('../simple-scheduler.es6.js');
 var audioContext = require("audio-context");
@@ -52,6 +53,41 @@ describe("SimpleScheduler", function() {
             }
             simpleScheduler.remove(engine)
         }, Error)
+    });
+    it("should reschedule a scheduled time engine (or callback correctly)", function(){
+        var engine = new TimeEngine();
+        engine.advanceTime = function(time) {
+            return time + 10;
+        }
+        simpleScheduler.add(engine)
+        var time = audioContext.currentTime + 1000
+        simpleScheduler.reset(engine, time)
+        // assert __rescheduled engine
+        assert.equal(simpleScheduler.__schedTimes[0], time);
+    });
+    it('should correctly manage a time engine', function(done){
+        // test that advanceTime is called
+        var engine = new TimeEngine();
+        var initialTime = audioContext.currentTime;
+        engine.advanceTime = function(time) {
+            // should be greater than simpleScheduler.period, no?
+            return time + 0.06;
+        }
+        var spy = sinon.spy(engine, "advanceTime");
+        setTimeout(()=>{
+            assert.equal(spy.callCount, Math.floor((audioContext.currentTime-initialTime) / 0.06)+1)
+            done();
+        }, 1000)
+        simpleScheduler.add(engine);
+    })
+    it('should correctly call a callback', function(){
+        var cb = sinon.spy();
+        var cbTime = audioContext.currentTime + 500;
+        setTimeout(()=>{
+            assert.equal(cb.callCount, 1);
+            done();
+        }, 1000)
+        simpleScheduler.callback(cb, cbTime);
     });
     // Test private methods to fix things
     it("should __scheduleEngine correctly", function() {

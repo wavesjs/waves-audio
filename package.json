@@ -18,13 +18,16 @@
     "time-engine": "git://github.com/Ircam-RnD/time-engine.git#master"
   },
   "browserify": {
-    "transforms": ["es6ify"]
+    "transforms": [
+      "es6ify"
+    ]
   },
   "scripts": {
     "bundle": "browserify simple-scheduler.es6.js > simple-scheduler.js -s 'TimeEngine' -d -t es6ify",
     "test": "tac6"
   },
   "devDependencies": {
+    "sinon": "^1.12.2",
     "tac6": "git://github.com/ircam-rnd/tac6.git#master"
   }
 }

@@ -3,7 +3,6 @@
  * @fileoverview WAVE simplified scheduler singleton based on audio time (time-engine master)
  * @author Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
  */
-'use strict';
 
 var audioContext = require("audio-context");
 var TimeEngine = require("time-engine");
@@ -148,7 +147,6 @@ class SimpleScheduler {
   add(engine, time = this.currentTime, getCurrentPosition = null) {
     if (TimeEngine.implementsScheduled(engine)) {
       if (!engine.interface) {
-
         TimeEngine.setScheduled(engine, (time) => {
           this.__rescheduleEngine(engine, time);
           this.__resetTick();
