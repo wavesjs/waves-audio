@@ -9,9 +9,6 @@
   ],
   "main": "simple-scheduler.js",
   "exports": "simpleScheduler",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/Ircam-RnD/simple-scheduler"
@@ -20,6 +17,14 @@
     "audio-context": "git://github.com/Ircam-RnD/audio-context.git#master",
     "time-engine": "git://github.com/Ircam-RnD/time-engine.git#master"
   },
+  "browserify": {
+    "transforms": ["es6ify"]
+  },
+  "scripts": {
+    "bundle": "browserify simple-scheduler.es6.js > simple-scheduler.js -s 'TimeEngine' -d -t es6ify",
+    "test": "tac6"
+  },
   "devDependencies": {
+    "tac6": "git://github.com/ircam-rnd/tac6.git#master"
   }
 }
