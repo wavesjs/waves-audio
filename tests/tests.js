@@ -89,6 +89,15 @@ describe("SimpleScheduler", function() {
         }, 1000)
         simpleScheduler.callback(cb, cbTime);
     });
+    it('should remove an engine that return an Infinity time', function(){
+        var engine = new TimeEngine();
+        engine.advanceTime = function(time) {
+            // should be greater than simpleScheduler.period, no?
+            return Infinity;
+        }
+        simpleScheduler.add(engine);
+        assert.equal(simpleScheduler.__schedEngines.length, 0);
+    })
     // Test private methods to fix things
     it("should __scheduleEngine correctly", function() {
         var engine = "foo";
