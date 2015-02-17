@@ -70,7 +70,7 @@ describe("SimpleScheduler", function() {
             // assert __rescheduled engine
         assert.equal(simpleScheduler.__schedTimes[0], time);
     });
-    it('should correctly manage a time engine', function(done) {
+    it('should correctly manage a regular time engine', function(done) {
         // test that advanceTime is called
         var engine = new TimeEngine();
         var initialTime = audioContext.currentTime;
@@ -82,21 +82,29 @@ describe("SimpleScheduler", function() {
         var spy = sinon.spy(engine, "advanceTime");
         setTimeout(() => {
             var currentTime = audioContext.currentTime
-            // At this time how many times the advanceTime method has been called, and it scheduled event has effectively been played
+                // At this time how many times the advanceTime method has been called, and it scheduled event has effectively been played
             var n = Math.floor((currentTime - initialTime) / engineTimePeriod);
             // Compute the worst cases for n, taking count of the audioContext.currentTime accuracy
-            var nDeviation = [Math.floor((currentTime - initialTime - 2*currentTimeDeviation) / engineTimePeriod), Math.floor((2*currentTimeDeviation + currentTime - initialTime) / engineTimePeriod)]
-            // Here we compute how many times the advanceTime method has been called, the events that has been scheduled, but have not been played yet
+            var nDeviation = [Math.floor((currentTime - initialTime - 2 * currentTimeDeviation) / engineTimePeriod), Math.floor((2 * currentTimeDeviation + currentTime - initialTime) / engineTimePeriod)]
+                // Here we compute how many times the advanceTime method has been called, the events that has been scheduled, but have not been played yet
             var m = Math.floor((currentTime + simpleScheduler.lookahead - (initialTime + n * engineTimePeriod)) / engineTimePeriod);
             // Compute the worst cases for m, taking count of the audioContext.currentTime accuracy
-            var mDeviation = [Math.floor((currentTime + simpleScheduler.lookahead - (initialTime + n * engineTimePeriod)- 2*currentTimeDeviation) / engineTimePeriod), Math.floor((2*currentTimeDeviation + currentTime + simpleScheduler.lookahead - (initialTime + n * engineTimePeriod)) / engineTimePeriod)]
-            assert(spy.callCount >= nDeviation[0]+mDeviation[0]+1);
-            assert(spy.callCount <= nDeviation[1]+mDeviation[1]+1);
-            // Below, the hard case, where all if too fine
+            var mDeviation = [Math.floor((currentTime + simpleScheduler.lookahead - (initialTime + n * engineTimePeriod) - 2 * currentTimeDeviation) / engineTimePeriod), Math.floor((2 * currentTimeDeviation + currentTime + simpleScheduler.lookahead - (initialTime + n * engineTimePeriod)) / engineTimePeriod)]
+            assert(spy.callCount >= nDeviation[0] + mDeviation[0] + 1);
+            assert(spy.callCount <= nDeviation[1] + mDeviation[1] + 1);
+            // Below, the hard case, where all works great
             assert.equal(spy.callCount, m + n + 1);
             done();
         }, 1500)
         simpleScheduler.add(engine, initialTime);
+    });
+    it('should remove the engine is it return a null value - undocumented function, only for happy few', function() {
+        var engine = new TimeEngine();
+        engine.advanceTime = function(time) {
+            return null;
+        }
+        simpleScheduler.add(engine);
+        assert.equal(simpleScheduler.__schedEngines.length, 0);
     })
     it('should correctly call a callback', function() {
         var cb = sinon.spy();
@@ -108,15 +116,15 @@ describe("SimpleScheduler", function() {
         simpleScheduler.callback(cb, cbTime);
     });
     it('should remove an engine that return an Infinity time', function() {
-            var engine = new TimeEngine();
-            engine.advanceTime = function(time) {
-                // should be greater than simpleScheduler.period, no?
-                return Infinity;
-            }
-            simpleScheduler.add(engine);
-            assert.equal(simpleScheduler.__schedEngines.length, 0);
-        })
-        // Test private methods to fix things
+        var engine = new TimeEngine();
+        engine.advanceTime = function(time) {
+            // should be greater than simpleScheduler.period, no?
+            return Infinity;
+        }
+        simpleScheduler.add(engine);
+        assert.equal(simpleScheduler.__schedEngines.length, 0);
+    });
+    // Test private methods to fix things
     it("should __scheduleEngine correctly", function() {
         var engine = "foo";
         var time = 0.1;
