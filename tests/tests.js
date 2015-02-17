@@ -24,6 +24,18 @@ describe("PriorityQueue", function(){
         assert.deepEqual(pq3.__objects[0], [obj2, time2]);
         assert.deepEqual(pq3.__objects[1], [obj1, time1]);
     });
+    it("should insert reverse properly", function(){
+        var pq3 = new PriorityQueue();
+        pq3.reverse = true;
+        var obj1 = {foo1: 'bar1'};
+        var time1 = 1;
+        var obj2 = {foo2: 'bar2'};
+        var time2 = 2;
+        pq3.insert(obj1, time1);
+        pq3.insert(obj2, time2);
+        assert.deepEqual(pq3.__objects[0], [obj2, time2]);
+        assert.deepEqual(pq3.__objects[1], [obj1, time1]);
+    });
     it("should move properly", function(){
         var pq = new PriorityQueue();
         var obj1 = {foo1: 'bar1'};
