@@ -8,6 +8,11 @@ var TimeEngine = require("time-engine");
 describe("SimpleScheduler", function() {
     afterEach(function() {
         simpleScheduler.clear();
+        // Due to https://github.com/uxebu/mocha-sinon-traceur-example/blob/fb354685b590390f8695f5ecee890c4f9072f944/src/sinon-cleanup.js
+        this.sinon = sinon.sandbox.restore();
+    });
+    beforeEach(function() {
+        this.sinon = sinon.sandbox.create();
     });
     // Test simple scheduler public API
     it('should not add a wrong time engine', function() {
@@ -54,7 +59,7 @@ describe("SimpleScheduler", function() {
             simpleScheduler.remove(engine)
         }, Error)
     });
-    it("should reschedule a scheduled time engine (or callback correctly)", function(){
+    it("should reschedule a scheduled time engine (or callback correctly)", function() {
         var engine = new TimeEngine();
         engine.advanceTime = function(time) {
             return time + 10;
@@ -62,43 +67,56 @@ describe("SimpleScheduler", function() {
         simpleScheduler.add(engine)
         var time = audioContext.currentTime + 1000
         simpleScheduler.reset(engine, time)
-        // assert __rescheduled engine
+            // assert __rescheduled engine
         assert.equal(simpleScheduler.__schedTimes[0], time);
     });
-    it('should correctly manage a time engine', function(done){
+    it('should correctly manage a time engine', function(done) {
         // test that advanceTime is called
         var engine = new TimeEngine();
         var initialTime = audioContext.currentTime;
+        var engineTimePeriod = 0.081;
+        var currentTimeDeviation = 128 / 44100; // the audioContext.currentTime accuracy
         engine.advanceTime = function(time) {
-            // should be greater than simpleScheduler.period, no?
-            return time + 0.06;
+            return time + engineTimePeriod;
         }
         var spy = sinon.spy(engine, "advanceTime");
-        setTimeout(()=>{
-            assert.equal(spy.callCount, Math.floor((audioContext.currentTime-initialTime) / 0.06)+1)
+        setTimeout(() => {
+            var currentTime = audioContext.currentTime
+            // At this time how many times the advanceTime method has been called, and it scheduled event has effectively been played
+            var n = Math.floor((currentTime - initialTime) / engineTimePeriod);
+            // Compute the worst cases for n, taking count of the audioContext.currentTime accuracy
+            var nDeviation = [Math.floor((currentTime - initialTime - 2*currentTimeDeviation) / engineTimePeriod), Math.floor((2*currentTimeDeviation + currentTime - initialTime) / engineTimePeriod)]
+            // Here we compute how many times the advanceTime method has been called, the events that has been scheduled, but have not been played yet
+            var m = Math.floor((currentTime + simpleScheduler.lookahead - (initialTime + n * engineTimePeriod)) / engineTimePeriod);
+            // Compute the worst cases for m, taking count of the audioContext.currentTime accuracy
+            var mDeviation = [Math.floor((currentTime + simpleScheduler.lookahead - (initialTime + n * engineTimePeriod)- 2*currentTimeDeviation) / engineTimePeriod), Math.floor((2*currentTimeDeviation + currentTime + simpleScheduler.lookahead - (initialTime + n * engineTimePeriod)) / engineTimePeriod)]
+            assert(spy.callCount >= nDeviation[0]+mDeviation[0]+1);
+            assert(spy.callCount <= nDeviation[1]+mDeviation[1]+1);
+            // Below, the hard case, where all if too fine
+            assert.equal(spy.callCount, m + n + 1);
             done();
-        }, 1000)
-        simpleScheduler.add(engine);
+        }, 1500)
+        simpleScheduler.add(engine, initialTime);
     })
-    it('should correctly call a callback', function(){
+    it('should correctly call a callback', function() {
         var cb = sinon.spy();
         var cbTime = audioContext.currentTime + 500;
-        setTimeout(()=>{
+        setTimeout(() => {
             assert.equal(cb.callCount, 1);
             done();
         }, 1000)
         simpleScheduler.callback(cb, cbTime);
     });
-    it('should remove an engine that return an Infinity time', function(){
-        var engine = new TimeEngine();
-        engine.advanceTime = function(time) {
-            // should be greater than simpleScheduler.period, no?
-            return Infinity;
-        }
-        simpleScheduler.add(engine);
-        assert.equal(simpleScheduler.__schedEngines.length, 0);
-    })
-    // Test private methods to fix things
+    it('should remove an engine that return an Infinity time', function() {
+            var engine = new TimeEngine();
+            engine.advanceTime = function(time) {
+                // should be greater than simpleScheduler.period, no?
+                return Infinity;
+            }
+            simpleScheduler.add(engine);
+            assert.equal(simpleScheduler.__schedEngines.length, 0);
+        })
+        // Test private methods to fix things
     it("should __scheduleEngine correctly", function() {
         var engine = "foo";
         var time = 0.1;
