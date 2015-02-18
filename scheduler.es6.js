@@ -105,7 +105,7 @@ class Scheduler {
       advanceTime: callbackFunction
     };
 
-    var nextTime = this.__queue.insert(engine, this.currentTime + time);
+    var nextTime = this.__queue.insert(engine, time);
     this.__reschedule(nextTime);
 
     return engine;
