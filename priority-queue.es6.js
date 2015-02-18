@@ -104,14 +104,20 @@ class PriorityQueue {
    * Get first object in queue
    */
   get head() {
-    return this.__objects[0][0];
+    if(this.__objects.length > 0)
+      return this.__objects[0][0];
+
+    return null;
   }
 
   /**
    * Get time of first object in queue
    */
   get time() {
-    return this.__objects[0][1];
+    if(this.__objects.length > 0)
+      return this.__objects[0][1];
+
+    return Infinity;
   }
 }
 
