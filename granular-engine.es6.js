@@ -264,11 +264,12 @@ class GranularEngine extends TimeEngine {
           envelopeNode.gain.exponentialRampToValueAtTime(1.0, attackEndTime);
         }
 
-        if (this.releaseShape === 'lin') {
+        if (releaseStartTime > attackEndTime)
           envelopeNode.gain.setValueAtTime(1.0, releaseStartTime);
+
+        if (this.releaseShape === 'lin') {
           envelopeNode.gain.linearRampToValueAtTime(0.0, grainEndTime);
         } else {
-          envelopeNode.gain.setValueAtTime(1.0, releaseStartTime);
           envelopeNode.gain.exponentialRampToValueAtTime(this.expRampOffset, grainEndTime);
         }
 
