@@ -125,10 +125,10 @@ class TransportedTransported extends Transported {
   constructor(transport, engine, startPosition, endPosition, offsetPosition) {
     super(transport, engine, startPosition, endPosition, offsetPosition);
 
-    TimeEngine.setTransported(engine, (nextEnginePosition = null) => {
+    engine.setTransported(this, (nextEnginePosition = null) => {
       // resetNextPosition
-      if(nextEnginePosition !== null)
-         nextEnginePosition += this.__offsetPosition;
+      if (nextEnginePosition !== null)
+        nextEnginePosition += this.__offsetPosition;
 
       this.resetNextPosition(nextEnginePosition);
     }, () => {
@@ -164,7 +164,7 @@ class TransportedTransported extends Transported {
   }
 
   destroy() {
-    TimeEngine.resetInterface(this.__engine);
+    this.__engine.resetInterface();
     super.destroy();
   }
 }
@@ -175,7 +175,7 @@ class TransportedSpeedControlled extends Transported {
   constructor(transport, engine, startPosition, endPosition, offsetPosition) {
     super(transport, engine, startPosition, endPosition, offsetPosition);
 
-    TimeEngine.setSpeedControlled(engine, () => {
+    engine.setSpeedControlled(this, () => {
       // getCurrentTime
       return scheduler.currentTime;
     }, () => {
@@ -199,7 +199,7 @@ class TransportedSpeedControlled extends Transported {
 
   destroy() {
     this.__engine.syncSpeed(this.__transport.currentTime, this.__transport.currentPosition - this.__offsetPosition, 0);
-    TimeEngine.resetInterface(this.__engine);
+    this.__engine.resetInterface();
     super.destroy();
   }
 }
@@ -412,51 +412,50 @@ class Transport extends TimeEngine {
     if (offsetPosition === -Infinity)
       offsetPosition = 0;
 
-    if (!engine.interface) {
-      if (TimeEngine.implementsTransported(engine))
-        transported = new TransportedTransported(this, engine, startPosition, endPosition, offsetPosition);
-      else if (TimeEngine.implementsSpeedControlled(engine))
-        transported = new TransportedSpeedControlled(this, engine, startPosition, endPosition, offsetPosition);
-      else if (TimeEngine.implementsScheduled(engine))
-        transported = new TransportedScheduled(this, engine, startPosition, endPosition, offsetPosition);
-      else
-        throw new Error("object cannot be added to transport");
+    if (engine.master)
+      throw new Error("object has already been added to a master");
 
-      if (transported) {
+    if (engine.implementsTransported())
+      transported = new TransportedTransported(this, engine, startPosition, endPosition, offsetPosition);
+    else if (engine.implementsSpeedControlled())
+      transported = new TransportedSpeedControlled(this, engine, startPosition, endPosition, offsetPosition);
+    else if (engine.implementsScheduled())
+      transported = new TransportedScheduled(this, engine, startPosition, endPosition, offsetPosition);
+    else
+      throw new Error("object cannot be added to a transport");
+
+    if (transported) {
+      var speed = this.__speed;
+
+      this.__engines.push(engine);
+      this.__transported.push(transported);
+
+      transported.setTransported(this, (nextEnginePosition = null) => {
+        // resetNextPosition
         var speed = this.__speed;
 
-        this.__engines.push(engine);
-        this.__transported.push(transported);
-
-        TimeEngine.setTransported(transported, (nextEnginePosition = null) => {
-          // resetNextPosition
-          var speed = this.__speed;
-
-          if (speed !== 0) {
-            if (nextEnginePosition === null)
-              nextEnginePosition = transported.syncPosition(this.currentTime, this.currentPosition, speed);
-
-            var nextPosition = this.__transportQueue.move(transported, nextEnginePosition);
-            this.resetNextPosition(nextPosition);
-          }
-        }, () => {
-          // getCurrentTime
-          return scheduler.currentTime;
-        }, () => {
-          // get currentPosition
-          return this.__transport.currentPosition - this.__offsetPosition;
-        });
-
         if (speed !== 0) {
-          // sync and start
-          var nextEnginePosition = transported.syncPosition(this.currentTime, this.currentPosition, speed);
-          var nextPosition = this.__transportQueue.insert(transported, nextEnginePosition);
+          if (nextEnginePosition === null)
+            nextEnginePosition = transported.syncPosition(this.currentTime, this.currentPosition, speed);
 
+          var nextPosition = this.__transportQueue.move(transported, nextEnginePosition);
           this.resetNextPosition(nextPosition);
         }
+      }, () => {
+        // getCurrentTime
+        return scheduler.currentTime;
+      }, () => {
+        // get currentPosition
+        return this.__transport.currentPosition - this.__offsetPosition;
+      });
+
+      if (speed !== 0) {
+        // sync and start
+        var nextEnginePosition = transported.syncPosition(this.currentTime, this.currentPosition, speed);
+        var nextPosition = this.__transportQueue.insert(transported, nextEnginePosition);
+
+        this.resetNextPosition(nextPosition);
       }
-    } else {
-      throw new Error("object has already been added to a master");
     }
 
     return transported;
@@ -478,7 +477,7 @@ class Transport extends TimeEngine {
     if (engine && transported) {
       var nextPosition = this.__transportQueue.remove(transported);
 
-      TimeEngine.resetInterface(transported);
+      transported.resetInterface();
       transported.destroy();
 
       if (this.__speed !== 0)
@@ -495,7 +494,7 @@ class Transport extends TimeEngine {
     this.syncSpeed(this.currentTime, this.currentPosition, 0);
 
     for (var transported of this.__transported) {
-      TimeEngine.resetInterface(transported);
+      transported.resetInterface();
       transported.destroy();
     }
   }

@@ -125,10 +125,10 @@ var TransportedTransported = (function(super$0){if(!PRS$0)MIXIN$0(TransportedTra
   function TransportedTransported(transport, engine, startPosition, endPosition, offsetPosition) {var this$0 = this;
     super$0.call(this, transport, engine, startPosition, endPosition, offsetPosition);
 
-    TimeEngine.setTransported(engine, function()  {var nextEnginePosition = arguments[0];if(nextEnginePosition === void 0)nextEnginePosition = null;
+    engine.setTransported(this, function()  {var nextEnginePosition = arguments[0];if(nextEnginePosition === void 0)nextEnginePosition = null;
       // resetNextPosition
-      if(nextEnginePosition !== null)
-         nextEnginePosition += this$0.__offsetPosition;
+      if (nextEnginePosition !== null)
+        nextEnginePosition += this$0.__offsetPosition;
 
       this$0.resetNextPosition(nextEnginePosition);
     }, function()  {
@@ -164,7 +164,7 @@ var TransportedTransported = (function(super$0){if(!PRS$0)MIXIN$0(TransportedTra
   };
 
   proto$0.destroy = function() {
-    TimeEngine.resetInterface(this.__engine);
+    this.__engine.resetInterface();
     super$0.prototype.destroy.call(this);
   };
 MIXIN$0(TransportedTransported.prototype,proto$0);proto$0=void 0;return TransportedTransported;})(Transported);
@@ -175,7 +175,7 @@ var TransportedSpeedControlled = (function(super$0){if(!PRS$0)MIXIN$0(Transporte
   function TransportedSpeedControlled(transport, engine, startPosition, endPosition, offsetPosition) {var this$0 = this;
     super$0.call(this, transport, engine, startPosition, endPosition, offsetPosition);
 
-    TimeEngine.setSpeedControlled(engine, function()  {
+    engine.setSpeedControlled(this, function()  {
       // getCurrentTime
       return scheduler.currentTime;
     }, function()  {
@@ -199,7 +199,7 @@ var TransportedSpeedControlled = (function(super$0){if(!PRS$0)MIXIN$0(Transporte
 
   proto$0.destroy = function() {
     this.__engine.syncSpeed(this.__transport.currentTime, this.__transport.currentPosition - this.__offsetPosition, 0);
-    TimeEngine.resetInterface(this.__engine);
+    this.__engine.resetInterface();
     super$0.prototype.destroy.call(this);
   };
 MIXIN$0(TransportedSpeedControlled.prototype,proto$0);proto$0=void 0;return TransportedSpeedControlled;})(Transported);
@@ -412,51 +412,50 @@ var Transport = (function(super$0){if(!PRS$0)MIXIN$0(Transport, super$0);var pro
     if (offsetPosition === -Infinity)
       offsetPosition = 0;
 
-    if (!engine.interface) {
-      if (TimeEngine.implementsTransported(engine))
-        transported = new TransportedTransported(this, engine, startPosition, endPosition, offsetPosition);
-      else if (TimeEngine.implementsSpeedControlled(engine))
-        transported = new TransportedSpeedControlled(this, engine, startPosition, endPosition, offsetPosition);
-      else if (TimeEngine.implementsScheduled(engine))
-        transported = new TransportedScheduled(this, engine, startPosition, endPosition, offsetPosition);
-      else
-        throw new Error("object cannot be added to transport");
+    if (engine.master)
+      throw new Error("object has already been added to a master");
 
-      if (transported) {
-        var speed = this.__speed;
+    if (engine.implementsTransported())
+      transported = new TransportedTransported(this, engine, startPosition, endPosition, offsetPosition);
+    else if (engine.implementsSpeedControlled())
+      transported = new TransportedSpeedControlled(this, engine, startPosition, endPosition, offsetPosition);
+    else if (engine.implementsScheduled())
+      transported = new TransportedScheduled(this, engine, startPosition, endPosition, offsetPosition);
+    else
+      throw new Error("object cannot be added to a transport");
 
-        this.__engines.push(engine);
-        this.__transported.push(transported);
+    if (transported) {
+      var speed = this.__speed;
 
-        TimeEngine.setTransported(transported, function()  {var nextEnginePosition = arguments[0];if(nextEnginePosition === void 0)nextEnginePosition = null;
-          // resetNextPosition
-          var speed = this$0.__speed;
+      this.__engines.push(engine);
+      this.__transported.push(transported);
 
-          if (speed !== 0) {
-            if (nextEnginePosition === null)
-              nextEnginePosition = transported.syncPosition(this$0.currentTime, this$0.currentPosition, speed);
-
-            var nextPosition = this$0.__transportQueue.move(transported, nextEnginePosition);
-            this$0.resetNextPosition(nextPosition);
-          }
-        }, function()  {
-          // getCurrentTime
-          return scheduler.currentTime;
-        }, function()  {
-          // get currentPosition
-          return this$0.__transport.currentPosition - this$0.__offsetPosition;
-        });
+      transported.setTransported(this, function()  {var nextEnginePosition = arguments[0];if(nextEnginePosition === void 0)nextEnginePosition = null;
+        // resetNextPosition
+        var speed = this$0.__speed;
 
         if (speed !== 0) {
-          // sync and start
-          var nextEnginePosition = transported.syncPosition(this.currentTime, this.currentPosition, speed);
-          var nextPosition = this.__transportQueue.insert(transported, nextEnginePosition);
+          if (nextEnginePosition === null)
+            nextEnginePosition = transported.syncPosition(this$0.currentTime, this$0.currentPosition, speed);
 
-          this.resetNextPosition(nextPosition);
+          var nextPosition = this$0.__transportQueue.move(transported, nextEnginePosition);
+          this$0.resetNextPosition(nextPosition);
         }
+      }, function()  {
+        // getCurrentTime
+        return scheduler.currentTime;
+      }, function()  {
+        // get currentPosition
+        return this$0.__transport.currentPosition - this$0.__offsetPosition;
+      });
+
+      if (speed !== 0) {
+        // sync and start
+        var nextEnginePosition = transported.syncPosition(this.currentTime, this.currentPosition, speed);
+        var nextPosition = this.__transportQueue.insert(transported, nextEnginePosition);
+
+        this.resetNextPosition(nextPosition);
       }
-    } else {
-      throw new Error("object has already been added to a master");
     }
 
     return transported;
@@ -478,7 +477,7 @@ var Transport = (function(super$0){if(!PRS$0)MIXIN$0(Transport, super$0);var pro
     if (engine && transported) {
       var nextPosition = this.__transportQueue.remove(transported);
 
-      TimeEngine.resetInterface(transported);
+      transported.resetInterface();
       transported.destroy();
 
       if (this.__speed !== 0)
@@ -495,7 +494,7 @@ var Transport = (function(super$0){if(!PRS$0)MIXIN$0(Transport, super$0);var pro
     this.syncSpeed(this.currentTime, this.currentPosition, 0);
 
     $D$7 = (this.__transported);$D$4 = GET_ITER$0($D$7);$D$6 = $D$4 === 0;$D$5 = ($D$6 ? $D$7.length : void 0);for (var transported ;$D$6 ? ($D$4 < $D$5) : !($D$5 = $D$4["next"]())["done"];){transported = ($D$6 ? $D$7[$D$4++] : $D$5["value"]);
-      TimeEngine.resetInterface(transported);
+      transported.resetInterface();
       transported.destroy();
     };$D$4 = $D$5 = $D$6 = $D$7 = void 0;
   };
