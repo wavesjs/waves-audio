@@ -59,9 +59,9 @@ class Scheduler {
       } else {
         nextTime = this.__queue.remove(engine);
 
-        // remove engine from scheduler
-        if(!time && arrayRemove(this.__engines, engine))
-          TimeEngine.resetInterface(engine);
+        // remove time engine from scheduler if advanceTime returns null/undfined
+        if (!time && engine.master === this)
+          engine.resetInterface();
       }
     }
 
@@ -95,16 +95,38 @@ class Scheduler {
   }
 
   /**
-   * Add a callback to the scheduler
-   * @param {Function} callbackFunction callback function(time) to be called
-   * @param {Number} time time of first callback (default is 0)
-   * @return {Object} scheduled object that can be used to call remove and reset
+   * Add a time engine or a simple callback function to the scheduler
+   * @param {Object} engine time engine to be added to the scheduler
+   * @param {Number} time scheduling time
+   * @param {Function} function to get current position
+   * @return handle to the scheduled engine (use for calling further methods)
    */
-  callback(callbackFunction, time = this.currentTime) {
-    var engine = {
-      advanceTime: callbackFunction
-    };
+  add(engine, time = this.currentTime, getCurrentPosition = null) {
+    if (engine instanceof Function) {
+      // construct minimal scheduled time engine
+      engine = {
+        advanceTime: engine
+      };
+    } else {
+      if (!engine.implementsScheduled())
+        throw new Error("object cannot be added to scheduler");
 
+      if (engine.master)
+        throw new Error("object has already been added to a master");
+
+      // register engine
+      this.__engines.push(engine);
+
+      // set scheduled interface
+      engine.setScheduled(this, (time) => {
+        var nextTime = this.__queue.move(engine, time);
+        this.__reschedule(nextTime);
+      }, () => {
+        return this.currentTime;
+      }, getCurrentPosition);
+    }
+
+    // schedule engine or callback
     var nextTime = this.__queue.insert(engine, time);
     this.__reschedule(nextTime);
 
@@ -112,48 +134,22 @@ class Scheduler {
   }
 
   /**
-   * Add a time engine to the scheduler
-   * @param {Object} engine time engine to be added to the scheduler
-   * @param {Number} time scheduling time
-   * @param {Function} function to get current position
-   */
-  add(engine, time = this.currentTime, getCurrentPosition = null) {
-    if (TimeEngine.implementsScheduled(engine)) {
-      if (!engine.interface) {
-        this.__engines.push(engine);
-
-        TimeEngine.setScheduled(engine, (time) => {
-          var nextTime = this.__queue.move(engine, time);
-          this.__reschedule(nextTime);
-        }, () => {
-          return this.currentTime;
-        }, getCurrentPosition);
-
-        var nextTime = this.__queue.insert(engine, time);
-        this.__reschedule(nextTime);
-      } else {
-        throw new Error("object has already been added to a master");
-      }
-    } else {
-      throw new Error("object cannot be added to scheduler");
-    }
-
-    return engine;
-  }
-
-  /**
-   * Remove time engine or callback from the scheduler
+   * Remove a time engine from the scheduler
    * @param {Object} engine time engine or callback to be removed from the scheduler
    */
   remove(engine) {
-    if (arrayRemove(this.__engines, engine)) {
-      TimeEngine.resetInterface(engine);
+    var master = engine.master;
 
-      var nextTime = this.__queue.remove(engine);
-      this.__reschedule(nextTime);
-    } else {
-      throw new Error("object has not been added to this scheduler");
+    if (master) {
+      if (master !== this)
+        throw new Error("object has not been added to this scheduler");
+
+      engine.resetInterface();
+      arrayRemove(this.__engines, engine);
     }
+
+    var nextTime = this.__queue.remove(engine);
+    this.__reschedule(nextTime);
   }
 
   /**
