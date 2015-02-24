@@ -17,7 +17,7 @@ class GranularEngine extends TimeEngine {
    * @param {AudioBuffer} buffer initial audio buffer for granular synthesis
    *
    * The engine implements the "scheduled" interface.
-   * The grain position (grain onset or center time in the audio buffer) is optionally 
+   * The grain position (grain onset or center time in the audio buffer) is optionally
    * determined by the engine's currentPosition attribute.
    */
   constructor(buffer = null) {
@@ -84,6 +84,12 @@ class GranularEngine extends TimeEngine {
     this.attackRel = 0.5;
 
     /**
+     * Shape of attack
+     * @type {String} 'lin' for linear ramp, 'exp' for exponential
+     */
+    this.attackShape = 'lin';
+
+    /**
      * Absolute release time in sec
      * @type {Number}
      */
@@ -94,6 +100,18 @@ class GranularEngine extends TimeEngine {
      * @type {Number}
      */
     this.releaseRel = 0.5;
+
+    /**
+     * Shape of release
+     * @type {String} 'lin' for linear ramp, 'exp' for exponential
+     */
+    this.releaseShape = 'lin';
+
+    /**
+     * Offset (start/end value) for exponential attack/release
+     * @type {Number} offset
+     */
+    this.expRampOffset = 0.0001;
 
     /**
      * Grain resampling in cent
@@ -238,13 +256,22 @@ class GranularEngine extends TimeEngine {
         var grainEndTime = grainTime + grainDuration;
         var releaseStartTime = grainEndTime - release;
 
-        envelopeNode.gain.setValueAtTime(0.0, grainTime);
-        envelopeNode.gain.linearRampToValueAtTime(1.0, attackEndTime);
+        if (this.attackShape === 'lin') {
+          envelopeNode.gain.setValueAtTime(0.0, grainTime);
+          envelopeNode.gain.linearRampToValueAtTime(1.0, attackEndTime);
+        } else {
+          envelopeNode.gain.setValueAtTime(this.expRampOffset, grainTime);
+          envelopeNode.gain.exponentialRampToValueAtTime(1.0, attackEndTime);
+        }
 
-        if (releaseStartTime > attackEndTime)
+        if (this.releaseShape === 'lin') {
           envelopeNode.gain.setValueAtTime(1.0, releaseStartTime);
+          envelopeNode.gain.linearRampToValueAtTime(0.0, grainEndTime);
+        } else {
+          envelopeNode.gain.setValueAtTime(1.0, releaseStartTime);
+          envelopeNode.gain.exponentialRampToValueAtTime(this.expRampOffset, grainEndTime);
+        }
 
-        envelopeNode.gain.linearRampToValueAtTime(0.0, grainEndTime);
         envelopeNode.connect(this.outputNode);
 
         // make source
