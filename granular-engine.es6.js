@@ -187,7 +187,7 @@ class GranularEngine extends TimeEngine {
    * This function can be called at any time (whether the engine is scheduled or not)
    * to generate a single grain according to the current grain parameters.
    */
-  trigger(time) {
+  trigger(time, outputNode = this.outputNode) {
     var grainTime = time || audioContext.currentTime;
     var grainPeriod = this.periodAbs;
     var grainPosition = this.currentPosition;
@@ -272,7 +272,7 @@ class GranularEngine extends TimeEngine {
           envelopeNode.gain.exponentialRampToValueAtTime(this.expRampOffset, grainEndTime);
         }
 
-        envelopeNode.connect(this.outputNode);
+        envelopeNode.connect(outputNode);
 
         // make source
         var source = audioContext.createBufferSource();

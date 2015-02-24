@@ -11,7 +11,7 @@ var TimeEngine = require("time-engine");
 /**
  * @class GranularEngine
  */
-var GranularEngine = (function(super$0){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};return o["a"]===t})({},{});var DP$0 = Object.defineProperty;var GOPD$0 = Object.getOwnPropertyDescriptor;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,GOPD$0(s,p));}}return t};var SP$0 = Object.setPrototypeOf||function(o,p){if(PRS$0){o["__proto__"]=p;}else {DP$0(o,"__proto__",{"value":p,"configurable":true,"enumerable":false,"writable":true});}return o};var OC$0 = Object.create;if(!PRS$0)MIXIN$0(GranularEngine, super$0);var proto$0={};
+var GranularEngine = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};MIXIN$0(GranularEngine, super$0);
   /**
    * @constructor
    * @param {AudioBuffer} buffer initial audio buffer for granular synthesis
@@ -138,9 +138,9 @@ var GranularEngine = (function(super$0){var PRS$0 = (function(o,t){o["__proto__"
     this.cyclic = false;
 
     this.outputNode = this.__gainNode = audioContext.createGain();
-  }if(super$0!==null)SP$0(GranularEngine,super$0);GranularEngine.prototype = OC$0(super$0!==null?super$0.prototype:null,{"constructor":{"value":GranularEngine,"configurable":true,"writable":true}, bufferDuration: {"get": $bufferDuration_get$0, "configurable":true,"enumerable":true}, currentPosition: {"get": $currentPosition_get$0, "configurable":true,"enumerable":true}, playbackLength: {"get": $playbackLength_get$0, "configurable":true,"enumerable":true}, gain: {"get": $gain_get$0, "set": $gain_set$0, "configurable":true,"enumerable":true}});DP$0(GranularEngine,"prototype",{"configurable":false,"enumerable":false,"writable":false});
+  }GranularEngine.prototype = Object.create(super$0.prototype, {"constructor": {"value": GranularEngine, "configurable": true, "writable": true}, bufferDuration: {"get": bufferDuration$get$0, "configurable": true, "enumerable": true}, currentPosition: {"get": currentPosition$get$0, "configurable": true, "enumerable": true}, playbackLength: {"get": playbackLength$get$0, "configurable": true, "enumerable": true}, gain: {"get": gain$get$0, "set": gain$set$0, "configurable": true, "enumerable": true} });DP$0(GranularEngine, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
-  function $bufferDuration_get$0() {
+  function bufferDuration$get$0() {
     var bufferDuration = this.buffer.duration;
 
     if (this.buffer.wrapAroundExtention)
@@ -150,16 +150,16 @@ var GranularEngine = (function(super$0){var PRS$0 = (function(o,t){o["__proto__"
   }
 
   // TimeEngine attribute
-  function $currentPosition_get$0() {
+  function currentPosition$get$0() {
     return this.position;
   }
 
   // TimeEngine method (scheduled interface)
-  proto$0.advanceTime = function(time) {
+  GranularEngine.prototype.advanceTime = function(time) {
     return time + this.trigger(time);
-  };
+  }
 
-  function $playbackLength_get$0() {
+  function playbackLength$get$0() {
     return this.bufferDuration;
   }
 
@@ -167,7 +167,7 @@ var GranularEngine = (function(super$0){var PRS$0 = (function(o,t){o["__proto__"
    * Set gain
    * @param {Number} value linear gain factor
    */
-  function $gain_set$0(value) {
+  function gain$set$0(value) {
     this.__gainNode.gain.value = value;
   }
 
@@ -175,7 +175,7 @@ var GranularEngine = (function(super$0){var PRS$0 = (function(o,t){o["__proto__"
    * Get gain
    * @return {Number} current gain
    */
-  function $gain_get$0() {
+  function gain$get$0() {
     return this.__gainNode.gain.value;
   }
 
@@ -187,7 +187,7 @@ var GranularEngine = (function(super$0){var PRS$0 = (function(o,t){o["__proto__"
    * This function can be called at any time (whether the engine is scheduled or not)
    * to generate a single grain according to the current grain parameters.
    */
-  proto$0.trigger = function(time) {
+  GranularEngine.prototype.trigger = function(time) {var outputNode = arguments[1];if(outputNode === void 0)outputNode = this.outputNode;
     var grainTime = time || audioContext.currentTime;
     var grainPeriod = this.periodAbs;
     var grainPosition = this.currentPosition;
@@ -272,7 +272,7 @@ var GranularEngine = (function(super$0){var PRS$0 = (function(o,t){o["__proto__"
           envelopeNode.gain.exponentialRampToValueAtTime(this.expRampOffset, grainEndTime);
         }
 
-        envelopeNode.connect(this.outputNode);
+        envelopeNode.connect(outputNode);
 
         // make source
         var source = audioContext.createBufferSource();
@@ -287,7 +287,7 @@ var GranularEngine = (function(super$0){var PRS$0 = (function(o,t){o["__proto__"
     }
 
     return grainPeriod;
-  };
-MIXIN$0(GranularEngine.prototype,proto$0);proto$0=void 0;return GranularEngine;})(TimeEngine);
+  }
+;return GranularEngine;})(TimeEngine);
 
 module.exports = GranularEngine;
