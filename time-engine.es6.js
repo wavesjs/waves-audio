@@ -36,6 +36,12 @@ class TimeEngine {
   constructor() {
 
     /**
+     * Current master
+     * @type {Object}
+     */
+    this.master = null;
+
+    /**
      * Interface currently used
      * @type {String}
      */
@@ -162,6 +168,67 @@ class TimeEngine {
   }
 
   /**
+   * Check whether the time engine implements the scheduled interface
+   **/
+  implementsScheduled() {
+    return (this.advanceTime && this.advanceTime instanceof Function);
+  }
+
+  /**
+   * Check whether the time engine implements the transported interface
+   **/
+  implementsTransported() {
+    return (
+      this.syncPosition && this.syncPosition instanceof Function &&
+      this.advancePosition && this.advancePosition instanceof Function
+    );
+  }
+
+  /**
+   * Check whether the time engine implements the speed-controlled interface
+   **/
+  implementsSpeedControlled() {
+    return (this.syncSpeed && this.syncSpeed instanceof Function);
+  }
+
+  setScheduled(master, resetNextTime, getCurrentTime, getCurrentPosition) {
+    this.master = master;
+    this.interface = "scheduled";
+
+    this.__setGetters(getCurrentTime, getCurrentPosition);
+
+    if (resetNextTime)
+      this.resetNextTime = resetNextTime;
+  }
+
+  setTransported(master, resetNextPosition, getCurrentTime, getCurrentPosition) {
+    this.master = master;
+    this.interface = "transported";
+
+    this.__setGetters(getCurrentTime, getCurrentPosition);
+
+    if (resetNextPosition)
+      this.resetNextPosition = resetNextPosition;
+  }
+
+  setSpeedControlled(master, getCurrentTime, getCurrentPosition) {
+    this.master = master;
+    this.interface = "speed-controlled";
+
+    this.__setGetters(getCurrentTime, getCurrentPosition);
+  }
+
+  resetInterface() {
+    this.__deleteGetters();
+
+    delete this.resetNextTime;
+    delete this.resetNextPosition;
+
+    this.master = null;
+    this.interface = null;
+  }
+
+  /**
    * Connect audio node
    * @param {Object} target audio node
    */
@@ -179,55 +246,5 @@ class TimeEngine {
     return this;
   }
 }
-
-/**
- * Check whether the time engine implements the scheduled interface
- **/
-TimeEngine.implementsScheduled = function(engine) {
-  return (engine.advanceTime && engine.advanceTime instanceof Function);
-};
-
-/**
- * Check whether the time engine implements the transported interface
- **/
-TimeEngine.implementsTransported = function(engine) {
-  return (
-    engine.syncPosition && engine.syncPosition instanceof Function &&
-    engine.advancePosition && engine.advancePosition instanceof Function
-  );
-};
-
-/**
- * Check whether the time engine implements the speed-controlled interface
- **/
-TimeEngine.implementsSpeedControlled = function(engine) {
-  return (engine.syncSpeed && engine.syncSpeed instanceof Function);
-};
-
-TimeEngine.setScheduled = function(engine, resetNextTime, getCurrentTime, getCurrentPosition) {
-  engine.interface = "scheduled";
-  engine.__setGetters(getCurrentTime, getCurrentPosition);
-  if (resetNextTime)
-    engine.resetNextTime = resetNextTime;
-};
-
-TimeEngine.setTransported = function(engine, resetNextPosition, getCurrentTime, getCurrentPosition) {
-  engine.interface = "transported";
-  engine.__setGetters(getCurrentTime, getCurrentPosition);
-  if (resetNextPosition)
-    engine.resetNextPosition = resetNextPosition;
-};
-
-TimeEngine.setSpeedControlled = function(engine, getCurrentTime, getCurrentPosition) {
-  engine.interface = "speed-controlled";
-  engine.__setGetters(getCurrentTime, getCurrentPosition);
-};
-
-TimeEngine.resetInterface = function(engine) {
-  engine.__deleteGetters();
-  delete engine.resetNextTime;
-  delete engine.resetNextPosition;
-  engine.interface = null;
-};
 
 module.exports = TimeEngine;
