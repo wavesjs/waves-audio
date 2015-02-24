@@ -52,6 +52,7 @@ var PlayControl = (function(super$0){if(!PRS$0)MIXIN$0(PlayControl, super$0);var
     super$0.call(this);
 
     this.__engine = null;
+    this.__interface = null;
     this.__schedulerHook = null;
 
     this.__loopControl = null;
@@ -68,44 +69,47 @@ var PlayControl = (function(super$0){if(!PRS$0)MIXIN$0(PlayControl, super$0);var
     // non-zero "user" speed
     this.__playingSpeed = 1;
 
-    if (!engine.master) {
-      var speed = this.__speed;
-
-      var getCurrentTime = function()  {
-        return this$0.currentTime;
-      };
-
-      var getCurrentPosition = function()  {
-        return this$0.currentPosition;
-      };
-
-      if (TimeEngine.implementsSpeedControlled(engine)) {
-        // add time engine with speed-controlled interface
-        this.__engine = engine;
-        TimeEngine.setSpeedControlled(engine, getCurrentTime, getCurrentPosition);
-      } else if (TimeEngine.implementsTransported(engine)) {
-        // add time engine with transported interface
-        this.__engine = engine;
-
-        TimeEngine.setTransported(engine, 0, function()  {var nextEnginePosition = arguments[0];if(nextEnginePosition === void 0)nextEnginePosition = null;
-          // resetNextPosition
-          if (nextEnginePosition === null) {
-            var time = scheduler.currentTime;
-            var position = this$0.__getPositionAtTime(time);
-            nextEnginePosition = engine.syncPosition(time, position, this$0.__speed);
-          }
-
-          this$0.__resetNextPosition(nextEnginePosition);
-        }, getCurrentTime, getCurrentPosition);
-      } else if (TimeEngine.implementsScheduled(engine)) {
-        // add time engine with scheduled interface
-        this.__engine = engine;
-        scheduler.add(engine, Infinity, getCurrentPosition);
-      } else {
-        throw new Error("object cannot be added to play control");
-      }
-    } else {
+    if (engine.master)
       throw new Error("object has already been added to a master");
+
+    var speed = this.__speed;
+
+    var getCurrentTime = function()  {
+      return this$0.currentTime;
+    };
+
+    var getCurrentPosition = function()  {
+      return this$0.currentPosition;
+    };
+
+    if (engine.implementsSpeedControlled()) {
+      // add time engine that implements speed-controlled interface
+      this.__engine = engine;
+      this.__interface = "speed-controlled";
+      engine.setSpeedControlled(this, getCurrentTime, getCurrentPosition);
+    } else if (engine.implementsTransported()) {
+      // add time engine that implements transported interface
+      this.__engine = engine;
+      this.__interface = "transported";
+
+      engine.setTransported(this, 0, function()  {var nextEnginePosition = arguments[0];if(nextEnginePosition === void 0)nextEnginePosition = null;
+        // resetNextPosition
+        if (nextEnginePosition === null) {
+          var time = scheduler.currentTime;
+          var position = this$0.__getPositionAtTime(time);
+          nextEnginePosition = engine.syncPosition(time, position, this$0.__speed);
+        }
+
+        this$0.__resetNextPosition(nextEnginePosition);
+      }, getCurrentTime, getCurrentPosition);
+    } else if (engine.implementsScheduled()) {
+      // add time engine that implements scheduled interface
+      this.__engine = engine;
+      this.__interface = "scheduled";
+
+      scheduler.add(engine, Infinity, getCurrentPosition);
+    } else {
+      throw new Error("object cannot be added to play control");
     }
   }if(super$0!==null)SP$0(PlayControl,super$0);PlayControl.prototype = OC$0(super$0!==null?super$0.prototype:null,{"constructor":{"value":PlayControl,"configurable":true,"writable":true}, currentTime: {"get": $currentTime_get$0, "configurable":true,"enumerable":true}, currentPosition: {"get": $currentPosition_get$0, "configurable":true,"enumerable":true}, loop: {"get": $loop_get$0, "set": $loop_set$0, "configurable":true,"enumerable":true}, loopStart: {"get": $loopStart_get$0, "set": $loopStart_set$0, "configurable":true,"enumerable":true}, loopEnd: {"get": $loopEnd_get$0, "set": $loopEnd_set$0, "configurable":true,"enumerable":true}, speed: {"get": $speed_get$0, "set": $speed_set$0, "configurable":true,"enumerable":true}});DP$0(PlayControl,"prototype",{"configurable":false,"enumerable":false,"writable":false});
 
@@ -246,7 +250,7 @@ var PlayControl = (function(super$0){if(!PRS$0)MIXIN$0(PlayControl, super$0);var
       this.__position = position;
       this.__speed = speed;
 
-      switch (this.__engine.interface) {
+      switch (this.__interface) {
         case "speed-controlled":
           this.__engine.syncSpeed(time, position, speed, seek);
           break;
