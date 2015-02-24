@@ -100,7 +100,7 @@ class SimpleScheduler {
 
         // remove engine from scheduler
         if (!time && arrayRemove(this.__engines, engine))
-          TimeEngine.resetInterface(engine);
+          engine.resetInterface();
       }
     }
 
@@ -146,30 +146,34 @@ class SimpleScheduler {
    * @param {Number} time scheduling time
    */
   add(engine, time = this.currentTime, getCurrentPosition = null) {
-    if (TimeEngine.implementsScheduled(engine)) {
-      if (!engine.interface) {
-
-        TimeEngine.setScheduled(engine, (time) => {
-          this.__rescheduleEngine(engine, time);
-          this.__resetTick();
-        }, () => {
-          return this.currentTime;
-        }, getCurrentPosition);
-
-        this.__engines.push(engine);
-
-        this.__scheduleEngine(engine, time);
-        this.__resetTick();
-
-        return engine;
-      } else {
-        throw new Error("object has already been added to a master");
-      }
+    if (engine instanceof Function) {
+      // construct minimal scheduled time engine
+      engine = {
+        advanceTime: engine
+      };
     } else {
-      throw new Error("object cannot be added to scheduler");
+      if (!engine.implementsScheduled())
+        throw new Error("object cannot be added to scheduler");
+
+      if (engine.master)
+        throw new Error("object has already been added to a master");
+
+      // register engine
+      this.__engines.push(engine);
+
+      // set scheduled interface
+      engine.setScheduled(this, (time) => {
+        this.__rescheduleEngine(engine, time);
+        this.__resetTick();
+      }, () => {
+        return this.currentTime;
+      }, getCurrentPosition);
     }
 
-    return null;
+    this.__scheduleEngine(engine, time);
+    this.__resetTick();
+
+    return engine;
   }
 
   /**
@@ -177,15 +181,18 @@ class SimpleScheduler {
    * @param {Object} engine time engine or callback to be removed from the scheduler
    */
   remove(engine) {
-    if (arrayRemove(this.__engines, engine)) {
-      if (engine.interface)
-        TimeEngine.resetInterface(engine);
+    var master = engine.master;
 
-      this.__unscheduleEngine(engine);
-      this.__resetTick();
-    } else {
-      throw new Error("object has not been added to this scheduler");
+    if (master) {
+      if (master !== this)
+        throw new Error("object has not been added to this scheduler");
+
+      engine.resetInterface();
+      arrayRemove(this.__engines, engine);
     }
+
+    this.__unscheduleEngine(engine);
+    this.__resetTick();
   }
 
   /**

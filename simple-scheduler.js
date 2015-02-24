@@ -100,7 +100,7 @@ var SimpleScheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a"
 
         // remove engine from scheduler
         if (!time && arrayRemove(this.__engines, engine))
-          TimeEngine.resetInterface(engine);
+          engine.resetInterface();
       }
     }
 
@@ -146,30 +146,34 @@ var SimpleScheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a"
    * @param {Number} time scheduling time
    */
   proto$0.add = function(engine) {var time = arguments[1];if(time === void 0)time = this.currentTime;var getCurrentPosition = arguments[2];if(getCurrentPosition === void 0)getCurrentPosition = null;var this$0 = this;
-    if (TimeEngine.implementsScheduled(engine)) {
-      if (!engine.interface) {
-
-        TimeEngine.setScheduled(engine, function(time)  {
-          this$0.__rescheduleEngine(engine, time);
-          this$0.__resetTick();
-        }, function()  {
-          return this$0.currentTime;
-        }, getCurrentPosition);
-
-        this.__engines.push(engine);
-
-        this.__scheduleEngine(engine, time);
-        this.__resetTick();
-
-        return engine;
-      } else {
-        throw new Error("object has already been added to a master");
-      }
+    if (engine instanceof Function) {
+      // construct minimal scheduled time engine
+      engine = {
+        advanceTime: engine
+      };
     } else {
-      throw new Error("object cannot be added to scheduler");
+      if (!engine.implementsScheduled())
+        throw new Error("object cannot be added to scheduler");
+
+      if (engine.master)
+        throw new Error("object has already been added to a master");
+
+      // register engine
+      this.__engines.push(engine);
+
+      // set scheduled interface
+      engine.setScheduled(this, function(time)  {
+        this$0.__rescheduleEngine(engine, time);
+        this$0.__resetTick();
+      }, function()  {
+        return this$0.currentTime;
+      }, getCurrentPosition);
     }
 
-    return null;
+    this.__scheduleEngine(engine, time);
+    this.__resetTick();
+
+    return engine;
   };
 
   /**
@@ -177,15 +181,18 @@ var SimpleScheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a"
    * @param {Object} engine time engine or callback to be removed from the scheduler
    */
   proto$0.remove = function(engine) {
-    if (arrayRemove(this.__engines, engine)) {
-      if (engine.interface)
-        TimeEngine.resetInterface(engine);
+    var master = engine.master;
 
-      this.__unscheduleEngine(engine);
-      this.__resetTick();
-    } else {
-      throw new Error("object has not been added to this scheduler");
+    if (master) {
+      if (master !== this)
+        throw new Error("object has not been added to this scheduler");
+
+      engine.resetInterface();
+      arrayRemove(this.__engines, engine);
     }
+
+    this.__unscheduleEngine(engine);
+    this.__resetTick();
   };
 
   /**
@@ -210,4 +217,5 @@ var SimpleScheduler = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a"
 MIXIN$0(SimpleScheduler.prototype,proto$0);proto$0=void 0;return SimpleScheduler;})();
 
 // export scheduler singleton
-module.exports = new SimpleScheduler();
+window.waves = window.waves || {};
+module.exports = window.waves.scheduler = window.waves.scheduler || new SimpleScheduler();
