@@ -13,7 +13,9 @@ var PriorityQueue = (function(){"use strict";var PRS$0 = (function(o,t){o["__pro
     this.reverse = false;
   }DPS$0(PriorityQueue.prototype,{head: {"get": $head_get$0, "configurable":true,"enumerable":true}, time: {"get": $time_get$0, "configurable":true,"enumerable":true}});DP$0(PriorityQueue,"prototype",{"configurable":false,"enumerable":false,"writable":false});
 
-  /* Get the index of an object in the object list */
+  /**
+   *  Get the index of an object in the object list
+   */
   proto$0.__objectIndex = function(object) {
     for (var i = 0; i < this.__objects.length; i++) {
       if (object === this.__objects[i][0]) {
@@ -23,7 +25,9 @@ var PriorityQueue = (function(){"use strict";var PRS$0 = (function(o,t){o["__pro
     return -1;
   };
 
-  /* Withdraw an object from the object list */
+  /** 
+   * Withdraw an object from the object list
+   */
   proto$0.__removeObject = function(object) {
     var index = this.__objectIndex(object);
 
@@ -104,7 +108,7 @@ var PriorityQueue = (function(){"use strict";var PRS$0 = (function(o,t){o["__pro
    * Get first object in queue
    */
   function $head_get$0() {
-    if(this.__objects.length > 0)
+    if (this.__objects.length > 0)
       return this.__objects[0][0];
 
     return null;
@@ -114,7 +118,7 @@ var PriorityQueue = (function(){"use strict";var PRS$0 = (function(o,t){o["__pro
    * Get time of first object in queue
    */
   function $time_get$0() {
-    if(this.__objects.length > 0)
+    if (this.__objects.length > 0)
       return this.__objects[0][1];
 
     return Infinity;

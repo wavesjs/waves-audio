@@ -13,7 +13,9 @@ class PriorityQueue {
     this.reverse = false;
   }
 
-  /* Get the index of an object in the object list */
+  /**
+   *  Get the index of an object in the object list
+   */
   __objectIndex(object) {
     for (var i = 0; i < this.__objects.length; i++) {
       if (object === this.__objects[i][0]) {
@@ -23,7 +25,9 @@ class PriorityQueue {
     return -1;
   }
 
-  /* Withdraw an object from the object list */
+  /** 
+   * Withdraw an object from the object list
+   */
   __removeObject(object) {
     var index = this.__objectIndex(object);
 
@@ -104,7 +108,7 @@ class PriorityQueue {
    * Get first object in queue
    */
   get head() {
-    if(this.__objects.length > 0)
+    if (this.__objects.length > 0)
       return this.__objects[0][0];
 
     return null;
@@ -114,7 +118,7 @@ class PriorityQueue {
    * Get time of first object in queue
    */
   get time() {
-    if(this.__objects.length > 0)
+    if (this.__objects.length > 0)
       return this.__objects[0][1];
 
     return Infinity;
