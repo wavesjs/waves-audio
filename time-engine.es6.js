@@ -5,7 +5,7 @@
  */
 "use strict";
 
-var audioContext = require("audio-context");
+var defaultAudioContext = require("audio-context");
 
 /**
  * @class TimeEngine
@@ -33,7 +33,8 @@ class TimeEngine {
   /**
    * @constructor
    */
-  constructor() {
+  constructor(audioContext = defaultAudioContext) {
+    this.audioContext = audioContext;
 
     /**
      * Current master
@@ -61,7 +62,7 @@ class TimeEngine {
    * This function provided by the master.
    */
   get currentTime() {
-    return audioContext.currentTime;
+    return this.audioContext.currentTime;
   }
 
   /**
