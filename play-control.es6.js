@@ -6,7 +6,6 @@
 'use strict';
 
 var TimeEngine = require("time-engine");
-var scheduler = require("scheduler");
 
 class PlayControlSchedulerHook extends TimeEngine {
   constructor(playControl) {
@@ -50,6 +49,10 @@ class PlayControlLoopControl extends TimeEngine {
 class PlayControl extends TimeEngine {
   constructor(engine) {
     super();
+
+    // future assignment
+    // this.scheduler = waves.getScheduler(engine.audioContext);
+    this.scheduler = require("scheduler");
 
     this.__engine = null;
     this.__interface = null;
@@ -95,7 +98,7 @@ class PlayControl extends TimeEngine {
       engine.setTransported(this, 0, (nextEnginePosition = null) => {
         // resetNextPosition
         if (nextEnginePosition === null) {
-          var time = scheduler.currentTime;
+          var time = this.scheduler.currentTime;
           var position = this.__getPositionAtTime(time);
           nextEnginePosition = engine.syncPosition(time, position, this.__speed);
         }
@@ -107,7 +110,7 @@ class PlayControl extends TimeEngine {
       this.__engine = engine;
       this.__interface = "scheduled";
 
-      scheduler.add(engine, Infinity, getCurrentPosition);
+      this.scheduler.add(engine, Infinity, getCurrentPosition);
     } else {
       throw new Error("object cannot be added to play control");
     }
@@ -156,7 +159,7 @@ class PlayControl extends TimeEngine {
    * This function will be replaced when the play-control is added to a master.
    */
   get currentTime() {
-    return scheduler.currentTime;
+    return this.scheduler.currentTime;
   }
 
   /**
@@ -166,17 +169,17 @@ class PlayControl extends TimeEngine {
    * This function will be replaced when the play-control is added to a master.
    */
   get currentPosition() {
-    return this.__position + (scheduler.currentTime - this.__time) * this.__speed;
+    return this.__position + (this.scheduler.currentTime - this.__time) * this.__speed;
   }
 
   set loop(enable) {
     if (enable) {
       if (this.__loopStart > -Infinity && this.__loopEnd < Infinity) {
         this.__loopControl = new PlayControlLoopControl(this);
-        scheduler.add(this.__loopControl, Infinity);
+        this.scheduler.add(this.__loopControl, Infinity);
       }
     } else if (this.__loopControl) {
-      scheduler.remove(this.__loopControl);
+      this.scheduler.remove(this.__loopControl);
       this.__loopControl = null;
     }
   }
@@ -228,12 +231,12 @@ class PlayControl extends TimeEngine {
     if (this.__loopControl) {
       if (speed > 0) {
         this.__loopControl.speed = speed;
-        scheduler.reset(this.__loopControl, this.__getTimeAtPosition(this.__loopEnd));
+        this.scheduler.reset(this.__loopControl, this.__getTimeAtPosition(this.__loopEnd));
       } else if (speed < 0) {
         this.__loopControl.speed = speed;
-        scheduler.reset(this.__loopControl, this.__getTimeAtPosition(this.__loopStart));
+        this.scheduler.reset(this.__loopControl, this.__getTimeAtPosition(this.__loopStart));
       } else {
-        scheduler.reset(this.__loopControl, Infinity);
+        this.scheduler.reset(this.__loopControl, Infinity);
       }
     }
   }
@@ -266,7 +269,7 @@ class PlayControl extends TimeEngine {
 
             // add scheduler hook to scheduler (will be rescheduled to appropriate time below)
             this.__schedulerHook = new PlayControlSchedulerHook(this);
-            scheduler.add(this.__schedulerHook, Infinity);
+            this.scheduler.add(this.__schedulerHook, Infinity);
           } else if (speed === 0) {
             // stop
             nextPosition = Infinity;
@@ -275,7 +278,7 @@ class PlayControl extends TimeEngine {
               this.__engine.syncSpeed(time, position, 0);
 
             // remove scheduler hook from scheduler            
-            scheduler.remove(this.__schedulerHook);
+            this.scheduler.remove(this.__schedulerHook);
             this.__schedulerHook = null;
           } else if (speed * lastSpeed < 0) { // change transport direction
             nextPosition = this.__engine.syncPosition(time, position, speed);
