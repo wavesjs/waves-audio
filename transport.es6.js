@@ -7,7 +7,7 @@
 
 var TimeEngine = require("time-engine");
 var PriorityQueue = require("priority-queue");
-var scheduler = require("scheduler");
+var defaultAudioContext = require("audioContext");
 
 function removeCouple(firstArray, secondArray, firstElement) {
   var index = firstArray.indexOf(firstElement);
@@ -133,7 +133,7 @@ class TransportedTransported extends Transported {
       this.resetNextPosition(nextEnginePosition);
     }, () => {
       // getCurrentTime
-      return scheduler.currentTime;
+      return this.__transport.scheduler.currentTime;
     }, () => {
       // get currentPosition
       return this.__transport.currentPosition - this.__offsetPosition;
@@ -177,7 +177,7 @@ class TransportedSpeedControlled extends Transported {
 
     engine.setSpeedControlled(this, () => {
       // getCurrentTime
-      return scheduler.currentTime;
+      return this.__transport.scheduler.currentTime;
     }, () => {
       // get currentPosition
       return this.__transport.currentPosition - this.__offsetPosition;
@@ -210,7 +210,7 @@ class TransportedScheduled extends Transported {
   constructor(transport, engine, startPosition, endPosition, offsetPosition) {
     super(transport, engine, startPosition, endPosition, offsetPosition);
 
-    scheduler.add(engine, Infinity, () => {
+    this.__transport.scheduler.add(engine, Infinity, () => {
       // get currentPosition
       return (this.__transport.currentPosition - this.__offsetPosition) * this.__scalePosition;
     });
@@ -225,7 +225,7 @@ class TransportedScheduled extends Transported {
   }
 
   destroy() {
-    scheduler.remove(this.__engine);
+    this.__transport.scheduler.remove(this.__engine);
     super.destroy();
   }
 }
@@ -255,8 +255,12 @@ class TransportSchedulerHook extends TimeEngine {
  *
  */
 class Transport extends TimeEngine {
-  constructor() {
-    super();
+  constructor(options = {}, audioContext = defaultAudioContext) {
+    super(audioContext);
+
+    // future assignment
+    // this.scheduler = waves.getScheduler(audioContext);
+    this.scheduler = require("scheduler");
 
     this.__engines = [];
     this.__transported = [];
@@ -316,7 +320,7 @@ class Transport extends TimeEngine {
    * This function will be replaced when the transport is added to a master (i.e. transport or play-control).
    */
   get currentTime() {
-    return scheduler.currentTime;
+    return this.scheduler.currentTime;
   }
 
   /**
@@ -326,7 +330,7 @@ class Transport extends TimeEngine {
    * This function will be replaced when the transport is added to a master (i.e. transport or play-control).
    */
   get currentPosition() {
-    return this.__position + (scheduler.currentTime - this.__time) * this.__speed;
+    return this.__position + (this.scheduler.currentTime - this.__time) * this.__speed;
   }
 
   /**
@@ -382,7 +386,7 @@ class Transport extends TimeEngine {
 
         // schedule transport itself
         this.__schedulerHook = new TransportSchedulerHook(this);
-        scheduler.add(this.__schedulerHook, Infinity);
+        this.scheduler.add(this.__schedulerHook, Infinity);
       } else if (speed === 0) {
         // stop
         nextPosition = Infinity;
@@ -390,7 +394,7 @@ class Transport extends TimeEngine {
         this.__syncTransportedSpeed(time, position, 0);
 
         // unschedule transport itself
-        scheduler.remove(this.__schedulerHook);
+        this.scheduler.remove(this.__schedulerHook);
         delete this.__schedulerHook;
       } else {
         // change speed without reversing direction
@@ -443,7 +447,7 @@ class Transport extends TimeEngine {
         }
       }, () => {
         // getCurrentTime
-        return scheduler.currentTime;
+        return this.__transport.scheduler.currentTime;
       }, () => {
         // get currentPosition
         return this.__transport.currentPosition - this.__offsetPosition;
