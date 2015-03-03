@@ -5,40 +5,42 @@
  */
 "use strict";
 
-var audioContext = require("audio-context");
 var TimeEngine = require("time-engine");
 
 class Metronome extends TimeEngine {
-  constructor(period = 1) {
-    super();
+  constructor(options = {}, audioContext = null) {
+    super(audioContext);
 
     /**
      * Metronome period in sec
      * @type {Number}
      */
-    this.period = period;
+    this.period = options.period || 1;
 
     /**
      * Metronome click frequency
      * @type {Number}
      */
-    this.clickFreq = 600;
+    this.clickFreq = options.clickFreq || 600;
 
     /**
      * Metronome click attack time
      * @type {Number}
      */
-    this.clickAttack = 0.002;
+    this.clickAttack = options.clickAttack || 0.002;
 
     /**
      * Metronome click release time
      * @type {Number}
      */
-    this.clickRelease = 0.098;
+    this.clickRelease = options.clickRelease || 0.098;
 
     this.__phase = 0;
 
-    this.outputNode = this.__gainNode = audioContext.createGain();
+    this.__gainNode = super.audioContext.createGain();
+    this.__gainNode.gain.value = options.gain || 1;
+
+    this.outputNode = this.__gainNode;
   }
 
   // TimeEngine method (scheduled interface)
@@ -74,6 +76,7 @@ class Metronome extends TimeEngine {
    * @param {Number} time metronome click synthesis audio time
    */
   trigger(time) {
+    var audioContext = super.audioContext;
     var clickAttack = this.clickAttack;
     var clickRelease = this.clickRelease;
     var period = this.period;
