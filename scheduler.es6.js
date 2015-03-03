@@ -5,9 +5,9 @@
  */
 'use strict';
 
-var audioContext = require("audio-context");
 var PriorityQueue = require("priority-queue");
 var TimeEngine = require("time-engine");
+var defaultAudioContext = require("audio-context");
 
 function arrayRemove(array, value) {
   var index = array.indexOf(value);
@@ -21,7 +21,9 @@ function arrayRemove(array, value) {
 }
 
 class Scheduler {
-  constructor() {
+  constructor(options = {}, audioContext = defaultAudioContext) {
+    this.__audioContext = audioContext;
+
     this.__queue = new PriorityQueue();
     this.__engines = [];
 
@@ -33,17 +35,18 @@ class Scheduler {
      * scheduler (setTimeout) period
      * @type {Number}
      */
-    this.period = 0.025;
+    this.period = options.period || 0.025;
 
     /**
      * scheduler lookahead time (> period)
      * @type {Number}
      */
-    this.lookahead = 0.1;
+    this.lookahead = options.lookahead || 0.1;
   }
 
   // setTimeout scheduling loop
   __tick() {
+    var audioContext = this.__audioContext;
     var nextTime = this.__nextTime;
 
     this.__timeout = null;
@@ -78,7 +81,7 @@ class Scheduler {
     if (nextTime !== Infinity) {
       this.__nextTime = nextTime;
 
-      var timeOutDelay = Math.max((nextTime - audioContext.currentTime - this.lookahead), this.period);
+      var timeOutDelay = Math.max((nextTime - this.__audioContext.currentTime - this.lookahead), this.period);
 
       this.__timeout = setTimeout(() => {
         this.__tick();
@@ -91,7 +94,7 @@ class Scheduler {
    * @return {Number} current scheduler time including lookahead
    */
   get currentTime() {
-    return this.__currentTime || audioContext.currentTime + this.lookahead;
+    return this.__currentTime || this.__audioContext.currentTime + this.lookahead;
   }
 
   /**
