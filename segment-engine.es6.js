@@ -5,8 +5,8 @@
  */
 "use strict";
 
-var audioContext = require("audio-context");
 var TimeEngine = require("time-engine");
+var defaultAudioContext = require("audio-context");
 
 function getCurrentOrPreviousIndex(sortedArray, value, index = 0) {
   var size = sortedArray.length;
@@ -73,62 +73,62 @@ class SegmentEngine extends TimeEngine {
    * (controlled by the periodAbs, periodRel, and perioVar attributes).
    * When "transported", the engine generates segments at the position of their onset time.
    */
-  constructor(buffer = null) {
-    super(false); // by default segments don't sync to transport position
+  constructor(options = {}, audioContext = defaultAudioContext) {
+    super(audioContext);
 
     /**
      * Audio buffer
      * @type {AudioBuffer}
      */
-    this.buffer = buffer;
+    this.buffer = options.buffer || null;
 
     /**
      * Absolute segment period in sec
      * @type {Number}
      */
-    this.periodAbs = 0.1;
+    this.periodAbs = options.periodAbs || 0.1;
 
     /**
      * Segment period relative to inter-segment distance
      * @type {Number}
      */
-    this.periodRel = 0;
+    this.periodRel = options.periodRel || 0;
 
     /**
      * Amout of random segment period variation relative to segment period
      * @type {Number}
      */
-    this.periodVar = 0;
+    this.periodVar = options.periodVar || 0;
 
     /**
      * Array of segment positions (onset times in audio buffer) in sec
      * @type {Number}
      */
-    this.positionArray = [0.0];
+    this.positionArray = options.positionArray || [0.0];
 
     /**
      * Amout of random segment position variation in sec
      * @type {Number}
      */
-    this.positionVar = 0;
+    this.positionVar = options.positionVar || 0;
 
     /**
      * Array of segment durations in sec
      * @type {Number}
      */
-    this.durationArray = [0.0];
+    this.durationArray = options.durationArray || [0.0];
 
     /**
      * Absolute segment duration in sec
      * @type {Number}
      */
-    this.durationAbs = 0;
+    this.durationAbs = options.durationAbs || 0;
 
     /**
      * Segment duration relative to given segment duration or inter-segment distance
      * @type {Number}
      */
-    this.durationRel = 1;
+    this.durationRel = options.durationRel || 1;
 
     /**
      * Array of segment offsets in sec
@@ -137,76 +137,79 @@ class SegmentEngine extends TimeEngine {
      * offset > 0: the segment's reference position is after the given segment position
      * offset < 0: the given segment position is the segment's reference position and the duration has to be corrected by the offset
      */
-    this.offsetArray = [0.0];
+    this.offsetArray = options.offsetArray || [0.0];
 
     /**
      * Absolute segment offset in sec
      * @type {Number}
      */
-    this.offsetAbs = -0.005;
+    this.offsetAbs = options.offsetAbs || -0.005;
 
     /**
      * Segment offset relative to segment duration
      * @type {Number}
      */
-    this.offsetRel = 0;
+    this.offsetRel = options.offsetRel || 0;
 
     /**
      * Time by which all segments are delayed (especially to realize segment offsets)
      * @type {Number}
      */
-    this.delay = 0.005;
+    this.delay = options.delay || 0.005;
 
     /**
      * Absolute attack time in sec
      * @type {Number}
      */
-    this.attackAbs = 0.005;
+    this.attackAbs = options.attackAbs || 0.005;
 
     /**
      * Attack time relative to segment duration
      * @type {Number}
      */
-    this.attackRel = 0;
+    this.attackRel = options.attackRel || 0;
 
     /**
      * Absolute release time in sec
      * @type {Number}
      */
-    this.releaseAbs = 0.005;
+    this.releaseAbs = options.releaseAbs || 0.005;
 
     /**
      * Release time relative to segment duration
      * @type {Number}
      */
-    this.releaseRel = 0;
+    this.releaseRel = options.releaseRel || 0;
 
     /**
      * Segment resampling in cent
      * @type {Number}
      */
-    this.resampling = 0;
+    this.resampling = options.resampling || 0;
 
     /**
      * Amout of random resampling variation in cent
      * @type {Number}
      */
-    this.resamplingVar = 0;
+    this.resamplingVar = options.resamplingVar || 0;
 
     /**
      * Index of
      * @type {Number}
      */
-    this.segmentIndex = 0;
+    this.segmentIndex = options.segmentIndex || 0;
 
     /**
      * Whether the audio buffer and segment indices are considered as cyclic
      * @type {Bool}
      */
-    this.cyclic = false;
+    this.cyclic = options.cyclic || false;
     this.__cyclicOffset = 0;
 
-    this.outputNode = this.__gainNode = audioContext.createGain();
+    this.__gainNode = audioContext.createGain();
+    this.__gainNode.gain.value = options.gain || 1;
+
+    this.outputNode = this.__gainNode;
   }
 
   get bufferDuration() {
@@ -326,6 +329,7 @@ class SegmentEngine extends TimeEngine {
    * to generate a single segment according to the current segment parameters.
    */
   trigger(audioTime) {
+    var audioContext = super.audioContext;
     var segmentTime = audioTime || audioContext.currentTime + this.delay;
     var segmentPeriod = this.periodAbs;
     var segmentIndex = this.segmentIndex;
