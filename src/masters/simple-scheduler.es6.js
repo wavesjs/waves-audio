@@ -4,8 +4,8 @@
  * @author Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
  */
 
-var TimeEngine = require("time-engine");
-var defaultAudioContext = require("audio-context");
+var TimeEngine = require("../core/time-engine");
+var defaultAudioContext = require("../core/audio-context");
 
 function arrayRemove(array, value) {
   var index = array.indexOf(value);
@@ -218,5 +218,4 @@ class SimpleScheduler {
 }
 
 // export scheduler singleton
-window.waves = window.waves || {};
-module.exports = window.waves.scheduler = window.waves.scheduler || new SimpleScheduler();
+module.exports = SimpleScheduler;

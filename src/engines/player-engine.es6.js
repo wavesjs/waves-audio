@@ -5,8 +5,8 @@
  */
 "use strict";
 
-var TimeEngine = require("time-engine");
-var defaultAudioContext = require("audio-context");
+var TimeEngine = require("../core/time-engine");
+var defaultAudioContext = require("../core/audio-context");
 
 class PlayerEngine extends TimeEngine {
   constructor(options = {}, audioContext = defaultAudioContext) {

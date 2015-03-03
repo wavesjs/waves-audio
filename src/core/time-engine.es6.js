@@ -5,7 +5,7 @@
  */
 "use strict";
 
-var defaultAudioContext = require("audio-context");
+var defaultAudioContext = require("./audio-context");
 
 /**
  * @class TimeEngine

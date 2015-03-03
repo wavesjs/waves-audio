@@ -5,9 +5,9 @@
  */
 'use strict';
 
-var TimeEngine = require("time-engine");
-var PriorityQueue = require("priority-queue");
-var defaultAudioContext = require("audioContext");
+var TimeEngine = require("../core/time-engine");
+var PriorityQueue = require("../utils/priority-queue");
+var defaultAudioContext = require("../core/audio-context");
 
 function removeCouple(firstArray, secondArray, firstElement) {
   var index = firstArray.indexOf(firstElement);
@@ -260,7 +260,9 @@ class Transport extends TimeEngine {
 
     // future assignment
     // this.scheduler = waves.getScheduler(audioContext);
-    this.scheduler = require("scheduler");
+    // this.scheduler = require("scheduler");
+    // test
+    this.scheduler = require('./factories').getScheduler(audioContext);
 
     this.__engines = [];
     this.__transported = [];
@@ -302,7 +304,7 @@ class Transport extends TimeEngine {
 
       engine = this.__transported[0];
       nextEnginePosition = engine.syncPosition(time, position, speed);
-      nextPosition = this.__transportQueue.insert(engine, nextEnginePosition, true); // insert and sort 
+      nextPosition = this.__transportQueue.insert(engine, nextEnginePosition, true); // insert and sort
     }
 
     return nextPosition;

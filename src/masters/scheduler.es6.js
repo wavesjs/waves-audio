@@ -5,9 +5,9 @@
  */
 'use strict';
 
-var PriorityQueue = require("priority-queue");
-var TimeEngine = require("time-engine");
-var defaultAudioContext = require("audio-context");
+var PriorityQueue = require("../utils/priority-queue");
+var TimeEngine = require("../core/time-engine");
+var defaultAudioContext = require("../core/audio-context");
 
 function arrayRemove(array, value) {
   var index = array.indexOf(value);
@@ -179,6 +179,4 @@ class Scheduler {
   }
 }
 
-// export scheduler singleton
-window.waves = window.waves || {};
-module.exports = window.waves.scheduler = window.waves.scheduler || new Scheduler();
+module.exports = Scheduler;

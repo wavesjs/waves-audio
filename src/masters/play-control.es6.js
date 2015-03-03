@@ -5,7 +5,7 @@
  */
 'use strict';
 
-var TimeEngine = require("time-engine");
+var TimeEngine = require("../core/time-engine");
 
 class PlayControlSchedulerHook extends TimeEngine {
   constructor(playControl) {
@@ -52,7 +52,9 @@ class PlayControl extends TimeEngine {
 
     // future assignment
     // this.scheduler = waves.getScheduler(engine.audioContext);
-    this.scheduler = require("scheduler");
+    // this.scheduler = require("scheduler");
+    // test
+    this.scheduler = require('./factories').getScheduler(engine.audioContext);
 
     this.__engine = null;
     this.__interface = null;
@@ -277,7 +279,7 @@ class PlayControl extends TimeEngine {
             if (this.__engine.syncSpeed)
               this.__engine.syncSpeed(time, position, 0);
 
-            // remove scheduler hook from scheduler            
+            // remove scheduler hook from scheduler
             this.scheduler.remove(this.__schedulerHook);
             this.__schedulerHook = null;
           } else if (speed * lastSpeed < 0) { // change transport direction

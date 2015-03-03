@@ -5,7 +5,7 @@
  */
 "use strict";
 
-var TimeEngine = require("time-engine");
+var TimeEngine = require("../core/time-engine");
 
 /**
  * @class GranularEngine

@@ -11,11 +11,14 @@ var wavesAudio = {
   SegmentEngine: require('./dist/engines/segment-engine'),
   // masters
   PlayControl: require('./dist/masters/play-control'),
+  Transport: require('./dist/masters/transport'),
+  // expose these ?
   Scheduler: require('./dist/masters/scheduler'),
   SimpleScheduler: require('./dist/masters/simple-scheduler'),
-  Transport: require('./dist/masters/transport'),
   // utils
   PriorityQueue: require('./dist/utils/priority-queue')
 };
+
+
 
 module.exports = wavesAudio;

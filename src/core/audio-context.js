@@ -1,4 +1,4 @@
-/*globals AudioContext*/
+// monkeypatch old webAudioAPI
 require('./ac-monkeypatch');
-window.waves = window.waves || {};
-module.exports = window.waves.audioContext = window.waves.audioContext || new AudioContext();
+// exposes a single instance
+module.exports = new AudioContext();

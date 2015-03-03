@@ -5,8 +5,8 @@
  */
 "use strict";
 
-var TimeEngine = require("time-engine");
-var defaultAudioContext = require("audio-context");
+var TimeEngine = require("../core/time-engine");
+var defaultAudioContext = require("../core/audio-context");
 
 function getCurrentOrPreviousIndex(sortedArray, value, index = 0) {
   var size = sortedArray.length;
@@ -234,7 +234,7 @@ class SegmentEngine extends TimeEngine {
 
     if (this.cyclic) {
       var cycles = position / bufferDuration;
-      
+
       cyclicOffset = Math.floor(cycles) * bufferDuration;
       position -= cyclicOffset;
     }
@@ -392,7 +392,7 @@ class SegmentEngine extends TimeEngine {
         if (interSegmentDistance < 0)
           interSegmentDistance = 0;
 
-        // use inter-segment distance instead of segment duration 
+        // use inter-segment distance instead of segment duration
         if (segmentDuration === 0)
           segmentDuration = interSegmentDistance;
 
