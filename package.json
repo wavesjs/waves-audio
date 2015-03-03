@@ -9,9 +9,6 @@
   ],
   "main": "granular-engine.js",
   "exports": "GranularEngine",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/Ircam-RnD/granular-engine"
@@ -21,5 +18,16 @@
     "time-engine": "git://github.com/Ircam-RnD/time-engine.git#master"
   },
   "devDependencies": {
+    "sinon": "^1.12.2",
+    "tac6": "git://github.com/ircam-rnd/tac6.git#master"
+  },
+  "browserify": {
+    "transforms": [
+      "es6ify"
+    ]
+  },
+  "scripts": {
+    "bundle": "browserify priority-queue.es6.js > priority-queue.js -s 'PriorityQueue' -d -t es6ify",
+    "test": "tac6"
   }
 }
