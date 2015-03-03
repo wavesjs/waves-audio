@@ -1,0 +1,40 @@
+{
+  "name": "waves-audio",
+  "version": "0.1.0",
+  "description": "'Audio section of the wavesjs library'",
+  "main": "waves-audio.js",
+  "standalone": "wavesAudio",
+  "scripts": {
+    "transpile": "node ./bin/scripts.js --transpile",
+    "prebundle": "npm run hint && npm run transpile",
+    "bundle": "node ./bin/scripts.js --bundle",
+    "postbundle": "npm run uglify",
+    "uglify": "node ./bin/scripts.js --uglify",
+    "watch": "node ./bin/scripts.js --watch",
+    "test": "tac6",
+    "pretest": "npm run hint",
+    "hint": "find src -type f | while read -r line; do jshint $line; done;"
+  },
+  "license": "BSD-3",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wavesjs/audio"
+  },
+  "jshintConfig": {
+    "esnext": true,
+    "browser": true,
+    "node": true,
+    "devel": true
+  },
+  "dependencies": {
+    "babel-runtime": "^4.6.5"
+  },
+  "devDependencies": {
+    "babel": "^4.5.0",
+    "browserify": "^9.0.3",
+    "fs-extra": "^0.16.3",
+    "jshint": "^2.6.0",
+    "node-watch": "^0.3.4",
+    "uglify-js": "^2.4.16"
+  }
+}
