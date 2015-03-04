@@ -8,7 +8,7 @@ var simpleScheduler = null;
 // scheduler factory
 module.exports.getScheduler = function(audioContext) {
   if (scheduler === null) {
-    scheduler = new Scheduler({}, audioContext);
+    scheduler = new Scheduler(audioContext, {});
   }
 
   return scheduler;
@@ -16,7 +16,7 @@ module.exports.getScheduler = function(audioContext) {
 
 module.exports.getSimpleScheduler = function(audioContext) {
   if (simpleScheduler === null) {
-    simpleScheduler = new SimpleScheduler({}, audioContext);
+    simpleScheduler = new SimpleScheduler(audioContext, {});
   }
 
   return simpleScheduler;

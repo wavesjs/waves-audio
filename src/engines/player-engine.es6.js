@@ -6,10 +6,9 @@
 "use strict";
 
 var TimeEngine = require("../core/time-engine");
-var defaultAudioContext = require("../core/audio-context");
 
 class PlayerEngine extends TimeEngine {
-  constructor(options = {}, audioContext = defaultAudioContext) {
+  constructor(audioContext, options = {}) {
     super(audioContext);
 
     this.transport = null; // set when added to transporter
@@ -36,14 +35,14 @@ class PlayerEngine extends TimeEngine {
 
     this.__playingSpeed = 1;
 
-    this.__gainNode = audioContext.createGain();
+    this.__gainNode = this.audioContext.createGain();
     this.__gainNode.gain.value = options.gain || 1;
 
     this.outputNode = this.__gainNode;
   }
 
   __start(time, position, speed) {
-    var audioContext = super.audioContext;
+    var audioContext = this.audioContext;
 
     if (this.buffer) {
       var bufferDuration = this.buffer.duration;

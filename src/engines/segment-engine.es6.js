@@ -6,7 +6,6 @@
 "use strict";
 
 var TimeEngine = require("../core/time-engine");
-var defaultAudioContext = require("../core/audio-context");
 
 function getCurrentOrPreviousIndex(sortedArray, value, index = 0) {
   var size = sortedArray.length;
@@ -73,7 +72,7 @@ class SegmentEngine extends TimeEngine {
    * (controlled by the periodAbs, periodRel, and perioVar attributes).
    * When "transported", the engine generates segments at the position of their onset time.
    */
-  constructor(options = {}, audioContext = defaultAudioContext) {
+  constructor(audioContext, options = {}) {
     super(audioContext);
 
     /**
@@ -329,7 +328,7 @@ class SegmentEngine extends TimeEngine {
    * to generate a single segment according to the current segment parameters.
    */
   trigger(audioTime) {
-    var audioContext = super.audioContext;
+    var audioContext = this.audioContext;
     var segmentTime = audioTime || audioContext.currentTime + this.delay;
     var segmentPeriod = this.periodAbs;
     var segmentIndex = this.segmentIndex;

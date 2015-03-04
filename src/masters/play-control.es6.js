@@ -6,6 +6,7 @@
 'use strict';
 
 var TimeEngine = require("../core/time-engine");
+var { getScheduler } = require('./factories');
 
 class PlayControlSchedulerHook extends TimeEngine {
   constructor(playControl) {
@@ -48,13 +49,13 @@ class PlayControlLoopControl extends TimeEngine {
 
 class PlayControl extends TimeEngine {
   constructor(engine) {
-    super();
+    super(engine.audioContext);
 
     // future assignment
     // this.scheduler = waves.getScheduler(engine.audioContext);
     // this.scheduler = require("scheduler");
     // test
-    this.scheduler = require('./factories').getScheduler(engine.audioContext);
+    this.scheduler = getScheduler(engine.audioContext);
 
     this.__engine = null;
     this.__interface = null;

@@ -19,7 +19,7 @@ class GranularEngine extends TimeEngine {
    * The grain position (grain onset or center time in the audio buffer) is optionally
    * determined by the engine's currentPosition attribute.
    */
-  constructor(options = {}, audioContext = null) {
+  constructor(audioContext,options = {}) {
     super(audioContext);
 
     /**
@@ -136,7 +136,7 @@ class GranularEngine extends TimeEngine {
      */
     this.cyclic = options.cyclic || false;
 
-    this.__gainNode = super.audioContext.createGain();
+    this.__gainNode = this.audioContext.createGain();
     this.__gainNode.gain.value = options.gain || 1;
 
     this.outputNode = this.__gainNode;
@@ -190,7 +190,7 @@ class GranularEngine extends TimeEngine {
    * to generate a single grain according to the current grain parameters.
    */
   trigger(time, outputNode = this.outputNode) {
-    var audioContext = super.audioContext;
+    var audioContext = this.audioContext;
     var grainTime = time || audioContext.currentTime;
     var grainPeriod = this.periodAbs;
     var grainPosition = this.currentPosition;

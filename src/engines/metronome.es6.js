@@ -8,7 +8,7 @@
 var TimeEngine = require("../core/time-engine");
 
 class Metronome extends TimeEngine {
-  constructor(options = {}, audioContext = null) {
+  constructor(audioContext, options = {}) {
     super(audioContext);
 
     /**
@@ -37,7 +37,7 @@ class Metronome extends TimeEngine {
 
     this.__phase = 0;
 
-    this.__gainNode = super.audioContext.createGain();
+    this.__gainNode = this.audioContext.createGain();
     this.__gainNode.gain.value = options.gain || 1;
 
     this.outputNode = this.__gainNode;
@@ -76,7 +76,7 @@ class Metronome extends TimeEngine {
    * @param {Number} time metronome click synthesis audio time
    */
   trigger(time) {
-    var audioContext = super.audioContext;
+    var audioContext = this.audioContext;
     var clickAttack = this.clickAttack;
     var clickRelease = this.clickRelease;
     var period = this.period;

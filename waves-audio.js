@@ -16,7 +16,10 @@ var wavesAudio = {
   Scheduler: require('./dist/masters/scheduler'),
   SimpleScheduler: require('./dist/masters/simple-scheduler'),
   // utils
-  PriorityQueue: require('./dist/utils/priority-queue')
+  PriorityQueue: require('./dist/utils/priority-queue'),
+  // factories
+  getScheduler: require('./dist/masters/factories').getScheduler,
+  getSimpleScheduler: require('./dist/masters/factories').getSimpleScheduler
 };
 
 
