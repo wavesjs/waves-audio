@@ -63,8 +63,6 @@ remove/comment all the component you don't need in `waves-audio.js`, then run
 npm run bundle
 ```
 
-_`core/timeline`, `core/layer`, and `helpers/utils` are mandatory_
-
 ## List of components
 
 #### core
