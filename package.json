@@ -13,7 +13,7 @@
     "watch": "node ./bin/scripts.js --watch",
     "test": "tac6",
     "pretest": "npm run hint",
-    "hint": "find src -type f | while read -r line; do jshint $line; done;"
+    "hint": "find es6 -type f | while read -r line; do jshint $line; done;"
   },
   "license": "BSD-3",
   "repository": {
@@ -35,6 +35,7 @@
     "fs-extra": "^0.16.3",
     "jshint": "^2.6.0",
     "node-watch": "^0.3.4",
+    "tac6": "git://github.com/ircam-rnd/tac6",
     "uglify-js": "^2.4.16"
   }
 }
