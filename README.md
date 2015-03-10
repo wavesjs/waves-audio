@@ -4,7 +4,7 @@ _audio part of the `wavesjs` library._
 
 ## Documentation
 
-[https://ircam-rnd.github.io/waves/audio](https://ircam-rnd.github.io/waves/audio)
+[https://wavesjs.github.io/audio/](https://wavesjs.github.io/audio/)
 
 ## Use
 
