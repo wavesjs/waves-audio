@@ -4,7 +4,7 @@ _audio part of the `wavesjs` library._
 
 ## Documentation
 
-[https://wavesjs.github.io/audio/](https://wavesjs.github.io/audio/)
+[http://wavesjs.github.io/audio/](http://wavesjs.github.io/audio/)
 
 ## Use
 
