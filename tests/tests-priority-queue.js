@@ -1,6 +1,6 @@
 var assert = require('assert');
 
-var PriorityQueue = require('../priority-queue.es6.js');
+var PriorityQueue = require('../es6/utils/priority-queue');
 
 describe("PriorityQueue", function(){
     it("should insert properly", function(){

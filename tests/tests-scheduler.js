@@ -1,9 +1,9 @@
 var assert = require('assert');
 var sinon = require('sinon');
 
-var audioContext = require("audio-context");
-var scheduler = require('../scheduler.es6.js');
-var TimeEngine = require("time-engine");
+var audioContext = require("../es6/core/audio-context");
+var scheduler = require("../es6/masters/scheduler");
+var TimeEngine = require("../es6/core/time-engine");
 
 var currentTimeDeviation = 128 / 44100; // the audioContext.currentTime accuracy
 

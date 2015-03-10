@@ -1,8 +1,8 @@
 var assert = require('assert');
 var sinon = require('sinon');
 
-var audioContext = require('audio-context');
-var GranularEngine = require('../granular-engine.es6.js');
+var audioContext = require('../es6/core/audio-context');
+var GranularEngine = require('../es6/engines/granular-engine');
 
 describe("GranularEngine", function() {
 	afterEach(function() {
@@ -218,7 +218,7 @@ describe("GranularEngine", function() {
 			grainDuration += grainPosition;
 			grainPosition = 0;
 
-			var envelopeNode = audioContext.createGain();
+			var envelopeNode = audioContext.createGainNode();
 			var attack = ge.attackAbs + ge.attackRel * grainDuration;
 			var release = ge.releaseAbs + ge.releaseRel * grainDuration;
 

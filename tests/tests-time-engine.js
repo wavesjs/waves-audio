@@ -1,7 +1,7 @@
 var assert = require('assert');
 
-var TimeEngine = require("../time-engine.es6.js");
-var audioContext = require("audio-context");
+var TimeEngine = require("../es6/core/time-engine");
+var audioContext = require("../es6/core/audio-context");
 
 describe("TimeEngine", function(){
     it("should init correctly", function(){
@@ -26,12 +26,14 @@ describe("TimeEngine", function(){
     });
     */
     it("should check well if engine implements the scheduled interface", function(){
-        var engine = {advanceTime: function(){}}
-        assert(TimeEngine.implementsScheduled(engine));
+        var engine = new TimeEngine();
+        engine.advanceTime = function(){};
+
+        assert(engine.implementsScheduled());
         engine.advanceTime = 42;
-        assert(!TimeEngine.implementsScheduled(engine));
+        assert(!engine.implementsScheduled());
         delete engine.advanceTime;
-        assert(!TimeEngine.implementsScheduled(engine));
+        assert(!engine.implementsScheduled());
     })
     it("should check well if engine implements the transported interface", function(){
         var engine = {syncPosition: function(){}, advancePosition: function(){}};

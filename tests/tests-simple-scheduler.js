@@ -1,9 +1,9 @@
 var assert = require('assert');
 var sinon = require('sinon');
 
-var simpleScheduler = require('../simple-scheduler.es6.js');
-var audioContext = require("audio-context");
-var TimeEngine = require("time-engine");
+var simpleScheduler = require("../es6/masters/simple-scheduler");
+var audioContext = require("../es6/core/audio-context");
+var TimeEngine = require("../es6/core/time-engine");
 
 describe("SimpleScheduler", function() {
     afterEach(function() {
