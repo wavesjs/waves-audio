@@ -27,7 +27,7 @@
     "devel": true
   },
   "dependencies": {
-    "babel-runtime": "^4.7.6"
+    "babel-runtime": "4.7.6"
   },
   "devDependencies": {
     "babel": "^4.5.0",
