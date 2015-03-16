@@ -74,6 +74,7 @@ class PriorityQueue {
    */
   move(object, time) {
     if (time !== Infinity && time != -Infinity) {
+      
       var index = this.__objectIndex(object);
 
       if (index < 0)
