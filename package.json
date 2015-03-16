@@ -11,9 +11,10 @@
     "postbundle": "npm run uglify",
     "uglify": "node ./bin/scripts.js --uglify",
     "watch": "node ./bin/scripts.js --watch",
-    "test": "tac6",
+    "test": "node ./bin/test-runner.js",
     "pretest": "npm run hint",
-    "hint": "find es6 -type f | while read -r line; do jshint $line; done;"
+    "hint": "find es6 -type f | while read -r line; do jshint $line; done;",
+    "performance": "node performance-tests/benchmark-priority-queue.js"
   },
   "license": "BSD-3",
   "repository": {
@@ -27,15 +28,30 @@
     "devel": true
   },
   "dependencies": {
-    "babel-runtime": "4.7.6"
+    "babel-runtime": "^4.6.5"
   },
   "devDependencies": {
     "babel": "^4.5.0",
+    "benchmark": "^1.0.0",
     "browserify": "^9.0.3",
     "fs-extra": "^0.16.3",
+    "inquirer": "^0.8.0",
     "jshint": "^2.6.0",
     "node-watch": "^0.3.4",
+    "sinon": "^1.13.0",
     "tac6": "git://github.com/ircam-rnd/tac6",
     "uglify-js": "^2.4.16"
-  }
+  },
+  "gitHead": "99e046ce91dbeae7c2e9d3b1f021b09b258e5f63",
+  "readme": "# WAVES - AUDIO\n\n_audio part of the `wavesjs` library._\n\n## Documentation\n\n[https://ircam-rnd.github.io/waves/audio](https://ircam-rnd.github.io/waves/audio)\n\n## Use\n\n#### CommonJS (browserify)\n\ninstall with npm\n\n```bash\nnpm install --save wavesjs/audio\n```\n\nconsume in your modules\n\n```javascript\nvar wavesUI = require('waves-audio');\n```\n\n#### AMD (requireJS)\n\nadd the waves library to your config\n\n```javascript\nrequirejs.config({\n  paths: {\n    waves: 'path/to/waves-audio.umd'\n  }\n});\n```\n\nconsume in your modules\n\n```javascript\ndefine(['waves-audio'], function(wavesAudio) {\n  var timeEngine = new wavesAudio.TimeEngine();\n  // ...\n});\n```\n\n#### Global\n\nadd the script tag in your at the bottom of the `<body>`\n\n```html\n<script scr=\"/path/to/waves-audio.umd.js\"></script>\n```\n\nthe library is exposed in the `window.wavesAudio` namespace\n\n\n## Custom build\n\nto create your own custom build, you need to\nremove/comment all the component you don't need in `waves-audio.js`, then run\n\n```bash\nnpm run bundle\n```\n\n## List of components\n\n#### core\n\n- `audioContext`\n- `TimeEngine`\n\n#### utils\n\n- `PriorityQueue`\n\n#### masters\n\n- `SimpleScheduler`\n- `Scheduler`\n- `Transport`      \n- `PlayControl`\n\n#### engines\n\n- `Metronome`\n- `GranularEngine`\n- `SegmentEngine`\n- `PlayerEngine`\n\n## License\n\nThis module is released under the BSD-3-Clause license.\n\nAcknowledgments\n\nThis code is part of the WAVE project, funded by ANR (The French National Research Agency).\n",
+  "readmeFilename": "README.md",
+  "bugs": {
+    "url": "https://github.com/wavesjs/audio/issues"
+  },
+  "homepage": "https://github.com/wavesjs/audio",
+  "_id": "waves-audio@0.1.0",
+  "_shasum": "eacdadbc143b5226569290d10605db78c165f8be",
+  "_from": "git://github.com/wavesjs/audio",
+  "_resolved": "git://github.com/wavesjs/audio#99e046ce91dbeae7c2e9d3b1f021b09b258e5f63",
+  "_fromGithub": true
 }
