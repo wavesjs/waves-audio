@@ -8,8 +8,8 @@
 var TimeEngine = require("../core/time-engine");
 
 class PlayerEngine extends TimeEngine {
-  constructor(audioContext, options = {}) {
-    super(audioContext);
+  constructor(options = {}) {
+    super(options.audioContext);
 
     this.transport = null; // set when added to transporter
 

@@ -7,6 +7,7 @@
 
 var PriorityQueue = require("../utils/priority-queue");
 var TimeEngine = require("../core/time-engine");
+var defaultAudioContext = require("../core/audio-context");
 
 function arrayRemove(array, value) {
   var index = array.indexOf(value);
@@ -20,8 +21,8 @@ function arrayRemove(array, value) {
 }
 
 class Scheduler {
-  constructor(audioContext, options = {}) {
-    this.audioContext = audioContext;
+  constructor(options = {}) {
+    this.audioContext = options.audioContext || defaultAudioContext;
 
     this.__queue = new PriorityQueue();
     this.__engines = [];

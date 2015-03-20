@@ -72,8 +72,8 @@ class SegmentEngine extends TimeEngine {
    * (controlled by the periodAbs, periodRel, and perioVar attributes).
    * When "transported", the engine generates segments at the position of their onset time.
    */
-  constructor(audioContext, options = {}) {
-    super(audioContext);
+  constructor(options = {}) {
+    super(options.audioContext);
 
     /**
      * Audio buffer
@@ -205,7 +205,7 @@ class SegmentEngine extends TimeEngine {
     this.cyclic = options.cyclic || false;
     this.__cyclicOffset = 0;
 
-    this.__gainNode = audioContext.createGain();
+    this.__gainNode = this.audioContext.createGain();
     this.__gainNode.gain.value = options.gain || 1;
 
     this.outputNode = this.__gainNode;

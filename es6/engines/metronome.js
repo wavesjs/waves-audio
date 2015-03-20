@@ -8,8 +8,8 @@
 var TimeEngine = require("../core/time-engine");
 
 class Metronome extends TimeEngine {
-  constructor(audioContext, options = {}) {
-    super(audioContext);
+  constructor(options = {}) {
+    super(options.audioContext);
 
     /**
      * Metronome period in sec

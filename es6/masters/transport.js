@@ -250,18 +250,12 @@ class TransportSchedulerHook extends TimeEngine {
 }
 
 /**
- * xxx
- *
- *
+ * Transport class
  */
 class Transport extends TimeEngine {
-  constructor(audioContext, options = {}) {
-    super(audioContext);
+  constructor(options = {}) {
+    super(options.audioContext);
 
-    // future assignment
-    // this.scheduler = waves.getScheduler(audioContext);
-    // this.scheduler = require("scheduler");
-    // test
     this.scheduler = getScheduler(this.audioContext);
 
     this.__engines = [];

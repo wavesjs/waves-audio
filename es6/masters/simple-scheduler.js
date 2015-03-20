@@ -18,8 +18,8 @@ function arrayRemove(array, value) {
 }
 
 class SimpleScheduler {
-  constructor(audioContext, options = {}) {
-    this.audioContext = audioContext;
+  constructor(options = {}) {
+    this.audioContext = options.audioContext || defaultAudioContext;
 
     this.__engines = [];
 

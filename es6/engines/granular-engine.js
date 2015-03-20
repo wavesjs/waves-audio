@@ -19,8 +19,8 @@ class GranularEngine extends TimeEngine {
    * The grain position (grain onset or center time in the audio buffer) is optionally
    * determined by the engine's currentPosition attribute.
    */
-  constructor(audioContext,options = {}) {
-    super(audioContext);
+  constructor(options = {}) {
+    super(options.audioContext);
 
     /**
      * Audio buffer
