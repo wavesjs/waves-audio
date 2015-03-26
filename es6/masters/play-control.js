@@ -6,7 +6,9 @@
 'use strict';
 
 var TimeEngine = require("../core/time-engine");
-var { getScheduler } = require('./factories');
+var {
+  getScheduler
+} = require('./factories');
 
 class PlayControlSchedulerHook extends TimeEngine {
   constructor(playControl) {
@@ -176,6 +178,10 @@ class PlayControl extends TimeEngine {
       if (this.__loopStart > -Infinity && this.__loopEnd < Infinity) {
         this.__loopControl = new PlayControlLoopControl(this);
         this.scheduler.add(this.__loopControl, Infinity);
+        
+        var speed = this.__speed;
+        if (speed !== 0)
+          this.__rescheduleLoopControl(this.__position, speed);
       }
     } else if (this.__loopControl) {
       this.scheduler.remove(this.__loopControl);
