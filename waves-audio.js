@@ -4,6 +4,7 @@ var wavesAudio = {
   // core
   audioContext: require('./dist/core/audio-context'),
   TimeEngine: require('./dist/core/time-engine'),
+  AudioTimeEngine: require('./dist/core/audio-time-engine'),
   // engines
   GranularEngine: require('./dist/engines/granular-engine'),
   Metronome: require('./dist/engines/metronome'),
@@ -17,6 +18,7 @@ var wavesAudio = {
   SimpleScheduler: require('./dist/masters/simple-scheduler'),
   // utils
   PriorityQueue: require('./dist/utils/priority-queue'),
+  SchedulingQueue: require('./dist/utils/scheduling-queue'),
   // factories
   getScheduler: require('./dist/masters/factories').getScheduler,
   getSimpleScheduler: require('./dist/masters/factories').getSimpleScheduler
