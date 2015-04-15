@@ -1,15 +1,17 @@
-/* written in ECMAscript 6 */
-/**
- * @fileoverview WAVE audio transport class (time-engine master), provides synchronized scheduling of time engines
- * @author Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
- */
 'use strict';
 
+var defaultAudioContext = require("../core/audio-context");
 var TimeEngine = require("../core/time-engine");
 var PriorityQueue = require("../utils/priority-queue");
-var { getScheduler } = require('./factories');
+var SchedulingQueue = require("../utils/scheduling-queue");
+var getScheduler = require('./factories').getScheduler;
 
-function removeCouple(firstArray, secondArray, firstElement) {
+function addDuplet(firstArray, secondArray, firstElement, secondElement) {
+  firstArray.push(firstElement);
+  secondArray.push(secondElement);
+}
+
+function removeDuplet(firstArray, secondArray, firstElement) {
   var index = firstArray.indexOf(firstElement);
 
   if (index >= 0) {
@@ -24,10 +26,17 @@ function removeCouple(firstArray, secondArray, firstElement) {
   return null;
 }
 
+// The Transported call is the base class of the adapters between 
+// different types of engines (i.e. transported, scheduled, play-controlled)
+// The adapters are at the same time masters for the engines added to the transport 
+// and transported TimeEngines inserted into the transport's position-based pritority queue.
 class Transported extends TimeEngine {
   constructor(transport, engine, startPosition, endPosition, offsetPosition) {
-    this.__transport = transport;
+    this.master = transport;
+
+    engine.master = this;
     this.__engine = engine;
+
     this.__startPosition = startPosition;
     this.__endPosition = endPosition;
     this.__offsetPosition = offsetPosition;
@@ -40,11 +49,26 @@ class Transported extends TimeEngine {
     this.__endPosition = endPosition;
     this.__offsetPosition = offsetPosition;
     this.__scalePosition = scalePosition;
-    this.resetNextPosition();
+    this.resetPosition();
   }
 
   start(time, position, speed) {}
   stop(time, position) {}
+
+  get currentTime() {
+    return this.master.currentTime;
+  }
+
+  get currentPosition() {
+    return this.master.currentPosition - this.__offsetPosition;
+  }
+
+  resetPosition(position) {
+    if (position !== undefined)
+      position += this.__offsetPosition;
+
+    this.master.resetEnginePosition(this, position);
+  }
 
   syncPosition(time, position, speed) {
     if (speed > 0) {
@@ -114,30 +138,17 @@ class Transported extends TimeEngine {
   }
 
   destroy() {
-    this.__transport = null;
+    this.master = null;
+    this.__engine.master = null;
     this.__engine = null;
   }
 }
 
-// TransportedScheduled has to switch on and off the scheduled engines
-// when the transport hits the engine's start and end position
+// TransportedScheduled 
+// has to switch on and off the scheduled engines when the transport hits the engine's start and end position
 class TransportedTransported extends Transported {
   constructor(transport, engine, startPosition, endPosition, offsetPosition) {
     super(transport, engine, startPosition, endPosition, offsetPosition);
-
-    engine.setTransported(this, (nextEnginePosition = null) => {
-      // resetNextPosition
-      if (nextEnginePosition !== null)
-        nextEnginePosition += this.__offsetPosition;
-
-      this.resetNextPosition(nextEnginePosition);
-    }, () => {
-      // getCurrentTime
-      return this.__transport.scheduler.currentTime;
-    }, () => {
-      // get currentPosition
-      return this.__transport.currentPosition - this.__offsetPosition;
-    });
   }
 
   syncPosition(time, position, speed) {
@@ -163,25 +174,19 @@ class TransportedTransported extends Transported {
       this.__engine.syncSpeed(time, position, speed);
   }
 
-  destroy() {
-    this.__engine.resetInterface();
-    super.destroy();
+  resetEnginePosition(engine, position) {
+    if (position !== undefined)
+      position += this.__offsetPosition;
+
+    this.resetPosition(position);
   }
 }
 
-// TransportedSpeedControlled has to start and stop the speed-controlled engines
-// when the transport hits the engine's start and end position
+// TransportedSpeedControlled 
+// has to start and stop the speed-controlled engines when the transport hits the engine's start and end position
 class TransportedSpeedControlled extends Transported {
   constructor(transport, engine, startPosition, endPosition, offsetPosition) {
     super(transport, engine, startPosition, endPosition, offsetPosition);
-
-    engine.setSpeedControlled(this, () => {
-      // getCurrentTime
-      return this.__transport.scheduler.currentTime;
-    }, () => {
-      // get currentPosition
-      return this.__transport.currentPosition - this.__offsetPosition;
-    });
   }
 
   start(time, position, speed) {
@@ -199,33 +204,28 @@ class TransportedSpeedControlled extends Transported {
 
   destroy() {
     this.__engine.syncSpeed(this.__transport.currentTime, this.__transport.currentPosition - this.__offsetPosition, 0);
-    this.__engine.resetInterface();
     super.destroy();
   }
 }
 
-// TransportedScheduled has to switch on and off the scheduled engines
-// when the transport hits the engine's start and end position
+// TransportedScheduled 
+// has to switch on and off the scheduled engines when the transport hits the engine's start and end position
 class TransportedScheduled extends Transported {
   constructor(transport, engine, startPosition, endPosition, offsetPosition) {
     super(transport, engine, startPosition, endPosition, offsetPosition);
-
-    this.__transport.scheduler.add(engine, Infinity, () => {
-      // get currentPosition
-      return (this.__transport.currentPosition - this.__offsetPosition) * this.__scalePosition;
-    });
+    this.__transport.__schedulingQueue.add(engine, Infinity);
   }
 
   start(time, position, speed) {
-    this.__engine.resetNextTime(time);
+    this.__transport.__schedulingQueue.resetEngineTime(this.__engine, time);
   }
 
   stop(time, position) {
-    this.__engine.resetNextTime(Infinity);
+    this.__transport.__schedulingQueue.resetEngineTime(this.__engine, Infinity);
   }
 
   destroy() {
-    this.__transport.scheduler.remove(this.__engine);
+    this.__transport.__schedulingQueue.remove(this.__engine);
     super.destroy();
   }
 }
@@ -233,19 +233,66 @@ class TransportedScheduled extends Transported {
 class TransportSchedulerHook extends TimeEngine {
   constructor(transport) {
     super();
+
     this.__transport = transport;
+
+    this.__nextPosition = Infinity;
+    this.__nextTime = Infinity;
+    transport.__scheduler.add(this, Infinity);
   }
 
   // TimeEngine method (scheduled interface)
   advanceTime(time) {
     var transport = this.__transport;
-    var position = transport.__getPositionAtTime(time);
-    var nextPosition = transport.advancePosition(time, position, transport.__speed);
+    var position = this.__nextPosition;
+    var speed = transport.__speed;
+    var nextPosition = transport.advancePosition(time, position, speed);
+    var nextTime = transport.__getTimeAtPosition(nextPosition);
 
-    if (nextPosition !== Infinity)
-      return transport.__getTimeAtPosition(nextPosition);
+    while (nextTime === time) {
+      nextPosition = transport.advancePosition(nextTime, nextPosition, speed);
+      nextTime = transport.__getTimeAtPosition(nextPosition);
+    }
 
-    return Infinity;
+    this.__nextPosition = nextPosition;
+    this.__nextTime = nextTime;
+    return nextTime;
+  }
+
+  resetPosition(position = this.__nextPosition) {
+    var transport = this.__transport;
+    var time = transport.__getTimeAtPosition(position);
+
+    this.__nextPosition = position;
+    this.__nextTime = time;
+    this.resetTime(time);
+  }
+
+  destroy() {
+    this.__transport.__scheduler.remove(this);
+    this.__transport = null;
+  }
+}
+
+class TransportSchedulingQueue extends SchedulingQueue {
+  constructor(transport) {
+    super();
+
+    this.__transport = transport;
+    transport.__scheduler.add(this, Infinity);
+  }
+
+  get currentTime() {
+    this.__transport.currentTime();
+  }
+
+  get currentPosition() {
+    this.__transport.currentPosition();
+  }
+
+  destroy() {
+    this.__transport.__scheduler.remove(this);
+    this.__transport = null;
   }
 }
 
@@ -254,30 +301,30 @@ class TransportSchedulerHook extends TimeEngine {
  */
 class Transport extends TimeEngine {
   constructor(options = {}) {
-    super(options.audioContext);
+    super();
 
-    this.scheduler = getScheduler(this.audioContext);
+    this.audioContext = options.audioContext || defaultAudioContext;
 
     this.__engines = [];
     this.__transported = [];
 
+    this.__scheduler = getScheduler(this.audioContext);
     this.__schedulerHook = null;
-    this.__transportQueue = new PriorityQueue();
+    this.__transportedQueue = new PriorityQueue();
+    this.__schedulingQueue = null;
 
     // syncronized time, position, and speed
     this.__time = 0;
     this.__position = 0;
     this.__speed = 0;
-
-    this.__nextPosition = Infinity;
-  }
-
-  __getPositionAtTime(time) {
-    return this.__position + (time - this.__time) * this.__speed;
   }
 
   __getTimeAtPosition(position) {
     return this.__time + (position - this.__position) / this.__speed;
+  }
+
+  __getPositionAtTime(time) {
+    return this.__position + (time - this.__time) * this.__speed;
   }
 
   __syncTransportedPosition(time, position, speed) {
@@ -287,18 +334,18 @@ class Transport extends TimeEngine {
     if (numTransportedEngines > 0) {
       var engine, nextEnginePosition;
 
-      this.__transportQueue.clear();
-      this.__transportQueue.reverse = (speed < 0);
+      this.__transportedQueue.clear();
+      this.__transportedQueue.reverse = (speed < 0);
 
       for (var i = numTransportedEngines - 1; i > 0; i--) {
         engine = this.__transported[i];
         nextEnginePosition = engine.syncPosition(time, position, speed);
-        this.__transportQueue.insert(engine, nextEnginePosition, false); // insert but don't sort
+        this.__transportedQueue.insert(engine, nextEnginePosition, false); // insert but don't sort
       }
 
       engine = this.__transported[0];
       nextEnginePosition = engine.syncPosition(time, position, speed);
-      nextPosition = this.__transportQueue.insert(engine, nextEnginePosition, true); // insert and sort
+      nextPosition = this.__transportedQueue.insert(engine, nextEnginePosition, true); // insert and sort
     }
 
     return nextPosition;
@@ -316,7 +363,7 @@ class Transport extends TimeEngine {
    * This function will be replaced when the transport is added to a master (i.e. transport or play-control).
    */
   get currentTime() {
-    return this.scheduler.currentTime;
+    return this.__scheduler.currentTime;
   }
 
   /**
@@ -326,20 +373,25 @@ class Transport extends TimeEngine {
    * This function will be replaced when the transport is added to a master (i.e. transport or play-control).
    */
   get currentPosition() {
-    return this.__position + (this.scheduler.currentTime - this.__time) * this.__speed;
+    var master = this.master;
+
+    if (master && master.currentPosition !== undefined)
+      return master.currentPosition;
+
+    return this.__position + (this.__scheduler.currentTime - this.__time) * this.__speed;
   }
 
   /**
    * Reset next transport position
    * @param {Number} next transport position
-   *
-   * This function will be replaced when the transport is added to a master (i.e. transport or play-control).
    */
-  resetNextPosition(nextPosition) {
-    if (this.__schedulerHook)
-      this.__schedulerHook.resetNextTime(this.__getTimeAtPosition(nextPosition));
+  resetPosition(position) {
+    var master = this.master;
 
-    this.__nextPosition = nextPosition;
+    if (master && master.resetEnginePosition !== undefined)
+      master.resetEnginePosition(this, position);
+    else if (this.__schedulerHook)
+      this.__schedulerHook.resetPosition(position);
   }
 
   // TimeEngine method (transported interface)
@@ -353,12 +405,21 @@ class Transport extends TimeEngine {
 
   // TimeEngine method (transported interface)
   advancePosition(time, position, speed) {
-    var nextEngine = this.__transportQueue.head;
-    var nextEnginePosition = nextEngine.advancePosition(time, position, speed);
+    var nextPosition = this.__transportedQueue.time;
 
-    this.__nextPosition = this.__transportQueue.move(nextEngine, nextEnginePosition);
+    while (nextPosition === position) {
+      var engine = this.__transportedQueue.head;
+      var nextEnginePosition = engine.advancePosition(time, position, speed);
 
-    return this.__nextPosition;
+      if (((speed > 0 && nextEnginePosition > position) || (speed < 0 && nextEnginePosition < position)) &&
+        (nextEnginePosition < Infinity && nextEnginePosition > -Infinity)) {
+        nextPosition = this.__transportedQueue.move(engine, nextEnginePosition);
+      } else {
+        nextPosition = this.__transportedQueue.remove(engine);
+      }
+    }
+
+    return nextPosition;
   }
 
   // TimeEngine method (speed-controlled interface)
@@ -370,7 +431,7 @@ class Transport extends TimeEngine {
     this.__speed = speed;
 
     if (speed !== lastSpeed || (seek && speed !== 0)) {
-      var nextPosition = this.__nextPosition;
+      var nextPosition = undefined;
 
       // resync transported engines
       if (seek || speed * lastSpeed < 0) {
@@ -378,26 +439,30 @@ class Transport extends TimeEngine {
         nextPosition = this.__syncTransportedPosition(time, position, speed);
       } else if (lastSpeed === 0) {
         // start
-        nextPosition = this.__syncTransportedPosition(time, position, speed);
 
-        // schedule transport itself
+        // create transport and scheduling queue
         this.__schedulerHook = new TransportSchedulerHook(this);
-        this.scheduler.add(this.__schedulerHook, Infinity);
+        this.__schedulingQueue = new TransportSchedulingQueue(this);
+
+        nextPosition = this.__syncTransportedPosition(time, position, speed);
       } else if (speed === 0) {
         // stop
         nextPosition = Infinity;
 
-        this.__syncTransportedSpeed(time, position, 0);
+        // destroy transport and scheduling queue
+        this.__schedulerHook.destroy();
+        this.__schedulingQueue.destroy();
 
-        // unschedule transport itself
-        this.scheduler.remove(this.__schedulerHook);
-        delete this.__schedulerHook;
+        this.__schedulerHook = null;
+        this.__schedulingQueue = null;
+
+        this.__syncTransportedSpeed(time, position, 0);
       } else {
         // change speed without reversing direction
         this.__syncTransportedSpeed(time, position, speed);
       }
 
-      this.resetNextPosition(nextPosition);
+      this.resetPosition(nextPosition);
     }
   }
 
@@ -427,34 +492,14 @@ class Transport extends TimeEngine {
     if (transported) {
       var speed = this.__speed;
 
-      this.__engines.push(engine);
-      this.__transported.push(transported);
-
-      transported.setTransported(this, (nextEnginePosition = null) => {
-        // resetNextPosition
-        var speed = this.__speed;
-
-        if (speed !== 0) {
-          if (nextEnginePosition === null)
-            nextEnginePosition = transported.syncPosition(this.currentTime, this.currentPosition, speed);
-
-          var nextPosition = this.__transportQueue.move(transported, nextEnginePosition);
-          this.resetNextPosition(nextPosition);
-        }
-      }, () => {
-        // getCurrentTime
-        return this.__transport.scheduler.currentTime;
-      }, () => {
-        // get currentPosition
-        return this.__transport.currentPosition - this.__offsetPosition;
-      });
+      addDuplet(this.__engines, this.__transported, engine, transported);
 
       if (speed !== 0) {
         // sync and start
         var nextEnginePosition = transported.syncPosition(this.currentTime, this.currentPosition, speed);
-        var nextPosition = this.__transportQueue.insert(transported, nextEnginePosition);
+        var nextPosition = this.__transportedQueue.insert(transported, nextEnginePosition);
 
-        this.resetNextPosition(nextPosition);
+        this.resetPosition(nextPosition);
       }
     }
 
@@ -467,23 +512,34 @@ class Transport extends TimeEngine {
    */
   remove(engineOrTransported) {
     var engine = engineOrTransported;
-    var transported = removeCouple(this.__engines, this.__transported, engineOrTransported);
+    var transported = removeDuplet(this.__engines, this.__transported, engineOrTransported);
 
     if (!transported) {
-      engine = removeCouple(this.__transported, this.__engines, engineOrTransported);
+      engine = removeDuplet(this.__transported, this.__engines, engineOrTransported);
       transported = engineOrTransported;
     }
 
     if (engine && transported) {
-      var nextPosition = this.__transportQueue.remove(transported);
+      var nextPosition = this.__transportedQueue.remove(transported);
 
-      transported.resetInterface();
       transported.destroy();
 
       if (this.__speed !== 0)
-        this.resetNextPosition(nextPosition);
+        this.resetPosition(nextPosition);
     } else {
       throw new Error("object has not been added to this transport");
+    }
+  }
+
+  resetEnginePosition(transported, position = undefined) {
+    var speed = this.__speed;
+
+    if (speed !== 0) {
+      if (position === undefined)
+        position = transported.syncPosition(this.currentTime, this.currentPosition, speed);
+
+      var nextPosition = this.__transportedQueue.move(transported, position);
+      this.resetPosition(nextPosition);
     }
   }
 
@@ -493,10 +549,8 @@ class Transport extends TimeEngine {
   clear() {
     this.syncSpeed(this.currentTime, this.currentPosition, 0);
 
-    for (var transported of this.__transported) {
-      transported.resetInterface();
+    for (var transported of this.__transported)
       transported.destroy();
-    }
   }
 }
 

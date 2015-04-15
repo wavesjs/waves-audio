@@ -1,9 +1,6 @@
-/* written in ECMAscript 6 */
-/**
- * @fileoverview WAVE simplified scheduler singleton based on audio time (time-engine master)
- * @author Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
- */
+'use strict';
 
+var defaultAudioContext = require("../core/audio-context");
 var TimeEngine = require("../core/time-engine");
 
 function arrayRemove(array, value) {
@@ -19,7 +16,7 @@ function arrayRemove(array, value) {
 
 class SimpleScheduler {
   constructor(options = {}) {
-    this.audioContext = options.audioContext || defaultAudioContext;
+    this.audioContext = options.audioContext ||  defaultAudioContext;
 
     this.__engines = [];
 
@@ -39,7 +36,7 @@ class SimpleScheduler {
      * scheduler lookahead time (> period)
      * @type {Number}
      */
-    this.lookahead = options.lookahead ||  0.1;
+    this.lookahead = options.lookahead || 0.1;
   }
 
   __scheduleEngine(engine, time) {
@@ -71,9 +68,12 @@ class SimpleScheduler {
 
   __resetTick() {
     if (this.__schedEngines.length > 0) {
-      if (!this.__timeout)
+      if (!this.__timeout) {
+        console.log("SimpleScheduler Start");
         this.__tick();
+      }
     } else if (this.__timeout) {
+      console.log("SimpleScheduler Stop");
       clearTimeout(this.__timeout);
       this.__timeout = null;
     }
@@ -99,8 +99,10 @@ class SimpleScheduler {
         this.__unscheduleEngine(engine);
 
         // remove engine from scheduler
-        if (!time && arrayRemove(this.__engines, engine))
-          engine.resetInterface();
+        if (!time) {
+          engine.master = null;
+          arrayRemove(this.__engines, engine);
+        }
       }
     }
 
@@ -114,93 +116,51 @@ class SimpleScheduler {
     }
   }
 
-  /**
-   * Get scheduler time
-   * @return {Number} current scheduler time including lookahead
-   */
   get currentTime() {
     return this.__currentTime || this.audioContext.currentTime + this.lookahead;
   }
 
-  /**
-   * Add a callback to the scheduler
-   * @param {Function} callback function(time) to be called
-   * @param {Number} time of first callback (default is now)
-   * @param {Number} period callback period (default is 0 for one-shot)
-   * @return {Object} scheduled object that can be used to call remove and reset
-   */
-  callback(callbackFunction, time = this.currentTime) {
-    var engineWrapper = {
-      advanceTime: callbackFunction
-    };
-
-    this.__scheduleEngine(engineWrapper, time);
-    this.__resetTick();
-
-    return engineWrapper;
+  get currentPosition() {
+    return undefined;
   }
 
-  /**
-   * Add a time engine to the scheduler
-   * @param {Object} engine time engine to be added to the scheduler
-   * @param {Number} time scheduling time
-   */
-  add(engine, time = this.currentTime, getCurrentPosition = null) {
-    if (engine instanceof Function) {
-      // construct minimal scheduled time engine
+  add(engineOrFunction, time = this.currentTime, getCurrentPosition = null) {
+    var engine = engineOrFunction;
+
+    if (engineOrFunction instanceof Function)
       engine = {
-        advanceTime: engine
+        advanceTime: engineOrFunction
       };
-    } else {
-      if (!engine.implementsScheduled())
-        throw new Error("object cannot be added to scheduler");
+    else if (!engineOrFunction.implementsScheduled())
+      throw new Error("object cannot be added to scheduler");
+    else if (engineOrFunction.master)
+      throw new Error("object has already been added to a master");
 
-      if (engine.master)
-        throw new Error("object has already been added to a master");
+    // set master and add to array
+    engine.master = this;
+    this.__engines.push(engine);
 
-      // register engine
-      this.__engines.push(engine);
-
-      // set scheduled interface
-      engine.setScheduled(this, (time) => {
-        this.__rescheduleEngine(engine, time);
-        this.__resetTick();
-      }, () => {
-        return this.currentTime;
-      }, getCurrentPosition);
-    }
-
+    // schedule engine
     this.__scheduleEngine(engine, time);
     this.__resetTick();
 
     return engine;
   }
 
-  /**
-   * Remove a scheduled time engine or callback from the scheduler
-   * @param {Object} engine time engine or callback to be removed from the scheduler
-   */
   remove(engine) {
-    var master = engine.master;
+    if (!engine.master || engine.master !== this)
+      throw new Error("engine has not been added to this scheduler");
 
-    if (master) {
-      if (master !== this)
-        throw new Error("object has not been added to this scheduler");
+    // reset master and remove from array
+    engine.master = null;
+    arrayRemove(this.__engines, engine);
 
-      engine.resetInterface();
-      arrayRemove(this.__engines, engine);
-    }
-
+    // unschedule engine
     this.__unscheduleEngine(engine);
     this.__resetTick();
   }
 
-  /**
-   * Reschedule a scheduled time engine or callback
-   * @param {Object} engine time engine or callback to be rescheduled
-   * @param {Number} time time when to reschedule
-   */
-  reset(engine, time) {
+  resetEngineTime(engine, time = this.currentTime) {
     this.__rescheduleEngine(engine, time);
     this.__resetTick();
   }
