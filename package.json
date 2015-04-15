@@ -2,6 +2,13 @@
   "name": "waves-audio",
   "version": "0.1.1",
   "description": "'Audio section of the wavesjs library'",
+  "authors": [
+    "Norbert Schnell",
+    "Benjamin Matuszewski",
+    "Victor Saiz",
+    "Karim Barkati",
+    "Samuel Goldszmidt"
+  ],
   "main": "waves-audio.js",
   "standalone": "wavesAudio",
   "scripts": {
