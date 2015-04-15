@@ -1,4 +1,10 @@
 // monkeypatch old webAudioAPI
 require('./ac-monkeypatch');
+
 // exposes a single instance
-module.exports = new AudioContext();
+var audioContext;
+
+if(AudioContext)
+  audioContext = new AudioContext();
+
+module.exports = audioContext;
