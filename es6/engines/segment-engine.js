@@ -1,11 +1,6 @@
-/* written in ECMAscript 6 */
-/**
- * @fileoverview WAVE audio sound segment engine
- * @author Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
- */
-"use strict";
+'use strict';
 
-var TimeEngine = require("../core/time-engine");
+var AudioTimeEngine = require("../core/audio-time-engine");
 
 function getCurrentOrPreviousIndex(sortedArray, value, index = 0) {
   var size = sortedArray.length;
@@ -62,7 +57,7 @@ function getCurrentOrNextIndex(sortedArray, value, index = 0) {
 /**
  * @class SegmentEngine
  */
-class SegmentEngine extends TimeEngine {
+class SegmentEngine extends AudioTimeEngine {
   /**
    * @constructor
    * @param {AudioBuffer} buffer initial audio buffer for granular synthesis
@@ -85,13 +80,13 @@ class SegmentEngine extends TimeEngine {
      * Absolute segment period in sec
      * @type {Number}
      */
-    this.periodAbs = options.periodAbs || 0.1;
+    this.periodAbs = options.periodAbs || 0;
 
     /**
      * Segment period relative to inter-segment distance
      * @type {Number}
      */
-    this.periodRel = options.periodRel || 0;
+    this.periodRel = options.periodRel || 1;
 
     /**
      * Amout of random segment period variation relative to segment period
@@ -193,7 +188,13 @@ class SegmentEngine extends TimeEngine {
     this.resamplingVar = options.resamplingVar || 0;
 
     /**
-     * Index of
+     * Linear gain factor
+     * @type {Number}
+     */
+    this.gain = options.gain || 1;
+
+    /**
+     * Index of the segment to synthesize (i.e. of this.positionArray/durationArray/offsetArray)
      * @type {Number}
      */
     this.segmentIndex = options.segmentIndex || 0;
@@ -205,24 +206,26 @@ class SegmentEngine extends TimeEngine {
     this.cyclic = options.cyclic || false;
     this.__cyclicOffset = 0;
 
-    this.__gainNode = this.audioContext.createGain();
-    this.__gainNode.gain.value = options.gain || 1;
+    /**
+     * Portion at the end of the audio buffer that has been copied from the beginning to assure cyclic behavior
+     * @type {Number}
+     */
+    this.wrapAroundExtension = options.wrapAroundExtension || 0;
 
-    this.outputNode = this.__gainNode;
+    this.outputNode = this.audioContext.createGain();
   }
 
   get bufferDuration() {
     var bufferDuration = this.buffer.duration;
 
-    if (this.buffer.wrapAroundExtention)
-      bufferDuration -= this.buffer.wrapAroundExtention;
+    if (this.wrapAroundExtension)
+      bufferDuration -= this.wrapAroundExtension;
 
     return bufferDuration;
   }
 
   // TimeEngine method (transported interface)
-  advanceTime(time, position, speed) {
-    time = Math.max(time, this.currentTime);
+  advanceTime(time) {
     return time + this.trigger(time);
   }
 
@@ -305,22 +308,6 @@ class SegmentEngine extends TimeEngine {
   }
 
   /**
-   * Set gain
-   * @param {Number} value linear gain factor
-   */
-  set gain(value) {
-    this.__gainNode.gain.value = value;
-  }
-
-  /**
-   * Get gain
-   * @return {Number} current gain
-   */
-  get gain() {
-    return this.__gainNode.gain.value;
-  }
-
-  /**
    * Trigger a segment
    * @param {Number} time segment synthesis audio time
    * @return {Number} period to next segment
@@ -333,7 +320,7 @@ class SegmentEngine extends TimeEngine {
     var segmentTime = (time || audioContext.currentTime) + this.delay;
     var segmentPeriod = this.periodAbs;
     var segmentIndex = this.segmentIndex;
-
+ 
     if (this.buffer) {
       var segmentPosition = 0.0;
       var segmentDuration = 0.0;
@@ -449,8 +436,6 @@ class SegmentEngine extends TimeEngine {
         var segmentEndTime = segmentTime + segmentDuration;
         var releaseStartTime = segmentEndTime - release;
 
-        envelopeNode.gain.value = this.gain;
-
         envelopeNode.gain.setValueAtTime(0.0, segmentTime);
         envelopeNode.gain.linearRampToValueAtTime(this.gain, attackEndTime);
 
@@ -458,7 +443,7 @@ class SegmentEngine extends TimeEngine {
           envelopeNode.gain.setValueAtTime(this.gain, releaseStartTime);
 
         envelopeNode.gain.linearRampToValueAtTime(0.0, segmentEndTime);
-        envelopeNode.connect(this.__gainNode);
+        envelopeNode.connect(this.outputNode);
 
         // make source
         var source = audioContext.createBufferSource();
@@ -466,7 +451,6 @@ class SegmentEngine extends TimeEngine {
         source.buffer = this.buffer;
         source.playbackRate.value = resamplingRate;
         source.connect(envelopeNode);
-        envelopeNode.connect(this.__gainNode);
 
         source.start(segmentTime, segmentPosition);
         source.stop(segmentTime + segmentDuration / resamplingRate);

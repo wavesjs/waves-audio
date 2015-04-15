@@ -1,13 +1,8 @@
-/* written in ECMAscript 6 */
-/**
- * @fileoverview WAVE audio player engine
- * @author Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
- */
-"use strict";
+'use strict';
 
-var TimeEngine = require("../core/time-engine");
+var AudioTimeEngine = require("../core/audio-time-engine");
 
-class PlayerEngine extends TimeEngine {
+class PlayerEngine extends AudioTimeEngine {
   constructor(options = {}) {
     super(options.audioContext);
 
@@ -38,6 +33,12 @@ class PlayerEngine extends TimeEngine {
     this.__gainNode = this.audioContext.createGain();
     this.__gainNode.gain.value = options.gain || 1;
 
+    /**
+     * Portion at the end of the audio buffer that has been copied from the beginning to assure cyclic behavior
+     * @type {Number}
+     */
+    this.wrapAroundExtension = options.wrapAroundExtension || 0;
+
     this.outputNode = this.__gainNode;
   }
 
@@ -47,8 +48,8 @@ class PlayerEngine extends TimeEngine {
     if (this.buffer) {
       var bufferDuration = this.buffer.duration;
 
-      if (this.buffer.wrapAroundExtension)
-        bufferDuration -= this.buffer.wrapAroundExtension;
+      if (this.wrapAroundExtension)
+        bufferDuration -= this.wrapAroundExtension;
 
       if (this.__cyclic && (position < 0 || position >= bufferDuration)) {
         var phase = position / bufferDuration;

@@ -1,16 +1,11 @@
-/* written in ECMAscript 6 */
-/**
- * @fileoverview WAVE audio granular synthesis engine
- * @author Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
- */
-"use strict";
+'use strict';
 
-var TimeEngine = require("../core/time-engine");
+var AudioTimeEngine = require("../core/audio-time-engine");
 
 /**
  * @class GranularEngine
  */
-class GranularEngine extends TimeEngine {
+class GranularEngine extends AudioTimeEngine {
   /**
    * @constructor
    * @param {AudioBuffer} buffer initial audio buffer for granular synthesis
@@ -119,10 +114,16 @@ class GranularEngine extends TimeEngine {
     this.resampling = options.resampling || 0;
 
     /**
-     * Linear gain factor
+     * Amout of random resampling variation in cent
      * @type {Number}
      */
     this.resamplingVar = options.resamplingVar || 0;
+
+    /**
+     * Linear gain factor
+     * @type {Number}
+     */
+    this.gain = options.gain || 1;
 
     /**
      * Whether the grain position refers to the center of the grain (or the beginning)
@@ -136,50 +137,37 @@ class GranularEngine extends TimeEngine {
      */
     this.cyclic = options.cyclic || false;
 
-    this.__gainNode = this.audioContext.createGain();
-    this.__gainNode.gain.value = options.gain || 1;
+    /**
+     * Portion at the end of the audio buffer that has been copied from the beginning to assure cyclic behavior
+     * @type {Number}
+     */
+    this.wrapAroundExtension = options.wrapAroundExtension || 0;
 
-    this.outputNode = this.__gainNode;
+    this.outputNode = this.audioContext.createGain();
   }
 
   get bufferDuration() {
     var bufferDuration = this.buffer.duration;
 
-    if (this.buffer.wrapAroundExtention)
-      bufferDuration -= this.buffer.wrapAroundExtention;
+    if (this.wrapAroundExtension)
+      bufferDuration -= this.wrapAroundExtension;
 
     return bufferDuration;
   }
 
   // TimeEngine attribute
   get currentPosition() {
+    var master = this.master;
+
+    if (master && master.currentPosition !== undefined)
+      return master.currentPosition;
+
     return this.position;
   }
 
   // TimeEngine method (scheduled interface)
   advanceTime(time) {
-    time = Math.max(time, this.currentTime);
     return time + this.trigger(time);
-  }
-
-  get playbackLength() {
-    return this.bufferDuration;
-  }
-
-  /**
-   * Set gain
-   * @param {Number} value linear gain factor
-   */
-  set gain(value) {
-    this.__gainNode.gain.value = value;
-  }
-
-  /**
-   * Get gain
-   * @return {Number} current gain
-   */
-  get gain() {
-    return this.__gainNode.gain.value;
   }
 
   /**
@@ -190,8 +178,9 @@ class GranularEngine extends TimeEngine {
    * This function can be called at any time (whether the engine is scheduled or not)
    * to generate a single grain according to the current grain parameters.
    */
-  trigger(time, outputNode = this.outputNode) {
+  trigger(time) {
     var audioContext = this.audioContext;
+    var now = audioContext.currentTime;
     var grainTime = time || audioContext.currentTime;
     var grainPeriod = this.periodAbs;
     var grainPosition = this.currentPosition;
@@ -262,14 +251,14 @@ class GranularEngine extends TimeEngine {
 
         if (this.attackShape === 'lin') {
           envelopeNode.gain.setValueAtTime(0.0, grainTime);
-          envelopeNode.gain.linearRampToValueAtTime(1.0, attackEndTime);
+          envelopeNode.gain.linearRampToValueAtTime(this.gain, attackEndTime);
         } else {
           envelopeNode.gain.setValueAtTime(this.expRampOffset, grainTime);
-          envelopeNode.gain.exponentialRampToValueAtTime(1.0, attackEndTime);
+          envelopeNode.gain.exponentialRampToValueAtTime(this.gain, attackEndTime);
         }
 
         if (releaseStartTime > attackEndTime)
-          envelopeNode.gain.setValueAtTime(1.0, releaseStartTime);
+          envelopeNode.gain.setValueAtTime(this.gain, releaseStartTime);
 
         if (this.releaseShape === 'lin') {
           envelopeNode.gain.linearRampToValueAtTime(0.0, grainEndTime);
@@ -277,7 +266,7 @@ class GranularEngine extends TimeEngine {
           envelopeNode.gain.exponentialRampToValueAtTime(this.expRampOffset, grainEndTime);
         }
 
-        envelopeNode.connect(outputNode);
+        envelopeNode.connect(this.outputNode);
 
         // make source
         var source = audioContext.createBufferSource();

@@ -1,21 +1,16 @@
-/* written in ECMAscript 6 */
-/**
- * @fileoverview WAVE audio metronome engine
- * @author Norbert.Schnell@ircam.fr, Victor.Saiz@ircam.fr, Karim.Barkati@ircam.fr
- */
-"use strict";
+'use strict';
 
-var TimeEngine = require("../core/time-engine");
+var AudioTimeEngine = require("../core/audio-time-engine");
 
-class Metronome extends TimeEngine {
+class Metronome extends AudioTimeEngine {
   constructor(options = {}) {
     super(options.audioContext);
 
     /**
-     * Metronome period in sec
+     * Metronome period
      * @type {Number}
      */
-    this.period = options.period || 1;
+    this.__period = options.period || 1;
 
     /**
      * Metronome click frequency
@@ -35,6 +30,7 @@ class Metronome extends TimeEngine {
      */
     this.clickRelease = options.clickRelease || 0.098;
 
+    this.__lastTime = 0;
     this.__phase = 0;
 
     this.__gainNode = this.audioContext.createGain();
@@ -46,19 +42,24 @@ class Metronome extends TimeEngine {
   // TimeEngine method (scheduled interface)
   advanceTime(time) {
     this.trigger(time);
-    return time + this.period;
+    this.__lastTime = time;
+    return time + this.__period;
   }
 
   // TimeEngine method (transported interface)
   syncPosition(time, position, speed) {
-    var nextPosition = (Math.floor(position / this.period) + this.__phase) * this.period;
+    if (this.__period > 0) {
+      var nextPosition = (Math.floor(position / this.__period) + this.__phase) * this.__period;
 
-    if (speed > 0 && nextPosition < position)
-      nextPosition += this.period;
-    else if (speed < 0 && nextPosition > position)
-      nextPosition -= this.period;
+      if (speed > 0 && nextPosition < position)
+        nextPosition += this.__period;
+      else if (speed < 0 && nextPosition > position)
+        nextPosition -= this.__period;
 
-    return nextPosition;
+      return nextPosition;
+    }
+
+    return Infinity;
   }
 
   // TimeEngine method (transported interface)
@@ -66,9 +67,9 @@ class Metronome extends TimeEngine {
     this.trigger(time);
 
     if (speed < 0)
-      return position - this.period;
+      return position - this.__period;
 
-    return position + this.period;
+    return position + this.__period;
   }
 
   /**
@@ -79,27 +80,20 @@ class Metronome extends TimeEngine {
     var audioContext = this.audioContext;
     var clickAttack = this.clickAttack;
     var clickRelease = this.clickRelease;
-    var period = this.period;
 
-    if (period < (clickAttack + clickRelease)) {
-      var scale = period / (clickAttack + clickRelease);
-      clickAttack *= scale;
-      clickRelease *= scale;
-    }
+    var env = audioContext.createGain();
+    env.gain.value = 0.0;
+    env.gain.setValueAtTime(0, time);
+    env.gain.linearRampToValueAtTime(1.0, time + clickAttack);
+    env.gain.exponentialRampToValueAtTime(0.0000001, time + clickAttack + clickRelease);
+    env.gain.setValueAtTime(0, time);
+    env.connect(this.outputNode);
 
-    this.__envNode = audioContext.createGain();
-    this.__envNode.gain.value = 0.0;
-    this.__envNode.gain.setValueAtTime(0, time);
-    this.__envNode.gain.linearRampToValueAtTime(1.0, time + clickAttack);
-    this.__envNode.gain.exponentialRampToValueAtTime(0.0000001, time + clickAttack + clickRelease);
-    this.__envNode.gain.setValueAtTime(0, time);
-    this.__envNode.connect(this.__gainNode);
-
-    this.__osc = audioContext.createOscillator();
-    this.__osc.frequency.value = this.clickFreq;
-    this.__osc.start(0);
-    this.__osc.stop(time + clickAttack + clickRelease);
-    this.__osc.connect(this.__envNode);
+    var osc = audioContext.createOscillator();
+    osc.frequency.value = this.clickFreq;
+    osc.start(time);
+    osc.stop(time + clickAttack + clickRelease);
+    osc.connect(env);
   }
 
   /**
@@ -119,12 +113,41 @@ class Metronome extends TimeEngine {
   }
 
   /**
-   * Set phase parameter
-   * @param {Number} phase metronome phase (0...1)
+   * Set period parameter
+   * @param {Number} period metronome period
+   */
+  set period(period) {
+    this.__period = period;
+
+    var master = this.master;
+
+    if (master) {
+      if (master.resetEngineTime)
+        master.resetEngineTime(this, this.__lastTime + period);
+      else if (master.resetEnginePosition)
+        this.resetEnginePosition(this);
+    }
+  }
+
+  /**
+   * Get period parameter
+   * @return {Number} value of period parameter
+   */
+  get period() {
+    return this.__period;
+  }
+
+  /**
+   * Set phase parameter (available only when 'transported')
+   * @param {Number} phase metronome phase [0, 1[
    */
   set phase(phase) {
     this.__phase = phase - Math.floor(phase);
-    this.resetNextPosition();
+
+    var master = this.master;
+
+    if (master && master.resetEnginePosition !== undefined)
+      master.resetEnginePosition(this);
   }
 
   /**
