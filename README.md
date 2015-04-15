@@ -69,6 +69,7 @@ npm run bundle
 
 - `audioContext`
 - `TimeEngine`
+- `AudioTimeEngine`
 
 #### utils
 
