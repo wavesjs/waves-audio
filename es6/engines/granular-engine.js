@@ -119,7 +119,7 @@ class GranularEngine extends TimeEngine {
     this.resampling = options.resampling || 0;
 
     /**
-     * Amout of random resampling variation in cent
+     * Linear gain factor
      * @type {Number}
      */
     this.resamplingVar = options.resamplingVar || 0;
@@ -158,6 +158,7 @@ class GranularEngine extends TimeEngine {
 
   // TimeEngine method (scheduled interface)
   advanceTime(time) {
+    time = Math.max(time, this.currentTime);
     return time + this.trigger(time);
   }
 

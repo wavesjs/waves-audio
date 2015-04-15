@@ -222,6 +222,7 @@ class SegmentEngine extends TimeEngine {
 
   // TimeEngine method (transported interface)
   advanceTime(time, position, speed) {
+    time = Math.max(time, this.currentTime);
     return time + this.trigger(time);
   }
 
@@ -321,15 +322,15 @@ class SegmentEngine extends TimeEngine {
 
   /**
    * Trigger a segment
-   * @param {Number} audioTime segment synthesis audio time
+   * @param {Number} time segment synthesis audio time
    * @return {Number} period to next segment
    *
    * This function can be called at any time (whether the engine is scheduled/transported or not)
    * to generate a single segment according to the current segment parameters.
    */
-  trigger(audioTime) {
+  trigger(time) {
     var audioContext = this.audioContext;
-    var segmentTime = audioTime || audioContext.currentTime + this.delay;
+    var segmentTime = (time || audioContext.currentTime) + this.delay;
     var segmentPeriod = this.periodAbs;
     var segmentIndex = this.segmentIndex;
 
