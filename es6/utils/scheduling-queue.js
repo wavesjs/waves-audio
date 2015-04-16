@@ -86,8 +86,6 @@ class SchedulingQueue extends TimeEngine {
 
   // reset next engine time
   resetEngineTime(engine, time) {
-    //time = Math.max(time, this.currentTime);
-
     var nextTime = this.__queue.move(engine, time);
     this.resetTime(nextTime);
   }

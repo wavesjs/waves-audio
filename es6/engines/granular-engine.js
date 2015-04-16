@@ -167,6 +167,7 @@ class GranularEngine extends AudioTimeEngine {
 
   // TimeEngine method (scheduled interface)
   advanceTime(time) {
+    time = Math.max(time, this.audioContext.currentTime);
     return time + this.trigger(time);
   }
 
@@ -180,7 +181,6 @@ class GranularEngine extends AudioTimeEngine {
    */
   trigger(time) {
     var audioContext = this.audioContext;
-    var now = audioContext.currentTime;
     var grainTime = time || audioContext.currentTime;
     var grainPeriod = this.periodAbs;
     var grainPosition = this.currentPosition;
@@ -235,7 +235,7 @@ class GranularEngine extends AudioTimeEngine {
       // make grain
       if (this.gain > 0 && grainDuration >= 0.001) {
         // make grain envelope
-        var envelopeNode = audioContext.createGain();
+        var envelope = audioContext.createGain();
         var attack = this.attackAbs + this.attackRel * grainDuration;
         var release = this.releaseAbs + this.releaseRel * grainDuration;
 
@@ -249,31 +249,33 @@ class GranularEngine extends AudioTimeEngine {
         var grainEndTime = grainTime + grainDuration;
         var releaseStartTime = grainEndTime - release;
 
+        envelope.gain.value = 0;
+
         if (this.attackShape === 'lin') {
-          envelopeNode.gain.setValueAtTime(0.0, grainTime);
-          envelopeNode.gain.linearRampToValueAtTime(this.gain, attackEndTime);
+          envelope.gain.setValueAtTime(0.0, grainTime);
+          envelope.gain.linearRampToValueAtTime(this.gain, attackEndTime);
         } else {
-          envelopeNode.gain.setValueAtTime(this.expRampOffset, grainTime);
-          envelopeNode.gain.exponentialRampToValueAtTime(this.gain, attackEndTime);
+          envelope.gain.setValueAtTime(this.expRampOffset, grainTime);
+          envelope.gain.exponentialRampToValueAtTime(this.gain, attackEndTime);
         }
 
         if (releaseStartTime > attackEndTime)
-          envelopeNode.gain.setValueAtTime(this.gain, releaseStartTime);
+          envelope.gain.setValueAtTime(this.gain, releaseStartTime);
 
         if (this.releaseShape === 'lin') {
-          envelopeNode.gain.linearRampToValueAtTime(0.0, grainEndTime);
+          envelope.gain.linearRampToValueAtTime(0.0, grainEndTime);
         } else {
-          envelopeNode.gain.exponentialRampToValueAtTime(this.expRampOffset, grainEndTime);
+          envelope.gain.exponentialRampToValueAtTime(this.expRampOffset, grainEndTime);
         }
 
-        envelopeNode.connect(this.outputNode);
+        envelope.connect(this.outputNode);
 
         // make source
         var source = audioContext.createBufferSource();
 
         source.buffer = this.buffer;
         source.playbackRate.value = resamplingRate;
-        source.connect(envelopeNode);
+        source.connect(envelope);
 
         source.start(grainTime, grainPosition);
         source.stop(grainTime + grainDuration / resamplingRate);

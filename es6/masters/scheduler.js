@@ -57,7 +57,7 @@ class Scheduler extends SchedulingQueue {
         if (this.__nextTime === Infinity)
           console.log("Scheduler Start");
 
-        var timeOutDelay = Math.max((time - this.audioContext.currentTime - this.lookahead), this.period);
+        var timeOutDelay = Math.max((time - this.lookahead - this.audioContext.currentTime), this.period);
 
         this.__timeout = setTimeout(() => {
           this.__tick();

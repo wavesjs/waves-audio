@@ -431,7 +431,7 @@ class Transport extends TimeEngine {
     this.__speed = speed;
 
     if (speed !== lastSpeed || (seek && speed !== 0)) {
-      var nextPosition = undefined;
+      var nextPosition;
 
       // resync transported engines
       if (seek || speed * lastSpeed < 0) {

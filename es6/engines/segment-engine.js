@@ -226,6 +226,7 @@ class SegmentEngine extends AudioTimeEngine {
 
   // TimeEngine method (transported interface)
   advanceTime(time) {
+    time = Math.max(time, this.audioContext.currentTime);
     return time + this.trigger(time);
   }
 
@@ -422,7 +423,7 @@ class SegmentEngine extends AudioTimeEngine {
       // make segment
       if (this.gain > 0 && segmentDuration > 0) {
         // make segment envelope
-        var envelopeNode = audioContext.createGain();
+        var envelope = audioContext.createGain();
         var attack = this.attackAbs + this.attackRel * segmentDuration;
         var release = this.releaseAbs + this.releaseRel * segmentDuration;
 
@@ -436,21 +437,21 @@ class SegmentEngine extends AudioTimeEngine {
         var segmentEndTime = segmentTime + segmentDuration;
         var releaseStartTime = segmentEndTime - release;
 
-        envelopeNode.gain.setValueAtTime(0.0, segmentTime);
-        envelopeNode.gain.linearRampToValueAtTime(this.gain, attackEndTime);
+        envelope.gain.setValueAtTime(0.0, segmentTime);
+        envelope.gain.linearRampToValueAtTime(this.gain, attackEndTime);
 
         if (releaseStartTime > attackEndTime)
-          envelopeNode.gain.setValueAtTime(this.gain, releaseStartTime);
+          envelope.gain.setValueAtTime(this.gain, releaseStartTime);
 
-        envelopeNode.gain.linearRampToValueAtTime(0.0, segmentEndTime);
-        envelopeNode.connect(this.outputNode);
+        envelope.gain.linearRampToValueAtTime(0.0, segmentEndTime);
+        envelope.connect(this.outputNode);
 
         // make source
         var source = audioContext.createBufferSource();
 
         source.buffer = this.buffer;
         source.playbackRate.value = resamplingRate;
-        source.connect(envelopeNode);
+        source.connect(envelope);
 
         source.start(segmentTime, segmentPosition);
         source.stop(segmentTime + segmentDuration / resamplingRate);
