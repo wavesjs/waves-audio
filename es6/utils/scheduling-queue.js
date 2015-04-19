@@ -37,7 +37,7 @@ class SchedulingQueue extends TimeEngine {
   advanceTime(time) {
     var nextTime = this.__queue.time;
 
-    while (nextTime === time) {
+    while (nextTime <= time) {
       var engine = this.__queue.head;
       var nextEngineTime = engine.advanceTime(time);
 
@@ -85,7 +85,7 @@ class SchedulingQueue extends TimeEngine {
   }
 
   // reset next engine time
-  resetEngineTime(engine, time) {
+  resetEngineTime(engine, time = this.currentTime) {
     var nextTime = this.__queue.move(engine, time);
     this.resetTime(nextTime);
   }
