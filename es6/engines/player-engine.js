@@ -2,6 +2,13 @@
 
 var AudioTimeEngine = require("../core/audio-time-engine");
 
+function optOrDef(opt, def) {
+  if(opt !== undefined)
+    return opt;
+
+  return def;
+}
+
 class PlayerEngine extends AudioTimeEngine {
   constructor(options = {}) {
     super(options.audioContext);
@@ -12,32 +19,25 @@ class PlayerEngine extends AudioTimeEngine {
      * Audio buffer
      * @type {AudioBuffer}
      */
-    this.buffer = options.buffer || null;
+    this.buffer = optOrDef(options.buffer, null);
 
     /**
      * Fade time for chaining segments (e.g. in start, stop, and seek)
      * @type {AudioBuffer}
      */
-    this.fadeTime = 0.005;
+    this.fadeTime = optOrDef(options.fadeTime, 0.005);
 
     this.__time = 0;
     this.__position = 0;
     this.__speed = 0;
-    this.__cyclic = false;
 
     this.__bufferSource = null;
     this.__envNode = null;
 
-    this.__playingSpeed = 1;
-
     this.__gainNode = this.audioContext.createGain();
-    this.__gainNode.gain.value = options.gain || 1;
+    this.__gainNode.gain.value = optOrDef(options.gain, 1);
 
-    /**
-     * Portion at the end of the audio buffer that has been copied from the beginning to assure cyclic behavior
-     * @type {Number}
-     */
-    this.wrapAroundExtension = options.wrapAroundExtension || 0;
+    this.__cyclic = optOrDef(options.cyclic, false);
 
     this.outputNode = this.__gainNode;
   }
@@ -47,9 +47,6 @@ class PlayerEngine extends AudioTimeEngine {
 
     if (this.buffer) {
       var bufferDuration = this.buffer.duration;
-
-      if (this.wrapAroundExtension)
-        bufferDuration -= this.wrapAroundExtension;
 
       if (this.__cyclic && (position < 0 || position >= bufferDuration)) {
         var phase = position / bufferDuration;
@@ -149,6 +146,17 @@ class PlayerEngine extends AudioTimeEngine {
    */
   get gain() {
     return this.__gainNode.gain.value;
+  }
+
+  /**
+   * Get buffer duration
+   * @return {Number} current buffer duration
+   */
+  get bufferDuration() {
+    if(this.buffer)
+      return this.buffer.duration;
+
+    return 0;
   }
 }
 

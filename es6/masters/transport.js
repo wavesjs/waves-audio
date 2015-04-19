@@ -203,7 +203,7 @@ class TransportedSpeedControlled extends Transported {
   }
 
   destroy() {
-    this.__engine.syncSpeed(this.__transport.currentTime, this.__transport.currentPosition - this.__offsetPosition, 0);
+    this.__engine.syncSpeed(this.master.currentTime, this.master.currentPosition - this.__offsetPosition, 0);
     super.destroy();
   }
 }
@@ -213,19 +213,19 @@ class TransportedSpeedControlled extends Transported {
 class TransportedScheduled extends Transported {
   constructor(transport, engine, startPosition, endPosition, offsetPosition) {
     super(transport, engine, startPosition, endPosition, offsetPosition);
-    this.__transport.__schedulingQueue.add(engine, Infinity);
+    transport.__schedulingQueue.add(engine, Infinity);
   }
 
   start(time, position, speed) {
-    this.__transport.__schedulingQueue.resetEngineTime(this.__engine, time);
+    this.master.__schedulingQueue.resetEngineTime(this.__engine, time);
   }
 
   stop(time, position) {
-    this.__transport.__schedulingQueue.resetEngineTime(this.__engine, Infinity);
+    this.master.__schedulingQueue.resetEngineTime(this.__engine, Infinity);
   }
 
   destroy() {
-    this.__transport.__schedulingQueue.remove(this.__engine);
+    this.master.__schedulingQueue.remove(this.__engine);
     super.destroy();
   }
 }
@@ -249,7 +249,7 @@ class TransportSchedulerHook extends TimeEngine {
     var nextPosition = transport.advancePosition(time, position, speed);
     var nextTime = transport.__getTimeAtPosition(nextPosition);
 
-    while (nextTime === time) {
+    while (nextTime <= time) {
       nextPosition = transport.advancePosition(nextTime, nextPosition, speed);
       nextTime = transport.__getTimeAtPosition(nextPosition);
     }
@@ -283,11 +283,11 @@ class TransportSchedulingQueue extends SchedulingQueue {
   }
 
   get currentTime() {
-    this.__transport.currentTime();
+    return this.__transport.currentTime;
   }
 
   get currentPosition() {
-    this.__transport.currentPosition();
+    return this.__transport.currentPosition;
   }
 
   destroy() {
@@ -309,9 +309,9 @@ class Transport extends TimeEngine {
     this.__transported = [];
 
     this.__scheduler = getScheduler(this.audioContext);
-    this.__schedulerHook = null;
+    this.__schedulerHook = new TransportSchedulerHook(this);
     this.__transportedQueue = new PriorityQueue();
-    this.__schedulingQueue = null;
+    this.__schedulingQueue = new TransportSchedulingQueue(this);
 
     // syncronized time, position, and speed
     this.__time = 0;
@@ -390,7 +390,7 @@ class Transport extends TimeEngine {
 
     if (master && master.resetEnginePosition !== undefined)
       master.resetEnginePosition(this, position);
-    else if (this.__schedulerHook)
+    else
       this.__schedulerHook.resetPosition(position);
   }
 
@@ -439,23 +439,10 @@ class Transport extends TimeEngine {
         nextPosition = this.__syncTransportedPosition(time, position, speed);
       } else if (lastSpeed === 0) {
         // start
-
-        // create transport and scheduling queue
-        this.__schedulerHook = new TransportSchedulerHook(this);
-        this.__schedulingQueue = new TransportSchedulingQueue(this);
-
         nextPosition = this.__syncTransportedPosition(time, position, speed);
       } else if (speed === 0) {
         // stop
         nextPosition = Infinity;
-
-        // destroy transport and scheduling queue
-        this.__schedulerHook.destroy();
-        this.__schedulingQueue.destroy();
-
-        this.__schedulerHook = null;
-        this.__schedulingQueue = null;
-
         this.__syncTransportedSpeed(time, position, 0);
       } else {
         // change speed without reversing direction

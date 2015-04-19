@@ -2,6 +2,13 @@
 
 var AudioTimeEngine = require("../core/audio-time-engine");
 
+function optOrDef(opt, def) {
+  if(opt !== undefined)
+    return opt;
+
+  return def;
+}
+
 /**
  * @class GranularEngine
  */
@@ -21,138 +28,146 @@ class GranularEngine extends AudioTimeEngine {
      * Audio buffer
      * @type {AudioBuffer}
      */
-    this.buffer = options.buffer || null;
+    this.buffer = optOrDef(options.buffer, null);
 
     /**
      * Absolute grain period in sec
      * @type {Number}
      */
-    this.periodAbs = options.periodAbs || 0.01;
+    this.periodAbs = optOrDef(options.periodAbs, 0.01);
 
     /**
      * Grain period relative to absolute duration
      * @type {Number}
      */
-    this.periodRel = options.periodRel || 0;
+    this.periodRel = optOrDef(options.periodRel, 0);
 
     /**
      * Amout of random grain period variation relative to grain period
      * @type {Number}
      */
-    this.periodVar = options.periodVar || 0;
+    this.periodVar = optOrDef(options.periodVar, 0);
 
     /**
      * Grain position (onset time in audio buffer) in sec
      * @type {Number}
      */
-    this.position = options.position || 0;
+    this.position = optOrDef(options.position, 0);
 
     /**
      * Amout of random grain position variation in sec
      * @type {Number}
      */
-    this.positionVar = options.positionVar || 0.003;
+    this.positionVar = optOrDef(options.positionVar, 0.003);
 
     /**
      * Absolute grain duration in sec
      * @type {Number}
      */
-    this.durationAbs = options.durationAbs || 0.1; // absolute grain duration
+    this.durationAbs = optOrDef(options.durationAbs, 0.1); // absolute grain duration
 
     /**
      * Grain duration relative to grain period (overlap)
      * @type {Number}
      */
-    this.durationRel = options.durationRel || 0;
+    this.durationRel = optOrDef(options.durationRel, 0);
 
     /**
      * Absolute attack time in sec
      * @type {Number}
      */
-    this.attackAbs = options.attackAbs || 0;
+    this.attackAbs = optOrDef(options.attackAbs, 0);
 
     /**
      * Attack time relative to grain duration
      * @type {Number}
      */
-    this.attackRel = options.attackRel || 0.5;
+    this.attackRel = optOrDef(options.attackRel, 0.5);
 
     /**
      * Shape of attack
      * @type {String} 'lin' for linear ramp, 'exp' for exponential
      */
-    this.attackShape = options.attackShape || 'lin';
+    this.attackShape = optOrDef(options.attackShape, 'lin');
 
     /**
      * Absolute release time in sec
      * @type {Number}
      */
-    this.releaseAbs = options.releaseAbs || 0;
+    this.releaseAbs = optOrDef(options.releaseAbs, 0);
 
     /**
      * Release time relative to grain duration
      * @type {Number}
      */
-    this.releaseRel = options.releaseRel || 0.5;
+    this.releaseRel = optOrDef(options.releaseRel, 0.5);
 
     /**
      * Shape of release
      * @type {String} 'lin' for linear ramp, 'exp' for exponential
      */
-    this.releaseShape = options.releaseShape || 'lin';
+    this.releaseShape = optOrDef(options.releaseShape, 'lin');
 
     /**
      * Offset (start/end value) for exponential attack/release
      * @type {Number} offset
      */
-    this.expRampOffset = options.expRampOffset || 0.0001;
+    this.expRampOffset = optOrDef(options.expRampOffset, 0.0001);
 
     /**
      * Grain resampling in cent
      * @type {Number}
      */
-    this.resampling = options.resampling || 0;
+    this.resampling = optOrDef(options.resampling, 0);
 
     /**
      * Amout of random resampling variation in cent
      * @type {Number}
      */
-    this.resamplingVar = options.resamplingVar || 0;
+    this.resamplingVar = optOrDef(options.resamplingVar, 0);
 
     /**
      * Linear gain factor
      * @type {Number}
      */
-    this.gain = options.gain || 1;
+    this.gain = optOrDef(options.gain, 1);
 
     /**
      * Whether the grain position refers to the center of the grain (or the beginning)
      * @type {Bool}
      */
-    this.centered = options.centered || true;
+    this.centered = optOrDef(options.centered, true);
 
     /**
      * Whether the audio buffer and grain position are considered as cyclic
      * @type {Bool}
      */
-    this.cyclic = options.cyclic || false;
+    this.cyclic = optOrDef(options.cyclic, false);
 
     /**
      * Portion at the end of the audio buffer that has been copied from the beginning to assure cyclic behavior
      * @type {Number}
      */
-    this.wrapAroundExtension = options.wrapAroundExtension || 0;
+    this.wrapAroundExtension = optOrDef(options.wrapAroundExtension, 0);
 
     this.outputNode = this.audioContext.createGain();
   }
 
+  /**
+   * Get buffer duration (excluding wrapAroundExtension)
+   * @return {Number} current buffer duration
+   */
   get bufferDuration() {
-    var bufferDuration = this.buffer.duration;
+    if (this.buffer) {
+      var bufferDuration = this.buffer.duration;
 
-    if (this.wrapAroundExtension)
-      bufferDuration -= this.wrapAroundExtension;
+      if (this.wrapAroundExtension)
+        bufferDuration -= this.wrapAroundExtension;
 
-    return bufferDuration;
+      return bufferDuration;
+    }
+
+    return 0;
   }
 
   // TimeEngine attribute

@@ -2,6 +2,13 @@
 
 var AudioTimeEngine = require("../core/audio-time-engine");
 
+function optOrDef(opt, def) {
+  if(opt !== undefined)
+    return opt;
+
+  return def;
+}
+
 class Metronome extends AudioTimeEngine {
   constructor(options = {}) {
     super(options.audioContext);
@@ -10,31 +17,31 @@ class Metronome extends AudioTimeEngine {
      * Metronome period
      * @type {Number}
      */
-    this.__period = options.period || 1;
+    this.__period = optOrDef(options.period, 1);
 
     /**
      * Metronome click frequency
      * @type {Number}
      */
-    this.clickFreq = options.clickFreq || 600;
+    this.clickFreq = optOrDef(options.clickFreq, 600);
 
     /**
      * Metronome click attack time
      * @type {Number}
      */
-    this.clickAttack = options.clickAttack || 0.002;
+    this.clickAttack = optOrDef(options.clickAttack, 0.002);
 
     /**
      * Metronome click release time
      * @type {Number}
      */
-    this.clickRelease = options.clickRelease || 0.098;
+    this.clickRelease = optOrDef(options.clickRelease, 0.098);
 
     this.__lastTime = 0;
     this.__phase = 0;
 
     this.__gainNode = this.audioContext.createGain();
-    this.__gainNode.gain.value = options.gain || 1;
+    this.__gainNode.gain.value = optOrDef(options.gain, 1);
 
     this.outputNode = this.__gainNode;
   }
@@ -125,7 +132,7 @@ class Metronome extends AudioTimeEngine {
       if (master.resetEngineTime)
         master.resetEngineTime(this, this.__lastTime + period);
       else if (master.resetEnginePosition)
-        this.resetEnginePosition(this);
+        master.resetEnginePosition(this);
     }
   }
 

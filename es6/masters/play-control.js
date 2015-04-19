@@ -117,7 +117,7 @@ class TransportedSchedulerHook extends TimeEngine {
     var nextPosition = engine.advancePosition(time, position, playControl.__speed);
     var nextTime = playControl.__getTimeAtPosition(nextPosition);
 
-    while (nextTime === time) {
+    while (nextTime <= time) {
       nextPosition = engine.advancePosition(time, position, playControl.__speed);
       nextTime = playControl.__getTimeAtPosition(nextPosition);
     }
@@ -127,9 +127,7 @@ class TransportedSchedulerHook extends TimeEngine {
   }
 
   resetPosition(position = this.__nextPosition) {
-    var transport = this.__transport;
-    var time = transport.__getTimeAtPosition(position);
-
+    var time = this.__playControl.__getTimeAtPosition(position);
     this.__nextPosition = position;
     this.resetTime(time);
   }
@@ -147,30 +145,6 @@ class PlayControlledTransported extends PlayControlled {
     super(playControl, engine);
 
     this.__schedulerHook = new TransportedSchedulerHook(playControl, engine);
-  }
-
-  __syncTransportedPosition(time, position, speed) {
-    var numTransportedEngines = this.__transported.length;
-    var nextPosition = Infinity;
-
-    if (numTransportedEngines > 0) {
-      var engine, nextEnginePosition;
-
-      this.__transportedQueue.destroy();
-      this.__transportedQueue.reverse = (speed < 0);
-
-      for (var i = numTransportedEngines - 1; i > 0; i--) {
-        engine = this.__transported[i];
-        nextEnginePosition = engine.syncPosition(time, position, speed);
-        this.__transportedQueue.insert(engine, nextEnginePosition, false); // insert but don't sort
-      }
-
-      engine = this.__transported[0];
-      nextEnginePosition = engine.syncPosition(time, position, speed);
-      nextPosition = this.__transportedQueue.insert(engine, nextEnginePosition, true); // insert and sort
-    }
-
-    return nextPosition;
   }
 
   syncSpeed(time, position, speed, seek, lastSpeed) {
@@ -195,10 +169,7 @@ class PlayControlledTransported extends PlayControlled {
       this.__engine.syncSpeed(time, position, speed);
     }
 
-    var nextTime = this.__playControl.__getTimeAtPosition(nextPosition);
-    this.__schedulerHook.resetTime(nextTime);
-
-    this.__nextPosition = nextPosition;
+    this.__schedulerHook.resetPosition(nextPosition);
   }
 
   resetEnginePosition(engine, position) {
@@ -220,19 +191,19 @@ class ScheduledSchedulingQueue extends SchedulingQueue {
     this.__engine = engine;
 
     this.add(engine, Infinity);
-    playControl.scheduler.add(this, Infinity);
+    playControl.__scheduler.add(this, Infinity);
   }
 
   get currentTime() {
-    this.__playControl.currentTime();
+    return this.__playControl.currentTime;
   }
 
   get currentPosition() {
-    this.__playControl.currentPosition();
+    return this.__playControl.currentPosition;
   }
 
   destroy() {
-    this.__playControl.scheduler.remove(this);
+    this.__playControl.__scheduler.remove(this);
     this.remove(this.__engine);
 
     this.__playControl = null;
@@ -247,10 +218,10 @@ class PlayControlledScheduled extends PlayControlled {
   }
 
   syncSpeed(time, position, speed, seek, lastSpeed) {
-    if (lastSpeed === 0) // start or seek
-      this.__engine.resetTime(0);
-    else if (speed === 0) // stop
-      this.__engine.resetTime(Infinity);
+      if (lastSpeed === 0 && speed !== 0) // start or seek
+        this.__engine.resetTime();
+      else if (lastSpeed !== 0 && speed === 0) // stop
+        this.__engine.resetTime(Infinity);
   }
 
   destroy() {
@@ -260,10 +231,11 @@ class PlayControlledScheduled extends PlayControlled {
 }
 
 class PlayControl extends TimeEngine {
-  constructor(engine) {
+  constructor(engine, options = {}) {
     super();
 
-    this.__scheduler = getScheduler(engine.audioContext);
+    this.audioContext = options.audioContext || defaultAudioContext;
+    this.__scheduler = getScheduler(this.audioContext);
 
     this.__loopControl = null;
     this.__loopStart = 0;
@@ -277,6 +249,10 @@ class PlayControl extends TimeEngine {
     // non-zero "user" speed
     this.__playingSpeed = 1;
 
+    this.__setEngine(engine);
+  }
+
+  __setEngine(engine) {
     if (engine.master)
       throw new Error("object has already been added to a master");
 
@@ -288,6 +264,11 @@ class PlayControl extends TimeEngine {
       this.__playControlled = new PlayControlledScheduled(this, engine);
     else
       throw new Error("object cannot be added to play control");
+  }
+
+  __resetEngine() {
+    this.__playControlled.destroy();
+    this.__playControlled = null;
   }
 
   /**
@@ -333,6 +314,28 @@ class PlayControl extends TimeEngine {
    */
   get currentPosition() {
     return this.__position + (this.__scheduler.currentTime - this.__time) * this.__speed;
+  }
+
+
+  set(engine = null) {
+    var time = this.__sync();
+    var speed = this.__speed;
+
+    if (this.__playControlled !== null && this.__playControlled.__engine !== engine) {
+
+      this.syncSpeed(time, this.__position, 0);
+
+      if (this.__playControlled)
+        this.__resetEngine();
+
+
+      if (this.__playControlled === null && engine !== null) {
+        this.__setEngine(engine);
+
+        if (speed !== 0)
+          this.syncSpeed(time, this.__position, speed);
+      }
+    }
   }
 
   set loop(enable) {
@@ -464,17 +467,6 @@ class PlayControl extends TimeEngine {
       this.__position = position;
       this.syncSpeed(time, position, this.__speed, true);
     }
-  }
-
-  /**
-   * Remove time engine from the transport
-   */
-  clear() {
-    var time = this.__sync();
-    this.syncSpeed(time, this.__position, 0);
-
-    this.__playControlled.destroy();
-    this.__playControlled = null;
   }
 }
 
