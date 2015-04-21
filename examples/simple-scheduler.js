@@ -1,18 +1,19 @@
 // This example shows three `Metronome` engines running in a `SimpleScheduler`.
 
-
 var audioContext = wavesAudio.audioContext;
 var scheduler = wavesAudio.getSimpleScheduler();
-var metros = [];
 
-function makeMetroWithControls(index) {
+function createMetro(index) {
+  var tempo = 30 + index * 30;
+
+  // create metronome engine
   var metro = new wavesAudio.Metronome();
+  metro.period = 60 / tempo;
   metro.gain = 0.3;
   metro.clickFreq = index * 666;
   metro.connect(audioContext.destination);
 
-  metros.push(metro);
-
+  // create GUI elements
   new wavesBasicControllers.Toggle("Metronome " + index, false, '#container', function(value) {
     if (value)
       scheduler.add(metro);
@@ -20,20 +21,21 @@ function makeMetroWithControls(index) {
       scheduler.remove(metro);
   });
 
-  var tempoSlider = new wavesBasicControllers.Slider("Tempo", 30, 240, 1, 0, "bpm", '', '#container', function(value) {
+  var tempoSlider = new wavesBasicControllers.Slider("Tempo", 30, 240, 1, tempo, "bpm", '', '#container', function(value) {
     metro.period = 60 / value;
   });
 
-  var tempo = 30 + index * 30;
-  tempoSlider.value = tempo;
-  metro.period = 60 / tempo;
+  return metro;
 }
 
-for (var i = 1; i <= 3; i++)
-  makeMetroWithControls(i);
+// create three metronome engines
+var engines = [];
+engines.push(createMetro(1));
+engines.push(createMetro(2));
+engines.push(createMetro(3));
 
 new wavesBasicControllers.Buttons("", ['Sync'], '#container', function(value) {
-  metros.forEach(function(element) {
+  engines.forEach(function(element) {
     element.resetTime();
   });
 });

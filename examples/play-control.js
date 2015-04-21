@@ -1,18 +1,21 @@
 // This example shows a `PlayControl` as the master of four different engines.
 
 var audioContext = wavesAudio.audioContext;
-var loader = new wavesLoaders.SuperLoader(); // instantiate loader
+var loader = new wavesLoaders.SuperLoader();
 
+// load audio and marker files
 loader.load(["http://wavesjs.github.io/assets/drum-loop.wav", "http://wavesjs.github.io/assets/drum-loop.json"])
   .then(function(loaded) {
     var audioBuffer = loaded[0];
     var markerBuffer = loaded[1];
     var beatDuration = audioBuffer.duration / 4;
 
+    // create and connect metronome engine
     var metronome = new wavesAudio.Metronome();
     metronome.period = beatDuration;
     metronome.connect(audioContext.destination);
 
+    // create and connect player engine
     var playerEngine = new wavesAudio.PlayerEngine({
       buffer: audioBuffer,
       centered: false,
@@ -20,12 +23,14 @@ loader.load(["http://wavesjs.github.io/assets/drum-loop.wav", "http://wavesjs.gi
     });
     playerEngine.connect(audioContext.destination);
 
+    // create and connect granular engine
     var granularEngine = new wavesAudio.GranularEngine({
       buffer: audioBuffer,
       cyclic: true
     });
     granularEngine.connect(audioContext.destination);
 
+    // create and connect segment engine
     var segmentEngine = new wavesAudio.SegmentEngine({
       buffer: audioBuffer,
       positionArray: markerBuffer.time,
@@ -34,19 +39,22 @@ loader.load(["http://wavesjs.github.io/assets/drum-loop.wav", "http://wavesjs.gi
     });
     segmentEngine.connect(audioContext.destination);
 
+    // create play control
     var playControl = new wavesAudio.PlayControl(metronome);
     playControl.setLoopBoundaries(0, 2 * audioBuffer.duration);
     playControl.loop = true;
 
+    // create position display (as scheduled TimeEngine)
     var scheduler = new wavesAudio.getScheduler();
     var positionDisplay = new wavesAudio.TimeEngine();
     positionDisplay.period = 0.05;
 
     positionDisplay.advanceTime = function(time) {
-      seekSlider.value = 0.01 * Math.floor(100 * playControl.currentPosition / beatDuration); 
+      seekSlider.value = (playControl.currentPosition / beatDuration).toFixed(2);
       return time + this.period;
     };
 
+    // create GUI elements
     new wavesBasicControllers.Buttons("Play", ['Start', 'Pause', 'Stop'], '#container', function(value) {
       switch (value) {
         case 'Start':

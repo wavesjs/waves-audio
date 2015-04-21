@@ -1,4 +1,4 @@
-// This example shows an `AudioTimeEngine` running in a `Scheduler` that repeats the waveform of a given vowel – cut outof a voice recording – at a given frequency.
+// This example shows a *scheduled* `AudioTimeEngine` repeating the waveform of a given vowel – cut outof a voice recording – at a given frequency.
 
 var audioContext = wavesAudio.audioContext;
 var scheduler = wavesAudio.getScheduler();
@@ -80,9 +80,9 @@ loader.load(files)
     // set current waveform of synth to 'A'
     var synth = new Synth(); // instantiate Synth AudioTimeEngine
     synth.waveform = waveforms['A'];
-
     scheduler.add(synth, Infinity);
 
+    // create GUI elements
     new wavesBasicControllers.Slider("Frequency", 0, 250, 1, 0, "Hz", '', '#container', function(value) {
       synth.setFreq(value);
     });

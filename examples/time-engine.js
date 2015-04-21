@@ -1,4 +1,4 @@
-// This example shows a `TimeEngine` running in a `Scheduler` that counts up at a given frequency.
+// This example shows a *scheduled* `TimeEngine` counting up at a given frequency.
 
 var audioContext = wavesAudio.audioContext;
 var scheduler = wavesAudio.getScheduler();
@@ -63,11 +63,15 @@ Counter.prototype.setFreq = function(freq) {
   this.period = period;
 };
 
-var counter = new Counter(); // instantiate Counter TimeEngine
+// create counter engine and add it to the scheduler without running it (i.e. at Infinity)
+var counter = new Counter();
 scheduler.add(counter, Infinity);
 
+// create GUI elements
 new wavesBasicControllers.Slider("Frequency", 0, 250, 1, 0, "Hz", '', '#container', function(value) {
   counter.setFreq(value);
 });
 
-counterSlider = new wavesBasicControllers.Slider("", 0, 99, 1, 0, "", '', '#container');
+counterSlider = new wavesBasicControllers.Slider("Counter", 0, 99, 1, 0, "", '', '#container', function(value) {
+  counter.count = value;
+});
