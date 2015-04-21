@@ -50,7 +50,7 @@ class TimeEngine {
     );
   }
 
-  resetPosition(position = null) {
+  resetPosition(position = undefined) {
     if (this.master)
       this.master.resetEnginePosition(this, position);
   }

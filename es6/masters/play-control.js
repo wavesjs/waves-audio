@@ -172,7 +172,14 @@ class PlayControlledTransported extends PlayControlled {
     this.__schedulerHook.resetPosition(nextPosition);
   }
 
-  resetEnginePosition(engine, position) {
+  resetEnginePosition(engine, position = undefined) {
+    if (position === undefined) {
+      var playControl = this.__playControl;
+      var time = playControl.__sync();
+
+      position = this.__engine.syncPosition(time, playControl.__position, playControl.__speed);
+    }
+
     this.__schedulerHook.resetPosition(position);
   }
 
@@ -218,10 +225,10 @@ class PlayControlledScheduled extends PlayControlled {
   }
 
   syncSpeed(time, position, speed, seek, lastSpeed) {
-      if (lastSpeed === 0 && speed !== 0) // start or seek
-        this.__engine.resetTime();
-      else if (lastSpeed !== 0 && speed === 0) // stop
-        this.__engine.resetTime(Infinity);
+    if (lastSpeed === 0 && speed !== 0) // start or seek
+      this.__engine.resetTime();
+    else if (lastSpeed !== 0 && speed === 0) // stop
+      this.__engine.resetTime(Infinity);
   }
 
   destroy() {
@@ -237,6 +244,8 @@ class PlayControl extends TimeEngine {
     this.audioContext = options.audioContext || defaultAudioContext;
     this.__scheduler = getScheduler(this.audioContext);
 
+    this.__playControlled = null;
+
     this.__loopControl = null;
     this.__loopStart = 0;
     this.__loopEnd = Infinity;
@@ -249,7 +258,8 @@ class PlayControl extends TimeEngine {
     // non-zero "user" speed
     this.__playingSpeed = 1;
 
-    this.__setEngine(engine);
+    if (engine)
+      this.__setEngine(engine);
   }
 
   __setEngine(engine) {
@@ -392,7 +402,8 @@ class PlayControl extends TimeEngine {
       this.__position = position;
       this.__speed = speed;
 
-      this.__playControlled.syncSpeed(time, position, speed, seek, lastSpeed);
+      if (this.__playControlled)
+        this.__playControlled.syncSpeed(time, position, speed, seek, lastSpeed);
 
       if (this.__loopControl)
         this.__loopControl.reschedule(speed);

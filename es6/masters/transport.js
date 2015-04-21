@@ -174,7 +174,7 @@ class TransportedTransported extends Transported {
       this.__engine.syncSpeed(time, position, speed);
   }
 
-  resetEnginePosition(engine, position) {
+  resetEnginePosition(engine, position = undefined) {
     if (position !== undefined)
       position += this.__offsetPosition;
 
