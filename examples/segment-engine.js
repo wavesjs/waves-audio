@@ -44,7 +44,7 @@ loader.load(["http://wavesjs.github.io/assets/drum-loop.wav", "http://wavesjs.gi
           scheduledSegmentEngine.segmentIndex = value;
         });
 
-        new wavesBasicControllers.Slider("Period", 0.010, 1.000, 0.001, 0.150, "sec", '', '#container', function(value) {
+        new wavesBasicControllers.Slider("Period", 0.010, 1.000, 0.001, eighthBeatDuration, "sec", '', '#container', function(value) {
           scheduledSegmentEngine.periodAbs = value;
         });
 
