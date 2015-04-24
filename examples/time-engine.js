@@ -2,6 +2,7 @@
 
 var audioContext = wavesAudio.audioContext;
 var scheduler = wavesAudio.getScheduler();
+var containerId = '#time-engine-container';
 
 // Counter TimeEngine class
 // The engine counts up at a given frequency.
@@ -68,10 +69,10 @@ var counter = new Counter();
 scheduler.add(counter, Infinity);
 
 // create GUI elements
-new wavesBasicControllers.Slider("Frequency", 0, 250, 1, 0, "Hz", '', '#container', function(value) {
+new wavesBasicControllers.Slider("Frequency", 0, 250, 1, 0, "Hz", '', containerId, function(value) {
   counter.setFreq(value);
 });
 
-counterSlider = new wavesBasicControllers.Slider("Counter", 0, 99, 1, 0, "", '', '#container', function(value) {
+counterSlider = new wavesBasicControllers.Slider("Counter", 0, 99, 1, 0, "", '', containerId, function(value) {
   counter.count = value;
 });

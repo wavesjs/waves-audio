@@ -2,6 +2,7 @@
 
 var audioContext = wavesAudio.audioContext;
 var loader = new wavesLoaders.SuperLoader();
+var containerId = '#transport-container';
 
 // load audio and marker files
 loader.load(["http://wavesjs.github.io/assets/drum-loop.wav", "http://wavesjs.github.io/assets/drum-loop.json"])

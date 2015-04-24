@@ -2,6 +2,7 @@
 
 var audioContext = wavesAudio.audioContext;
 var scheduler = wavesAudio.getScheduler();
+var containerId = '#audio-time-engine-container';
 
 // Synth AudioTimeEngine class
 // The engine repeats a waveform at a given frequency.
@@ -83,11 +84,11 @@ loader.load(files)
     scheduler.add(synth, Infinity);
 
     // create GUI elements
-    new wavesBasicControllers.Slider("Frequency", 0, 250, 1, 0, "Hz", '', '#container', function(value) {
+    new wavesBasicControllers.Slider("Frequency", 0, 250, 1, 0, "Hz", '', containerId, function(value) {
       synth.setFreq(value);
     });
 
-    new wavesBasicControllers.Buttons("Vowel", ['A', 'O', 'I'], '#container', function(value) {
+    new wavesBasicControllers.Buttons("Vowel", ['A', 'O', 'I'], containerId, function(value) {
       synth.waveform = waveforms[value];
     });
   });

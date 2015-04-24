@@ -2,6 +2,7 @@
 
 var audioContext = wavesAudio.audioContext;
 var scheduler = wavesAudio.getSimpleScheduler();
+var containerId = '#simple-scheduler-container';
 
 function createMetro(index) {
   var tempo = 30 + index * 30;
@@ -14,14 +15,14 @@ function createMetro(index) {
   metro.connect(audioContext.destination);
 
   // create GUI elements
-  new wavesBasicControllers.Toggle("Metronome " + index, false, '#container', function(value) {
+  new wavesBasicControllers.Toggle("Metronome " + index, false, containerId, function(value) {
     if (value)
       scheduler.add(metro);
     else
       scheduler.remove(metro);
   });
 
-  var tempoSlider = new wavesBasicControllers.Slider("Tempo", 30, 240, 1, tempo, "bpm", '', '#container', function(value) {
+  var tempoSlider = new wavesBasicControllers.Slider("Tempo", 30, 240, 1, tempo, "bpm", '', containerId, function(value) {
     metro.period = 60 / value;
   });
 
@@ -34,7 +35,7 @@ engines.push(createMetro(1));
 engines.push(createMetro(2));
 engines.push(createMetro(3));
 
-new wavesBasicControllers.Buttons("", ['Sync'], '#container', function(value) {
+new wavesBasicControllers.Buttons("", ['Sync'], containerId, function(value) {
   engines.forEach(function(element) {
     element.resetTime();
   });

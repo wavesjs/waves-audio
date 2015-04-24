@@ -2,6 +2,7 @@
 
 var audioContext = wavesAudio.audioContext;
 var loader = new wavesLoaders.SuperLoader();
+var containerId = '#play-control-container';
 
 // load audio and marker files
 loader.load(["http://wavesjs.github.io/assets/drum-loop.wav", "http://wavesjs.github.io/assets/drum-loop.json"])
@@ -55,7 +56,7 @@ loader.load(["http://wavesjs.github.io/assets/drum-loop.wav", "http://wavesjs.gi
     };
 
     // create GUI elements
-    new wavesBasicControllers.Buttons("Play", ['Start', 'Pause', 'Stop'], '#container', function(value) {
+    new wavesBasicControllers.Buttons("Play", ['Start', 'Pause', 'Stop'], containerId, function(value) {
       switch (value) {
         case 'Start':
           playControl.start();
@@ -77,24 +78,24 @@ loader.load(["http://wavesjs.github.io/assets/drum-loop.wav", "http://wavesjs.gi
       }
     });
 
-    var speedSlider = new wavesBasicControllers.Slider("Speed", -2, 2, 0.01, 1, "", '', '#container', function(value) {
+    var speedSlider = new wavesBasicControllers.Slider("Speed", -2, 2, 0.01, 1, "", '', containerId, function(value) {
       playControl.speed = value;
       speedSlider.value = playControl.speed;
     });
 
-    var seekSlider = new wavesBasicControllers.Slider("Seek", 0, 8, 0.125, 0, "beats", 'large', '#container', function(value) {
+    var seekSlider = new wavesBasicControllers.Slider("Seek", 0, 8, 0.125, 0, "beats", 'large', containerId, function(value) {
       playControl.seek(value * beatDuration);
     });
 
-    new wavesBasicControllers.Slider("Loop Start", 0, 8, 0.25, 0, "beats", 'large', '#container', function(value) {
+    new wavesBasicControllers.Slider("Loop Start", 0, 8, 0.25, 0, "beats", 'large', containerId, function(value) {
       playControl.loopStart = value * beatDuration;
     });
 
-    new wavesBasicControllers.Slider("Loop End", 0, 8, 0.25, 8, "beats", 'large', '#container', function(value) {
+    new wavesBasicControllers.Slider("Loop End", 0, 8, 0.25, 8, "beats", 'large', containerId, function(value) {
       playControl.loopEnd = value * beatDuration;
     });
 
-    new wavesBasicControllers.Buttons("Choose Engine", ['Metronome', 'Player Engine', 'Granular Engine', 'Segment Engine'], '#container', function(value) {
+    new wavesBasicControllers.Buttons("Choose Engine", ['Metronome', 'Player Engine', 'Granular Engine', 'Segment Engine'], containerId, function(value) {
       switch (value) {
         case 'Metronome':
           playControl.set(metronome);
