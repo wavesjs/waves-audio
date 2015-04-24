@@ -133,8 +133,7 @@ class PlayerEngine extends AudioTimeEngine {
    * @param {Number} value linear gain factor
    */
   set gain(value) {
-    var time = this.__sync();
-
+    var time = this.currentTime;
     this.__gainNode.cancelScheduledValues(time);
     this.__gainNode.setValueAtTime(this.__gainNode.gain.value, time);
     this.__gainNode.linearRampToValueAtTime(0, time + this.fadeTime);
