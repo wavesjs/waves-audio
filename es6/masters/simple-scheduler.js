@@ -54,6 +54,9 @@ class SimpleScheduler {
         this.__schedEngines.splice(index, 1);
         this.__schedTimes.splice(index, 1);
       }
+    } else if (time < Infinity) {
+      this.__schedEngines.push(engine);
+      this.__schedTimes.push(time);
     }
   }
 
