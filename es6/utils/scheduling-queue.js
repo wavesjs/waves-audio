@@ -61,7 +61,7 @@ class SchedulingQueue extends TimeEngine {
   }
 
   // add a time engine to the queue and return the engine
-  add(engine, time) {
+  add(engine, time = this.currentTime) {
     engine.master = this;
 
     // add to engines and queue
