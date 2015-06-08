@@ -4,7 +4,7 @@ require('./ac-monkeypatch');
 // exposes a single instance
 var audioContext;
 
-if(AudioContext)
-  audioContext = new AudioContext();
+if (window.AudioContext)
+  audioContext = new window.AudioContext();
 
 module.exports = audioContext;
