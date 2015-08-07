@@ -21,6 +21,7 @@
         buffer: audioBuffer,
         cyclic: true
       });
+
       playerEngine.connect(audioContext.destination);
 
       // create and connect granular engine
@@ -29,6 +30,7 @@
         centered: false, // to be synchronous with other engines
         cyclic: true
       });
+
       granularEngine.connect(audioContext.destination);
 
       // create and connect segment engine
@@ -38,6 +40,7 @@
         positionArray: markerBuffer.time,
         durationArray: markerBuffer.duration
       });
+
       segmentEngine.connect(audioContext.destination);
 
       // create position display (as transported TimeEngine)

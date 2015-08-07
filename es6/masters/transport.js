@@ -26,29 +26,29 @@ function removeDuplet(firstArray, secondArray, firstElement) {
   return null;
 }
 
-// The Transported call is the base class of the adapters between 
+// The Transported call is the base class of the adapters between
 // different types of engines (i.e. transported, scheduled, play-controlled)
-// The adapters are at the same time masters for the engines added to the transport 
+// The adapters are at the same time masters for the engines added to the transport
 // and transported TimeEngines inserted into the transport's position-based pritority queue.
 class Transported extends TimeEngine {
-  constructor(transport, engine, startPosition, endPosition, offsetPosition) {
+  constructor(transport, engine, start, duration, offset, stretch = 1) {
     this.master = transport;
 
     engine.master = this;
     this.__engine = engine;
 
-    this.__startPosition = startPosition;
-    this.__endPosition = endPosition;
-    this.__offsetPosition = offsetPosition;
-    this.__scalePosition = 1;
+    this.__startPosition = start;
+    this.__endPosition = start + duration;
+    this.__offsetPosition = start + offset;
+    this.__stretchPosition = stretch;
     this.__haltPosition = Infinity; // engine's next halt position when not running (is null when engine hes been started)
   }
 
-  setBoundaries(startPosition, endPosition, offsetPosition = startPosition, scalePosition = 1) {
-    this.__startPosition = startPosition;
-    this.__endPosition = endPosition;
-    this.__offsetPosition = offsetPosition;
-    this.__scalePosition = scalePosition;
+  setBoundaries(start, duration, offset = 0, stretch = 1) {
+    this.__startPosition = start;
+    this.__endPosition = start + duration;
+    this.__offsetPosition = start + offset;
+    this.__stretchPosition = stretch;
     this.resetPosition();
   }
 
@@ -144,7 +144,7 @@ class Transported extends TimeEngine {
   }
 }
 
-// TransportedScheduled 
+// TransportedScheduled
 // has to switch on and off the scheduled engines when the transport hits the engine's start and end position
 class TransportedTransported extends Transported {
   constructor(transport, engine, startPosition, endPosition, offsetPosition) {
@@ -182,7 +182,7 @@ class TransportedTransported extends Transported {
   }
 }
 
-// TransportedSpeedControlled 
+// TransportedSpeedControlled
 // has to start and stop the speed-controlled engines when the transport hits the engine's start and end position
 class TransportedSpeedControlled extends Transported {
   constructor(transport, engine, startPosition, endPosition, offsetPosition) {
@@ -208,7 +208,7 @@ class TransportedSpeedControlled extends Transported {
   }
 }
 
-// TransportedScheduled 
+// TransportedScheduled
 // has to switch on and off the scheduled engines when the transport hits the engine's start and end position
 class TransportedScheduled extends Transported {
   constructor(transport, engine, startPosition, endPosition, offsetPosition) {
