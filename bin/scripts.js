@@ -111,31 +111,48 @@ function uglify() {
   });
 }
 
+
 // transpile all files in `srcDir`
 function transpileAll() {
-  var cmd = 'find '+ srcDir +' -type f';
+  var cmd = 'find ' + srcDir + ' -type f';
 
   childProcess.exec(cmd , function(err, stdout, stderr) {
+    if (err) { console.error(err); }
     var fileList = stdout.split('\n');
 
-    fileList.forEach(function(file) {
-      if (!file) { return; }
-      transpile(file);
-    });
+    var stack = [];
+
+    for (var i = 0; i < fileList.length; i++) {
+      var file = fileList[i];
+      if (!file) { continue; }
+
+      stack.push(file);
+    }
+
+    transpile(stack.shift(), stack);
   });
 }
 
-// transpile one file
-function transpile(src) {
+// transpile one file or several files in serial
+// @param `stack` is a workaround for babel which has some kind of leak and
+// cannot transpile several files in parallel without being messy with sourceMaps.
+// Using the Sync method crash the entire script each time there is an error in
+// the code which is really boring when watching...
+function transpile(src, stack) {
   var target = createTargetName(src);
 
-  babel.transformFile(src, babelOptions, function(err, res) {
-    if (err) { return console.log(err.message); }
+  babel.transformFile(src, babelOptions, function (err, result) {
+    if (err) { return console.log(err.codeFrame); }
 
-    fse.outputFile(target, res.code, function(err, res) {
-      if (err) { return console.log(err.message); }
+    fse.outputFile(target, result.code, function(err) {
+      if (err) { return console.error(err.message); }
 
       console.log(util.format(green + '=> "%s" successfully transpiled to "%s"' + NC, src, target));
+
+      // next
+      if (stack && stack.length) {
+        transpile(stack.shift(), stack);
+      }
     });
   });
 }
