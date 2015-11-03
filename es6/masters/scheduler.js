@@ -1,11 +1,10 @@
-'use strict';
+import defaultAudioContext from '../core/audio-context';
+import TimeEngine from '../core/time-engine';
+import PriorityQueue from '../utils/priority-queue';
+import SchedulingQueue from '../utils/scheduling-queue';
 
-var defaultAudioContext = require("../core/audio-context");
-var TimeEngine = require("../core/time-engine");
-var PriorityQueue = require("../utils/priority-queue");
-var SchedulingQueue = require("../utils/scheduling-queue");
 
-class Scheduler extends SchedulingQueue {
+export default class Scheduler extends SchedulingQueue {
   constructor(options = {}) {
     super();
 
@@ -122,5 +121,3 @@ class Scheduler extends SchedulingQueue {
     super.resetEngineTime(engine, time);
   }
 }
-
-module.exports = Scheduler;

@@ -1,6 +1,4 @@
-'use strict';
-
-var AudioTimeEngine = require("../core/audio-time-engine");
+import AudioTimeEngine from '../core/audio-time-engine';
 
 function optOrDef(opt, def) {
   if(opt !== undefined)
@@ -9,7 +7,7 @@ function optOrDef(opt, def) {
   return def;
 }
 
-class PlayerEngine extends AudioTimeEngine {
+export default class PlayerEngine extends AudioTimeEngine {
   constructor(options = {}) {
     super(options.audioContext);
 
@@ -158,5 +156,3 @@ class PlayerEngine extends AudioTimeEngine {
     return 0;
   }
 }
-
-module.exports = PlayerEngine;

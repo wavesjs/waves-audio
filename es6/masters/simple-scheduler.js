@@ -1,7 +1,5 @@
-'use strict';
-
-var defaultAudioContext = require("../core/audio-context");
-var TimeEngine = require("../core/time-engine");
+import defaultAudioContext from '../core/audio-context';
+import TimeEngine from '../core/time-engine';
 
 function arrayRemove(array, value) {
   var index = array.indexOf(value);
@@ -14,7 +12,7 @@ function arrayRemove(array, value) {
   return false;
 }
 
-class SimpleScheduler {
+export default class SimpleScheduler {
   constructor(options = {}) {
     this.audioContext = options.audioContext ||  defaultAudioContext;
 
@@ -178,6 +176,3 @@ class SimpleScheduler {
     this.__schedTimes.length = 0;
   }
 }
-
-// export scheduler singleton
-module.exports = SimpleScheduler;

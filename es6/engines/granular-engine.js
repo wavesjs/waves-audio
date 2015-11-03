@@ -1,6 +1,4 @@
-'use strict';
-
-var AudioTimeEngine = require("../core/audio-time-engine");
+import AudioTimeEngine from '../core/audio-time-engine';
 
 function optOrDef(opt, def) {
   if(opt !== undefined)
@@ -12,7 +10,7 @@ function optOrDef(opt, def) {
 /**
  * @class GranularEngine
  */
-class GranularEngine extends AudioTimeEngine {
+export default class GranularEngine extends AudioTimeEngine {
   /**
    * @constructor
    * @param {AudioBuffer} buffer initial audio buffer for granular synthesis
@@ -300,5 +298,3 @@ class GranularEngine extends AudioTimeEngine {
     return grainPeriod;
   }
 }
-
-module.exports = GranularEngine;

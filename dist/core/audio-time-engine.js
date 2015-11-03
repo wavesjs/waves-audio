@@ -1,53 +1,62 @@
-"use strict";
+'use strict';
 
-var _classCallCheck = require("babel-runtime/helpers/class-call-check")["default"];
+var _get = require('babel-runtime/helpers/get')['default'];
 
-var _inherits = require("babel-runtime/helpers/inherits")["default"];
+var _inherits = require('babel-runtime/helpers/inherits')['default'];
 
-var _get = require("babel-runtime/helpers/get")["default"];
+var _createClass = require('babel-runtime/helpers/create-class')['default'];
 
-var _createClass = require("babel-runtime/helpers/create-class")["default"];
+var _classCallCheck = require('babel-runtime/helpers/class-call-check')['default'];
 
-var _core = require("babel-runtime/core-js")["default"];
+var _interopRequireDefault = require('babel-runtime/helpers/interop-require-default')['default'];
 
-var TimeEngine = require("./time-engine");
-var defaultAudioContext = require("./audio-context");
+Object.defineProperty(exports, '__esModule', {
+  value: true
+});
+
+var _timeEngine = require('./time-engine');
+
+var _timeEngine2 = _interopRequireDefault(_timeEngine);
+
+var _audioContext = require('./audio-context');
 
 /**
  * @class AudioTimeEngine
  */
 
+var _audioContext2 = _interopRequireDefault(_audioContext);
+
 var AudioTimeEngine = (function (_TimeEngine) {
+  _inherits(AudioTimeEngine, _TimeEngine);
+
   function AudioTimeEngine() {
-    var audioContext = arguments[0] === undefined ? defaultAudioContext : arguments[0];
+    var audioContext = arguments.length <= 0 || arguments[0] === undefined ? _audioContext2['default'] : arguments[0];
 
     _classCallCheck(this, AudioTimeEngine);
 
-    _get(_core.Object.getPrototypeOf(AudioTimeEngine.prototype), "constructor", this).call(this);
+    _get(Object.getPrototypeOf(AudioTimeEngine.prototype), 'constructor', this).call(this);
 
     this.audioContext = audioContext;
     this.outputNode = null;
   }
 
-  _inherits(AudioTimeEngine, _TimeEngine);
-
-  _createClass(AudioTimeEngine, {
-    connect: {
-      value: function connect(target) {
-        this.outputNode.connect(target);
-        return this;
-      }
-    },
-    disconnect: {
-      value: function disconnect(connection) {
-        this.outputNode.disconnect(connection);
-        return this;
-      }
+  _createClass(AudioTimeEngine, [{
+    key: 'connect',
+    value: function connect(target) {
+      this.outputNode.connect(target);
+      return this;
     }
-  });
+  }, {
+    key: 'disconnect',
+    value: function disconnect(connection) {
+      this.outputNode.disconnect(connection);
+      return this;
+    }
+  }]);
 
   return AudioTimeEngine;
-})(TimeEngine);
+})(_timeEngine2['default']);
 
-module.exports = AudioTimeEngine;
-//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbImVzNi91dGlscy9zY2hlZHVsaW5nLXF1ZXVlLmpzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7OztBQUVBLElBQUksVUFBVSxHQUFHLE9BQU8sQ0FBQyxlQUFlLENBQUMsQ0FBQztBQUMxQyxJQUFJLG1CQUFtQixHQUFHLE9BQU8sQ0FBQyxpQkFBaUIsQ0FBQyxDQUFDOzs7Ozs7SUFLL0MsZUFBZTtBQUNSLFdBRFAsZUFBZSxHQUM2QjtRQUFwQyxZQUFZLGdDQUFHLG1CQUFtQjs7MEJBRDFDLGVBQWU7O0FBRWpCLHFDQUZFLGVBQWUsNkNBRVQ7O0FBRVIsUUFBSSxDQUFDLFlBQVksR0FBRyxZQUFZLENBQUM7QUFDakMsUUFBSSxDQUFDLFVBQVUsR0FBRyxJQUFJLENBQUM7R0FDeEI7O1lBTkcsZUFBZTs7ZUFBZixlQUFlO0FBUW5CLFdBQU87YUFBQSxpQkFBQyxNQUFNLEVBQUU7QUFDZCxZQUFJLENBQUMsVUFBVSxDQUFDLE9BQU8sQ0FBQyxNQUFNLENBQUMsQ0FBQztBQUNoQyxlQUFPLElBQUksQ0FBQztPQUNiOztBQUVELGNBQVU7YUFBQSxvQkFBQyxVQUFVLEVBQUU7QUFDckIsWUFBSSxDQUFDLFVBQVUsQ0FBQyxVQUFVLENBQUMsVUFBVSxDQUFDLENBQUM7QUFDdkMsZUFBTyxJQUFJLENBQUM7T0FDYjs7OztTQWhCRyxlQUFlO0dBQVMsVUFBVTs7QUFtQnhDLE1BQU0sQ0FBQyxPQUFPLEdBQUcsZUFBZSxDQUFDIiwiZmlsZSI6ImVzNi91dGlscy9zY2hlZHVsaW5nLXF1ZXVlLmpzIiwic291cmNlc0NvbnRlbnQiOlsiJ3VzZSBzdHJpY3QnO1xuXG52YXIgVGltZUVuZ2luZSA9IHJlcXVpcmUoXCIuL3RpbWUtZW5naW5lXCIpO1xudmFyIGRlZmF1bHRBdWRpb0NvbnRleHQgPSByZXF1aXJlKFwiLi9hdWRpby1jb250ZXh0XCIpO1xuXG4vKipcbiAqIEBjbGFzcyBBdWRpb1RpbWVFbmdpbmVcbiAqL1xuY2xhc3MgQXVkaW9UaW1lRW5naW5lIGV4dGVuZHMgVGltZUVuZ2luZXtcbiAgY29uc3RydWN0b3IoYXVkaW9Db250ZXh0ID0gZGVmYXVsdEF1ZGlvQ29udGV4dCkge1xuICAgIHN1cGVyKCk7XG5cbiAgICB0aGlzLmF1ZGlvQ29udGV4dCA9IGF1ZGlvQ29udGV4dDtcbiAgICB0aGlzLm91dHB1dE5vZGUgPSBudWxsO1xuICB9XG5cbiAgY29ubmVjdCh0YXJnZXQpIHtcbiAgICB0aGlzLm91dHB1dE5vZGUuY29ubmVjdCh0YXJnZXQpO1xuICAgIHJldHVybiB0aGlzO1xuICB9XG5cbiAgZGlzY29ubmVjdChjb25uZWN0aW9uKSB7XG4gICAgdGhpcy5vdXRwdXROb2RlLmRpc2Nvbm5lY3QoY29ubmVjdGlvbik7XG4gICAgcmV0dXJuIHRoaXM7XG4gIH1cbn1cblxubW9kdWxlLmV4cG9ydHMgPSBBdWRpb1RpbWVFbmdpbmU7XG4iXX0=
+exports['default'] = AudioTimeEngine;
+module.exports = exports['default'];
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbImVzNi9jb3JlL2F1ZGlvLXRpbWUtZW5naW5lLmpzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7Ozs7MEJBQXVCLGVBQWU7Ozs7NEJBQ04saUJBQWlCOzs7Ozs7OztJQUs1QixlQUFlO1lBQWYsZUFBZTs7QUFDdkIsV0FEUSxlQUFlLEdBQ2M7UUFBcEMsWUFBWTs7MEJBREwsZUFBZTs7QUFFaEMsK0JBRmlCLGVBQWUsNkNBRXhCOztBQUVSLFFBQUksQ0FBQyxZQUFZLEdBQUcsWUFBWSxDQUFDO0FBQ2pDLFFBQUksQ0FBQyxVQUFVLEdBQUcsSUFBSSxDQUFDO0dBQ3hCOztlQU5rQixlQUFlOztXQVEzQixpQkFBQyxNQUFNLEVBQUU7QUFDZCxVQUFJLENBQUMsVUFBVSxDQUFDLE9BQU8sQ0FBQyxNQUFNLENBQUMsQ0FBQztBQUNoQyxhQUFPLElBQUksQ0FBQztLQUNiOzs7V0FFUyxvQkFBQyxVQUFVLEVBQUU7QUFDckIsVUFBSSxDQUFDLFVBQVUsQ0FBQyxVQUFVLENBQUMsVUFBVSxDQUFDLENBQUM7QUFDdkMsYUFBTyxJQUFJLENBQUM7S0FDYjs7O1NBaEJrQixlQUFlOzs7cUJBQWYsZUFBZSIsImZpbGUiOiJlczYvY29yZS9hdWRpby10aW1lLWVuZ2luZS5qcyIsInNvdXJjZXNDb250ZW50IjpbImltcG9ydCBUaW1lRW5naW5lIGZyb20gJy4vdGltZS1lbmdpbmUnO1xuaW1wb3J0IGRlZmF1bHRBdWRpb0NvbnRleHQgZnJvbSAnLi9hdWRpby1jb250ZXh0JztcblxuLyoqXG4gKiBAY2xhc3MgQXVkaW9UaW1lRW5naW5lXG4gKi9cbmV4cG9ydCBkZWZhdWx0IGNsYXNzIEF1ZGlvVGltZUVuZ2luZSBleHRlbmRzIFRpbWVFbmdpbmV7XG4gIGNvbnN0cnVjdG9yKGF1ZGlvQ29udGV4dCA9IGRlZmF1bHRBdWRpb0NvbnRleHQpIHtcbiAgICBzdXBlcigpO1xuXG4gICAgdGhpcy5hdWRpb0NvbnRleHQgPSBhdWRpb0NvbnRleHQ7XG4gICAgdGhpcy5vdXRwdXROb2RlID0gbnVsbDtcbiAgfVxuXG4gIGNvbm5lY3QodGFyZ2V0KSB7XG4gICAgdGhpcy5vdXRwdXROb2RlLmNvbm5lY3QodGFyZ2V0KTtcbiAgICByZXR1cm4gdGhpcztcbiAgfVxuXG4gIGRpc2Nvbm5lY3QoY29ubmVjdGlvbikge1xuICAgIHRoaXMub3V0cHV0Tm9kZS5kaXNjb25uZWN0KGNvbm5lY3Rpb24pO1xuICAgIHJldHVybiB0aGlzO1xuICB9XG59XG4iXX0=

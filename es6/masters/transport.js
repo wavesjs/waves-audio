@@ -1,10 +1,9 @@
-'use strict';
+import defaultAudioContext from '../core/audio-context';
+import TimeEngine from '../core/time-engine';
+import PriorityQueue from '../utils/priority-queue';
+import SchedulingQueue from '../utils/scheduling-queue';
+import { getScheduler } from './factories';
 
-var defaultAudioContext = require("../core/audio-context");
-var TimeEngine = require("../core/time-engine");
-var PriorityQueue = require("../utils/priority-queue");
-var SchedulingQueue = require("../utils/scheduling-queue");
-var getScheduler = require('./factories').getScheduler;
 
 function addDuplet(firstArray, secondArray, firstElement, secondElement) {
   firstArray.push(firstElement);
@@ -32,16 +31,18 @@ function removeDuplet(firstArray, secondArray, firstElement) {
 // and transported TimeEngines inserted into the transport's position-based pritority queue.
 class Transported extends TimeEngine {
   constructor(transport, engine, start, duration, offset, stretch = 1) {
+    super();
     this.master = transport;
 
     engine.master = this;
     this.__engine = engine;
 
     this.__startPosition = start;
-    this.__endPosition = start + duration;
+    this.__endPosition = !isFinite(duration) ? Infinity : start + duration;
     this.__offsetPosition = start + offset;
     this.__stretchPosition = stretch;
     this.__haltPosition = Infinity; // engine's next halt position when not running (is null when engine hes been started)
+    // console.log(this.__startPosition, this.__endPosition, this.__offsetPosition, this.__stretchPosition)
   }
 
   setBoundaries(start, duration, offset = 0, stretch = 1) {
@@ -299,7 +300,7 @@ class TransportSchedulingQueue extends SchedulingQueue {
 /**
  * Transport class
  */
-class Transport extends TimeEngine {
+export default class Transport extends TimeEngine {
   constructor(options = {}) {
     super();
 
@@ -405,6 +406,7 @@ class Transport extends TimeEngine {
 
   // TimeEngine method (transported interface)
   advancePosition(time, position, speed) {
+    // console.log(time, position, speed);
     var nextPosition = this.__transportedQueue.time;
 
     while (nextPosition === position) {
@@ -458,7 +460,7 @@ class Transport extends TimeEngine {
    * @param {Object} engine engine to be added to the transport
    * @param {Number} position start position
    */
-  add(engine, startPosition = -Infinity, endPosition = Infinity, offsetPosition = startPosition) {
+  add(engine, startPosition = -Infinity, endPosition = Infinity, offsetPosition = 0) {
     var transported = null;
 
     if (offsetPosition === -Infinity)
@@ -540,5 +542,3 @@ class Transport extends TimeEngine {
       transported.destroy();
   }
 }
-
-module.exports = Transport;

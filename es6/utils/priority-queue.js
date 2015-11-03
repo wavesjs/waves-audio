@@ -6,7 +6,7 @@
  * First rather stupid implementation to be optimized...
  */
 
-class PriorityQueue {
+export default class PriorityQueue {
 
   constructor() {
     this.__objects = [];
@@ -25,7 +25,7 @@ class PriorityQueue {
     return -1;
   }
 
-  /** 
+  /**
    * Withdraw an object from the object list
    */
   __removeObject(object) {
@@ -74,7 +74,7 @@ class PriorityQueue {
    */
   move(object, time) {
     if (time !== Infinity && time != -Infinity) {
-      
+
       var index = this.__objectIndex(object);
 
       if (index < 0)
@@ -125,5 +125,3 @@ class PriorityQueue {
     return Infinity;
   }
 }
-
-module.exports = PriorityQueue;

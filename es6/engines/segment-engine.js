@@ -1,6 +1,4 @@
-'use strict';
-
-var AudioTimeEngine = require("../core/audio-time-engine");
+import AudioTimeEngine from '../core/audio-time-engine';
 
 function optOrDef(opt, def) {
   if(opt !== undefined)
@@ -64,7 +62,7 @@ function getCurrentOrNextIndex(sortedArray, value, index = 0) {
 /**
  * @class SegmentEngine
  */
-class SegmentEngine extends AudioTimeEngine {
+export default class SegmentEngine extends AudioTimeEngine {
   /**
    * @constructor
    * @param {AudioBuffer} buffer initial audio buffer for granular synthesis
@@ -336,7 +334,7 @@ class SegmentEngine extends AudioTimeEngine {
     var segmentTime = (time || audioContext.currentTime) + this.delay;
     var segmentPeriod = this.periodAbs;
     var segmentIndex = this.segmentIndex;
- 
+
     if (this.buffer) {
       var segmentPosition = 0.0;
       var segmentDuration = 0.0;
@@ -476,5 +474,3 @@ class SegmentEngine extends AudioTimeEngine {
     return segmentPeriod;
   }
 }
-
-module.exports = SegmentEngine;

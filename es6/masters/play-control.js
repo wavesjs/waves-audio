@@ -1,9 +1,7 @@
-'use strict';
-
-var defaultAudioContext = require("../core/audio-context");
-var TimeEngine = require("../core/time-engine");
-var SchedulingQueue = require("../utils/scheduling-queue");
-var getScheduler = require('./factories').getScheduler;
+import defaultAudioContext from '../core/audio-context';
+import TimeEngine from '../core/time-engine';
+import SchedulingQueue from '../utils/scheduling-queue';
+import { getScheduler } from './factories';
 
 class LoopControl extends TimeEngine {
   constructor(playControl) {
@@ -237,7 +235,7 @@ class PlayControlledScheduled extends PlayControlled {
   }
 }
 
-class PlayControl extends TimeEngine {
+export default class PlayControl extends TimeEngine {
   constructor(engine, options = {}) {
     super();
 
@@ -480,5 +478,3 @@ class PlayControl extends TimeEngine {
     }
   }
 }
-
-module.exports = PlayControl;

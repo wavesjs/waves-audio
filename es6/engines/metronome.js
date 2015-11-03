@@ -1,6 +1,4 @@
-'use strict';
-
-var AudioTimeEngine = require("../core/audio-time-engine");
+import AudioTimeEngine from '../core/audio-time-engine';
 
 function optOrDef(opt, def) {
   if(opt !== undefined)
@@ -9,7 +7,7 @@ function optOrDef(opt, def) {
   return def;
 }
 
-class Metronome extends AudioTimeEngine {
+export default class Metronome extends AudioTimeEngine {
   constructor(options = {}) {
     super(options.audioContext);
 
@@ -165,5 +163,3 @@ class Metronome extends AudioTimeEngine {
     return this.__phase;
   }
 }
-
-module.exports = Metronome;

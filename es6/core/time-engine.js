@@ -1,9 +1,7 @@
-'use strict';
-
 /**
  * @class TimeEngine
  */
-class TimeEngine {
+export default class TimeEngine {
   constructor() {
     this.master = null;
     this.outputNode = null;
@@ -63,5 +61,3 @@ class TimeEngine {
     return (this.syncSpeed && this.syncSpeed instanceof Function);
   }
 }
-
-module.exports = TimeEngine;

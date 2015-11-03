@@ -1,5 +1,5 @@
 // monkeypatch old webAudioAPI
-require('./ac-monkeypatch');
+import monkeyPatch from './ac-monkeypatch';
 
 // exposes a single instance
 var audioContext;
@@ -7,4 +7,4 @@ var audioContext;
 if (window.AudioContext)
   audioContext = new window.AudioContext();
 
-module.exports = audioContext;
+export default audioContext;

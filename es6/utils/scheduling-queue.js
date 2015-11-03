@@ -5,11 +5,10 @@
  * Norbert.Schnell@ircam.fr
  * Copyright 2014, 2015 IRCAM – Centre Pompidou
  */
-'use strict';
 
-var PriorityQueue = require("../utils/priority-queue");
-var TimeEngine = require("../core/time-engine");
-var defaultAudioContext = require("../core/audio-context");
+import PriorityQueue from '../utils/priority-queue';
+import TimeEngine from '../core/time-engine';
+import defaultAudioContext from '../core/audio-context';
 
 function arrayRemove(array, value) {
   var index = array.indexOf(value);
@@ -25,7 +24,7 @@ function arrayRemove(array, value) {
 /**
  * @class SchedulingQueue
  */
-class SchedulingQueue extends TimeEngine {
+export default class SchedulingQueue extends TimeEngine {
   constructor() {
     super();
 
@@ -97,5 +96,3 @@ class SchedulingQueue extends TimeEngine {
     this.resetTime(Infinity);
   }
 }
-
-module.exports = SchedulingQueue;

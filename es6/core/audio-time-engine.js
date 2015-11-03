@@ -1,12 +1,10 @@
-'use strict';
-
-var TimeEngine = require("./time-engine");
-var defaultAudioContext = require("./audio-context");
+import TimeEngine from './time-engine';
+import defaultAudioContext from './audio-context';
 
 /**
  * @class AudioTimeEngine
  */
-class AudioTimeEngine extends TimeEngine{
+export default class AudioTimeEngine extends TimeEngine{
   constructor(audioContext = defaultAudioContext) {
     super();
 
@@ -24,5 +22,3 @@ class AudioTimeEngine extends TimeEngine{
     return this;
   }
 }
-
-module.exports = AudioTimeEngine;
