@@ -460,7 +460,7 @@ export default class Transport extends TimeEngine {
    * @param {Object} engine engine to be added to the transport
    * @param {Number} position start position
    */
-  add(engine, startPosition = -Infinity, endPosition = Infinity, offsetPosition = 0) {
+  add(engine, startPosition = 0, endPosition = Infinity, offsetPosition = 0) {
     var transported = null;
 
     if (offsetPosition === -Infinity)
