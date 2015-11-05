@@ -20,11 +20,11 @@ var _timeEngine2 = _interopRequireDefault(_timeEngine);
 
 var _audioContext = require('./audio-context');
 
+var _audioContext2 = _interopRequireDefault(_audioContext);
+
 /**
  * @class AudioTimeEngine
  */
-
-var _audioContext2 = _interopRequireDefault(_audioContext);
 
 var AudioTimeEngine = (function (_TimeEngine) {
   _inherits(AudioTimeEngine, _TimeEngine);
