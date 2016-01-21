@@ -82,11 +82,11 @@ export default class Metronome extends AudioTimeEngine {
    * @param {Number} time metronome click synthesis audio time
    */
   trigger(time) {
-    var audioContext = this.audioContext;
-    var clickAttack = this.clickAttack;
-    var clickRelease = this.clickRelease;
+    const audioContext = this.audioContext;
+    const clickAttack = this.clickAttack;
+    const clickRelease = this.clickRelease;
 
-    var env = audioContext.createGain();
+    const env = audioContext.createGain();
     env.gain.value = 0.0;
     env.gain.setValueAtTime(0, time);
     env.gain.linearRampToValueAtTime(1.0, time + clickAttack);
@@ -94,7 +94,7 @@ export default class Metronome extends AudioTimeEngine {
     env.gain.setValueAtTime(0, time);
     env.connect(this.outputNode);
 
-    var osc = audioContext.createOscillator();
+    const osc = audioContext.createOscillator();
     osc.frequency.value = this.clickFreq;
     osc.start(time);
     osc.stop(time + clickAttack + clickRelease);
@@ -124,7 +124,7 @@ export default class Metronome extends AudioTimeEngine {
   set period(period) {
     this.__period = period;
 
-    var master = this.master;
+    const master = this.master;
 
     if (master) {
       if (master.resetEngineTime)
@@ -149,7 +149,7 @@ export default class Metronome extends AudioTimeEngine {
   set phase(phase) {
     this.__phase = phase - Math.floor(phase);
 
-    var master = this.master;
+    const master = this.master;
 
     if (master && master.resetEnginePosition !== undefined)
       master.resetEnginePosition(this);
