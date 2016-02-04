@@ -1,10 +1,22 @@
-// monkeypatch old webAudioAPI
-require('./ac-monkeypatch');
-
 // exposes a single instance
-var audioContext;
+var audioContext = null;
 
-if (window.AudioContext)
-  audioContext = new window.AudioContext();
+var AudioContext = window.webkitAudioContext || window.AudioContext;
+
+if(AudioContext) {
+  audioContext = new AudioContext();
+
+  if (/(iPhone|iPad)/i.test(navigator.userAgent) && audioContext.sampleRate !== 44100) {
+    var buffer = audioContext.createBuffer(1, 1, 44100);
+    var dummy = audioContext.createBufferSource();
+    dummy.buffer = buffer;
+    dummy.connect(audioContext.destination);
+    dummy.start(0);
+    dummy.disconnect();
+
+    audioContext.close();
+    audioContext = new AudioContext();
+  }
+}
 
 module.exports = audioContext;
