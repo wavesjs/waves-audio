@@ -253,10 +253,10 @@ export default class PriorityQueue {
           this._bubbleDown(1);
         } else {
           // bubble the (ex last) element up or down according to its new context
-          const entry = this._heap[index];
+          const e = this._heap[index];
           const parent = this._heap[Math.floor(index / 2)];
 
-          if (parent && this._isHigher(entry.time, parent.time))
+          if (parent && this._isHigher(e.time, parent.time))
             this._bubbleUp(index);
           else
             this._bubbleDown(index);
