@@ -3,7 +3,7 @@
 var AudioTimeEngine = require("../core/audio-time-engine");
 
 function optOrDef(opt, def) {
-  if(opt !== undefined)
+  if (opt !== undefined)
     return opt;
 
   return def;
@@ -261,7 +261,7 @@ class GranularEngine extends AudioTimeEngine {
         }
 
         var attackEndTime = grainTime + attack;
-        var grainEndTime = grainTime + grainDuration;
+        var grainEndTime = grainTime + grainDuration / resamplingRate;
         var releaseStartTime = grainEndTime - release;
 
         envelope.gain.value = 0;
@@ -293,7 +293,7 @@ class GranularEngine extends AudioTimeEngine {
         source.connect(envelope);
 
         source.start(grainTime, grainPosition);
-        source.stop(grainTime + grainDuration / resamplingRate);
+        source.stop(grainEndTime);
       }
     }
 
