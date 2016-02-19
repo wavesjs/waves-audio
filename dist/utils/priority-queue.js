@@ -1,9 +1,3 @@
-"use strict";
-
-var _classCallCheck = require("babel-runtime/helpers/class-call-check")["default"];
-
-var _createClass = require("babel-runtime/helpers/create-class")["default"];
-
 /* written in ECMAscript 6 */
 /**
  * @fileoverview WAVE audio priority queue used by scheduler and transports
@@ -11,6 +5,12 @@ var _createClass = require("babel-runtime/helpers/create-class")["default"];
  *
  * First rather stupid implementation to be optimized...
  */
+
+"use strict";
+
+var _classCallCheck = require("babel-runtime/helpers/class-call-check")["default"];
+
+var _createClass = require("babel-runtime/helpers/create-class")["default"];
 
 var PriorityQueue = (function () {
   function PriorityQueue() {
