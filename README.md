@@ -63,36 +63,10 @@ remove/comment all the component you don't need in `waves-audio.js`, then run
 npm run bundle
 ```
 
-## List of components
-
-#### core
-
-- `audioContext`
-- `TimeEngine`
-- `AudioTimeEngine`
-
-#### utils
-
-- `PriorityQueue`
-
-#### masters
-
-- `SimpleScheduler`
-- `Scheduler`
-- `Transport`      
-- `PlayControl`
-
-#### engines
-
-- `Metronome`
-- `GranularEngine`
-- `SegmentEngine`
-- `PlayerEngine`
-
 ## License
 
 This module is released under the BSD-3-Clause license.
 
 Acknowledgments
 
-This code is part of the WAVE project, funded by ANR (The French National Research Agency).
+This code has been developed in the framework of the WAVE and CoSiMa research projects, funded by the French National Research Agency (ANR).
