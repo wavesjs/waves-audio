@@ -7,7 +7,7 @@ const schedulerMap = new WeakMap();
 const simpleSchedulerMap = new WeakMap();
 
 // scheduler factory
-const getScheduler = function(audioContext = defaultAudioContext) {
+export const getScheduler = function(audioContext = defaultAudioContext) {
   let scheduler = schedulerMap.get(audioContext);
 
   if (!scheduler) {
@@ -18,7 +18,7 @@ const getScheduler = function(audioContext = defaultAudioContext) {
   return scheduler;
 };
 
-const getSimpleScheduler = function(audioContext = defaultAudioContext) {
+export const getSimpleScheduler = function(audioContext = defaultAudioContext) {
   let simpleScheduler = simpleSchedulerMap.get(audioContext);
 
   if (!simpleScheduler) {
@@ -28,5 +28,3 @@ const getSimpleScheduler = function(audioContext = defaultAudioContext) {
 
   return simpleScheduler;
 };
-
-export default { getScheduler, getSimpleScheduler };

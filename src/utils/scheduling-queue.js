@@ -53,7 +53,7 @@ export default class SchedulingQueue extends TimeEngine {
     if (!(fun instanceof Function))
       throw new Error("object cannot be defered by scheduler");
 
-    super.add({
+    this.add({
       advanceTime: function() { fun(); }, // make sur that the advanceTime method does not returm anything
     }, time);
   }
