@@ -10,17 +10,6 @@ import PriorityQueue from '../utils/priority-queue';
 import TimeEngine from '../core/time-engine';
 import defaultAudioContext from '../core/audio-context';
 
-function arrayRemove(array, value) {
-  var index = array.indexOf(value);
-
-  if (index >= 0) {
-    array.splice(index, 1);
-    return true;
-  }
-
-  return false;
-}
-
 /**
  * @class SchedulingQueue
  */
@@ -29,7 +18,7 @@ export default class SchedulingQueue extends TimeEngine {
     super();
 
     this.__queue = new PriorityQueue();
-    this.__engines = [];
+    this.__engines = new Set();
   }
 
   // TimeEngine 'scheduled' interface
@@ -42,7 +31,7 @@ export default class SchedulingQueue extends TimeEngine {
 
       if (!nextEngineTime) {
         engine.master = null;
-        arrayRemove(this.__engines, engine);
+        this.__engines.delete(engine);
         nextTime = this.__queue.remove(engine);
       } else if (nextEngineTime > time && nextEngineTime < Infinity) {
         nextTime = this.__queue.move(engine, nextEngineTime);
@@ -59,12 +48,28 @@ export default class SchedulingQueue extends TimeEngine {
     return 0;
   }
 
+  // call a function at a given time
+  defer(fun, time = this.currentTime) {
+    if (!(fun instanceof Function))
+      throw new Error("object cannot be defered by scheduler");
+
+    this.add({
+      advanceTime: function() { fun(); }, // make sur that the advanceTime method does not returm anything
+    }, time);
+  }
+
   // add a time engine to the queue and return the engine
   add(engine, time = this.currentTime) {
+    if (!engine.implementsScheduled())
+      throw new Error("object cannot be added to scheduler");
+
+    if (engine.master)
+      throw new Error("object has already been added to a master");
+
     engine.master = this;
 
     // add to engines and queue
-    this.__engines.push(engine);
+    this.__engines.add(engine);
     var nextTime = this.__queue.insert(engine, time);
 
     // reschedule queue
@@ -73,10 +78,13 @@ export default class SchedulingQueue extends TimeEngine {
 
   // remove a time engine from the queue
   remove(engine) {
+    if (engine.master !== this)
+      throw new Error("object has not been added to this scheduler");
+
     engine.master = null;
 
     // remove from array and queue
-    arrayRemove(this.__engines, engine);
+    this.__engines.delete(engine);
     var nextTime = this.__queue.remove(engine);
 
     // reschedule queue
@@ -85,14 +93,22 @@ export default class SchedulingQueue extends TimeEngine {
 
   // reset next engine time
   resetEngineTime(engine, time = this.currentTime) {
+    if (engine.master !== this)
+      throw new Error("object has not been added to this scheduler");
+
     var nextTime = this.__queue.move(engine, time);
     this.resetTime(nextTime);
+  }
+
+  // check whether a given engine is scheduled
+  has(engine) {
+    return this.__engines.has(engine);
   }
 
   // clear queue
   clear() {
     this.__queue.clear();
-    this.__engines.length = 0;
+    this.__engines.clear;
     this.resetTime(Infinity);
   }
 }

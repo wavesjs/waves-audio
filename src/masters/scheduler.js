@@ -3,7 +3,6 @@ import TimeEngine from '../core/time-engine';
 import PriorityQueue from '../utils/priority-queue';
 import SchedulingQueue from '../utils/scheduling-queue';
 
-
 export default class Scheduler extends SchedulingQueue {
   constructor(options = {}) {
     super();
@@ -29,8 +28,8 @@ export default class Scheduler extends SchedulingQueue {
 
   // setTimeout scheduling loop
   __tick() {
-    var audioContext = this.audioContext;
-    var time = this.__nextTime;
+    const audioContext = this.audioContext;
+    let time = this.__nextTime;
 
     this.__timeout = null;
 
@@ -56,7 +55,7 @@ export default class Scheduler extends SchedulingQueue {
         if (this.__nextTime === Infinity)
           console.log("Scheduler Start");
 
-        var timeOutDelay = Math.max((time - this.lookahead - this.audioContext.currentTime), this.period);
+        const timeOutDelay = Math.max((time - this.lookahead - this.audioContext.currentTime), this.period);
 
         this.__timeout = setTimeout(() => {
           this.__tick();
@@ -77,47 +76,11 @@ export default class Scheduler extends SchedulingQueue {
   }
 
   get currentPosition() {
-    var master = this.master;
+    const master = this.master;
 
     if (master && master.currentPosition !== undefined)
       return master.currentPosition;
 
     return undefined;
-  }
-
-  // add a time engine to the queue and return the engine
-  add(engineOrFunction, time = this.currentTime) {
-    var engine;
-
-    if (engineOrFunction instanceof Function) {
-      // construct minimal scheduled engine
-      engine = {
-        advanceTime: engineOrFunction
-      };
-    } else {
-      engine = engineOrFunction;
-
-      if (!engine.implementsScheduled())
-        throw new Error("object cannot be added to scheduler");
-
-      if (engine.master)
-        throw new Error("object has already been added to a master");
-    }
-
-    super.add(engine, time);
-  }
-
-  remove(engine) {
-    if (engine.master !== this)
-      throw new Error("object has not been added to this scheduler");
-
-    super.remove(engine);
-  }
-
-  resetEngineTime(engine, time = this.currentTime) {
-    if (engine.master !== this)
-      throw new Error("object has not been added to this scheduler");
-
-    super.resetEngineTime(engine, time);
   }
 }

@@ -1,22 +1,11 @@
 import defaultAudioContext from '../core/audio-context';
 import TimeEngine from '../core/time-engine';
 
-function arrayRemove(array, value) {
-  var index = array.indexOf(value);
-
-  if (index >= 0) {
-    array.splice(index, 1);
-    return true;
-  }
-
-  return false;
-}
-
 export default class SimpleScheduler {
   constructor(options = {}) {
     this.audioContext = options.audioContext ||  defaultAudioContext;
 
-    this.__engines = [];
+    this.__engines = new Set();
 
     this.__schedEngines = [];
     this.__schedTimes = [];
@@ -102,7 +91,7 @@ export default class SimpleScheduler {
         // remove engine from scheduler
         if (!time) {
           engine.master = null;
-          arrayRemove(this.__engines, engine);
+          this.__engines.delete(engine);
         }
       }
     }
@@ -125,21 +114,27 @@ export default class SimpleScheduler {
     return undefined;
   }
 
-  add(engineOrFunction, time = this.currentTime, getCurrentPosition = null) {
-    var engine = engineOrFunction;
+  // call a function at a given time
+  defer(fun, time = this.currentTime) {
+    if (!(fun instanceof Function))
+      throw new Error("object cannot be defered by scheduler");
 
-    if (engineOrFunction instanceof Function)
-      engine = {
-        advanceTime: engineOrFunction
-      };
-    else if (!engineOrFunction.implementsScheduled())
+    this.add({
+      advanceTime: function() { fun(); }, // make sur that the advanceTime method does not returm anything
+    }, time);
+  }
+
+  // add a time engine to the queue and return the engine
+  add(engine, time = this.currentTime, getCurrentPosition = null) {
+    if (!engine.implementsScheduled())
       throw new Error("object cannot be added to scheduler");
-    else if (engineOrFunction.master)
+
+    if (engine.master)
       throw new Error("object has already been added to a master");
 
     // set master and add to array
     engine.master = this;
-    this.__engines.push(engine);
+    this.__engines.add(engine);
 
     // schedule engine
     this.__scheduleEngine(engine, time);
@@ -154,7 +149,7 @@ export default class SimpleScheduler {
 
     // reset master and remove from array
     engine.master = null;
-    arrayRemove(this.__engines, engine);
+    this.__engines.delete(engine);
 
     // unschedule engine
     this.__unscheduleEngine(engine);
@@ -164,6 +159,11 @@ export default class SimpleScheduler {
   resetEngineTime(engine, time = this.currentTime) {
     this.__rescheduleEngine(engine, time);
     this.__resetTick();
+  }
+
+  // check whether a given engine is scheduled
+  has(engine) {
+    return this.__engines.has(engine);
   }
 
   clear() {
