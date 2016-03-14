@@ -1,53 +1,72 @@
-"use strict";
+'use strict';
 
-var _classCallCheck = require("babel-runtime/helpers/class-call-check")["default"];
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 
-var _inherits = require("babel-runtime/helpers/inherits")["default"];
+var _getPrototypeOf = require('babel-runtime/core-js/object/get-prototype-of');
 
-var _get = require("babel-runtime/helpers/get")["default"];
+var _getPrototypeOf2 = _interopRequireDefault(_getPrototypeOf);
 
-var _createClass = require("babel-runtime/helpers/create-class")["default"];
+var _classCallCheck2 = require('babel-runtime/helpers/classCallCheck');
 
-var _core = require("babel-runtime/core-js")["default"];
+var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
 
-var TimeEngine = require("./time-engine");
-var defaultAudioContext = require("./audio-context");
+var _createClass2 = require('babel-runtime/helpers/createClass');
+
+var _createClass3 = _interopRequireDefault(_createClass2);
+
+var _possibleConstructorReturn2 = require('babel-runtime/helpers/possibleConstructorReturn');
+
+var _possibleConstructorReturn3 = _interopRequireDefault(_possibleConstructorReturn2);
+
+var _inherits2 = require('babel-runtime/helpers/inherits');
+
+var _inherits3 = _interopRequireDefault(_inherits2);
+
+var _timeEngine = require('./time-engine');
+
+var _timeEngine2 = _interopRequireDefault(_timeEngine);
+
+var _audioContext = require('./audio-context');
+
+var _audioContext2 = _interopRequireDefault(_audioContext);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * @class AudioTimeEngine
  */
 
-var AudioTimeEngine = (function (_TimeEngine) {
+var AudioTimeEngine = function (_TimeEngine) {
+  (0, _inherits3.default)(AudioTimeEngine, _TimeEngine);
+
   function AudioTimeEngine() {
-    var audioContext = arguments[0] === undefined ? defaultAudioContext : arguments[0];
+    var audioContext = arguments.length <= 0 || arguments[0] === undefined ? _audioContext2.default : arguments[0];
+    (0, _classCallCheck3.default)(this, AudioTimeEngine);
 
-    _classCallCheck(this, AudioTimeEngine);
+    var _this = (0, _possibleConstructorReturn3.default)(this, (0, _getPrototypeOf2.default)(AudioTimeEngine).call(this));
 
-    _get(_core.Object.getPrototypeOf(AudioTimeEngine.prototype), "constructor", this).call(this);
-
-    this.audioContext = audioContext;
-    this.outputNode = null;
+    _this.audioContext = audioContext;
+    _this.outputNode = null;
+    return _this;
   }
 
-  _inherits(AudioTimeEngine, _TimeEngine);
-
-  _createClass(AudioTimeEngine, {
-    connect: {
-      value: function connect(target) {
-        this.outputNode.connect(target);
-        return this;
-      }
-    },
-    disconnect: {
-      value: function disconnect(connection) {
-        this.outputNode.disconnect(connection);
-        return this;
-      }
+  (0, _createClass3.default)(AudioTimeEngine, [{
+    key: 'connect',
+    value: function connect(target) {
+      this.outputNode.connect(target);
+      return this;
     }
-  });
-
+  }, {
+    key: 'disconnect',
+    value: function disconnect(connection) {
+      this.outputNode.disconnect(connection);
+      return this;
+    }
+  }]);
   return AudioTimeEngine;
-})(TimeEngine);
+}(_timeEngine2.default);
 
-module.exports = AudioTimeEngine;
-//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbImVzNi91dGlscy9zY2hlZHVsaW5nLXF1ZXVlLmpzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiJBQUFBLFlBQVksQ0FBQzs7Ozs7Ozs7Ozs7O0FBRWIsSUFBSSxVQUFVLEdBQUcsT0FBTyxDQUFDLGVBQWUsQ0FBQyxDQUFDO0FBQzFDLElBQUksbUJBQW1CLEdBQUcsT0FBTyxDQUFDLGlCQUFpQixDQUFDLENBQUM7Ozs7OztJQUsvQyxlQUFlO0FBQ1IsV0FEUCxlQUFlLEdBQzZCO1FBQXBDLFlBQVksZ0NBQUcsbUJBQW1COzswQkFEMUMsZUFBZTs7QUFFakIscUNBRkUsZUFBZSw2Q0FFVDs7QUFFUixRQUFJLENBQUMsWUFBWSxHQUFHLFlBQVksQ0FBQztBQUNqQyxRQUFJLENBQUMsVUFBVSxHQUFHLElBQUksQ0FBQztHQUN4Qjs7WUFORyxlQUFlOztlQUFmLGVBQWU7QUFRbkIsV0FBTzthQUFBLGlCQUFDLE1BQU0sRUFBRTtBQUNkLFlBQUksQ0FBQyxVQUFVLENBQUMsT0FBTyxDQUFDLE1BQU0sQ0FBQyxDQUFDO0FBQ2hDLGVBQU8sSUFBSSxDQUFDO09BQ2I7O0FBRUQsY0FBVTthQUFBLG9CQUFDLFVBQVUsRUFBRTtBQUNyQixZQUFJLENBQUMsVUFBVSxDQUFDLFVBQVUsQ0FBQyxVQUFVLENBQUMsQ0FBQztBQUN2QyxlQUFPLElBQUksQ0FBQztPQUNiOzs7O1NBaEJHLGVBQWU7R0FBUyxVQUFVOztBQW1CeEMsTUFBTSxDQUFDLE9BQU8sR0FBRyxlQUFlLENBQUMiLCJmaWxlIjoiZXM2L3V0aWxzL3NjaGVkdWxpbmctcXVldWUuanMiLCJzb3VyY2VzQ29udGVudCI6WyIndXNlIHN0cmljdCc7XG5cbnZhciBUaW1lRW5naW5lID0gcmVxdWlyZShcIi4vdGltZS1lbmdpbmVcIik7XG52YXIgZGVmYXVsdEF1ZGlvQ29udGV4dCA9IHJlcXVpcmUoXCIuL2F1ZGlvLWNvbnRleHRcIik7XG5cbi8qKlxuICogQGNsYXNzIEF1ZGlvVGltZUVuZ2luZVxuICovXG5jbGFzcyBBdWRpb1RpbWVFbmdpbmUgZXh0ZW5kcyBUaW1lRW5naW5le1xuICBjb25zdHJ1Y3RvcihhdWRpb0NvbnRleHQgPSBkZWZhdWx0QXVkaW9Db250ZXh0KSB7XG4gICAgc3VwZXIoKTtcblxuICAgIHRoaXMuYXVkaW9Db250ZXh0ID0gYXVkaW9Db250ZXh0O1xuICAgIHRoaXMub3V0cHV0Tm9kZSA9IG51bGw7XG4gIH1cblxuICBjb25uZWN0KHRhcmdldCkge1xuICAgIHRoaXMub3V0cHV0Tm9kZS5jb25uZWN0KHRhcmdldCk7XG4gICAgcmV0dXJuIHRoaXM7XG4gIH1cblxuICBkaXNjb25uZWN0KGNvbm5lY3Rpb24pIHtcbiAgICB0aGlzLm91dHB1dE5vZGUuZGlzY29ubmVjdChjb25uZWN0aW9uKTtcbiAgICByZXR1cm4gdGhpcztcbiAgfVxufVxuXG5tb2R1bGUuZXhwb3J0cyA9IEF1ZGlvVGltZUVuZ2luZTtcbiJdfQ==
+exports.default = AudioTimeEngine;
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbImF1ZGlvLXRpbWUtZW5naW5lLmpzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7O0FBQUE7Ozs7QUFDQTs7Ozs7Ozs7OztJQUtxQjs7O0FBQ25CLFdBRG1CLGVBQ25CLEdBQWdEO1FBQXBDLDJHQUFvQzt3Q0FEN0IsaUJBQzZCOzs2RkFEN0IsNkJBQzZCOztBQUc5QyxVQUFLLFlBQUwsR0FBb0IsWUFBcEIsQ0FIOEM7QUFJOUMsVUFBSyxVQUFMLEdBQWtCLElBQWxCLENBSjhDOztHQUFoRDs7NkJBRG1COzs0QkFRWCxRQUFRO0FBQ2QsV0FBSyxVQUFMLENBQWdCLE9BQWhCLENBQXdCLE1BQXhCLEVBRGM7QUFFZCxhQUFPLElBQVAsQ0FGYzs7OzsrQkFLTCxZQUFZO0FBQ3JCLFdBQUssVUFBTCxDQUFnQixVQUFoQixDQUEyQixVQUEzQixFQURxQjtBQUVyQixhQUFPLElBQVAsQ0FGcUI7OztTQWJKIiwiZmlsZSI6ImF1ZGlvLXRpbWUtZW5naW5lLmpzIiwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IFRpbWVFbmdpbmUgZnJvbSAnLi90aW1lLWVuZ2luZSc7XG5pbXBvcnQgZGVmYXVsdEF1ZGlvQ29udGV4dCBmcm9tICcuL2F1ZGlvLWNvbnRleHQnO1xuXG4vKipcbiAqIEBjbGFzcyBBdWRpb1RpbWVFbmdpbmVcbiAqL1xuZXhwb3J0IGRlZmF1bHQgY2xhc3MgQXVkaW9UaW1lRW5naW5lIGV4dGVuZHMgVGltZUVuZ2luZXtcbiAgY29uc3RydWN0b3IoYXVkaW9Db250ZXh0ID0gZGVmYXVsdEF1ZGlvQ29udGV4dCkge1xuICAgIHN1cGVyKCk7XG5cbiAgICB0aGlzLmF1ZGlvQ29udGV4dCA9IGF1ZGlvQ29udGV4dDtcbiAgICB0aGlzLm91dHB1dE5vZGUgPSBudWxsO1xuICB9XG5cbiAgY29ubmVjdCh0YXJnZXQpIHtcbiAgICB0aGlzLm91dHB1dE5vZGUuY29ubmVjdCh0YXJnZXQpO1xuICAgIHJldHVybiB0aGlzO1xuICB9XG5cbiAgZGlzY29ubmVjdChjb25uZWN0aW9uKSB7XG4gICAgdGhpcy5vdXRwdXROb2RlLmRpc2Nvbm5lY3QoY29ubmVjdGlvbik7XG4gICAgcmV0dXJuIHRoaXM7XG4gIH1cbn1cbiJdfQ==

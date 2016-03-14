@@ -53,15 +53,31 @@ add the script tag in your at the bottom of the `<body>`
 
 the library is exposed in the `window.wavesAudio` namespace
 
+## List of components
 
-## Custom build
+#### core
 
-to create your own custom build, you need to
-remove/comment all the component you don't need in `waves-audio.js`, then run
+- `audioContext`
+- `TimeEngine`
+- `AudioTimeEngine`
 
-```bash
-npm run bundle
-```
+#### utils
+
+- `PriorityQueue`
+
+#### masters
+
+- `SimpleScheduler`
+- `Scheduler`
+- `Transport`      
+- `PlayControl`
+
+#### engines
+
+- `Metronome`
+- `GranularEngine`
+- `SegmentEngine`
+- `PlayerEngine`
 
 ## License
 
