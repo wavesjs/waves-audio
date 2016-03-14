@@ -1,41 +1,23 @@
 #!/usr/bin/env node
 var babel = require('babel-core');
+var browserify = require('browserify');
 var fse = require('fs-extra');
 var log = require('./log');
 var path = require('path');
+var uglify = require('uglify-js');
 
 'use strict';
 
 /**
  * Create a transpiler object binded to a `srcDirectory` and a `distDirectory`
  */
-function getTranspiler(srcDirectory, distDirectory, isAllowed, babelOptions) {
+function getTranspiler(srcDirectory, distDirectory, isAllowed, babelOptions, browserifyOptions) {
 
   /**
    * Returns the name of the target transpiled file
    */
   function getTarget(filename) {
     return filename.replace(new RegExp('^' + srcDirectory), distDirectory);
-  }
-
-  /**
-   * Returns the path transpiled `index.js` file the client folder in which resides
-   * the given `filename`
-   */
-  function getEntryPoint(filename) {
-    const folderName = getFolderName(filename);
-    const entryPoint = path.join(distDirectory, folderName, 'index.js');
-    return entryPoint;
-  }
-
-  /**
-   * Returns the name of the 1rst level folder inside `srcDirectory` in which the
-   * client side javascript file resides.
-   */
-  function getFolderName(filename) {
-    const relFilename = filename.replace(new RegExp('^' + srcDirectory), '');
-    const folderName = relFilename.split(path.sep)[1];
-    return folderName;
   }
 
   /**
@@ -76,6 +58,57 @@ function getTranspiler(srcDirectory, distDirectory, isAllowed, babelOptions) {
           log.transpileSuccess(filename, outFilename, startTime);
           next();
         });
+      });
+    },
+
+    /**
+     * Transform a given file to it's browserified version, client only.
+     * Only clients have their browserified counterparts, each folder in `src/client`
+     * is considered has a separate browserified client file. The `index.js` in each
+     * folder defines the entry point of the particular client. The browserified
+     * file is name after the name of the folder.
+     */
+    bundle: function(entryPoint, outFilename, callback) {
+      if (entryPoint === undefined || !isAllowed(entryPoint))
+        return;
+
+      var bundler = browserify(entryPoint, browserifyOptions);
+      var startTime = new Date().getTime();
+
+      log.bundleStart(outFilename);
+      fse.ensureFileSync(outFilename); // ensure file exists
+
+      var writeStream = fse.createWriteStream(outFilename);
+
+      bundler
+        .bundle()
+        .on('error', function(err) {
+          log.bundleError(outFilename, err);
+        })
+        .on('end', function() {
+          log.bundleSuccess(outFilename, startTime);
+        })
+        .pipe(writeStream);
+
+      writeStream.on('finish', function() {
+        if (callback)
+          callback();
+      });
+    },
+
+    /**
+     * Uglify the `inFilename` into `outFilename`.
+     */
+    uglify: function(inFilename, outFilename) {
+      var result = uglify.minify(inFilename);
+      var startTime = new Date().getTime();
+
+
+      fse.outputFile(outFilename, result.code, function(err) {
+        if (err)
+          return console.error(err.message);
+
+        log.uglifySuccess(inFilename, outFilename, startTime);
       });
     },
 

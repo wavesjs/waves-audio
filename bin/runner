@@ -2,6 +2,7 @@
 var fse = require('fs-extra');
 var watch = require('watch');
 var path = require('path');
+var pkg = require('../package.json');
 var util = require('util');
 
 var javascripts = require('./javascripts');
@@ -29,10 +30,22 @@ var watchOptions = {
 };
 
 /**
+ * Options for browserify.
+ */
+var browserifyOptions = {
+  debug: true,
+  fullPaths: false,
+  standalone: pkg.standalone,
+};
+
+/**
  * Watched directories
  */
 var srcDirectory = path.join(cwd, 'src');
-var distDirectory = path.join(cwd, '.');
+var distDirectory = path.join(cwd, 'dist');
+
+var umdTarget = path.join(cwd, pkg.name + '.umd.js');
+var minTarget = path.join(cwd, pkg.name + '.min.js');
 
 /**
  * Define which file should be ignored by every command.
@@ -107,10 +120,21 @@ function watchFiles(srcDirectory, distDirectory) {
 }
 
 
-function transpileFiles(srcDirectory, distDirectory) {
+function transpileFiles(srcDirectory, distDirectory, callback) {
   _getFileList(srcDirectory, function(files) {
     var transpiler = javascripts.getTranspiler(srcDirectory, distDirectory, isAllowed, babelOptions);
-    transpiler.transpile(undefined, files);
+    transpiler.transpile(undefined, files, callback);
+  });
+}
+
+function bundle(distDirectory) {
+  var entryPoint = path.join(distDirectory, 'index.js');
+  var transpiler = javascripts.getTranspiler(srcDirectory, distDirectory, isAllowed, babelOptions, browserifyOptions);
+
+  transpileFiles(srcDirectory, distDirectory, function() {
+    transpiler.bundle(entryPoint, umdTarget, function() {
+      transpiler.uglify(umdTarget, minTarget);
+    });
   });
 }
 
@@ -139,6 +163,13 @@ switch (command) {
    */
   case '--transpile':
     transpileFiles(srcDirectory, distDirectory);
+    break;
+
+  /**
+   * Transpile all files in `src` from es6 to es5.
+   */
+  case '--bundle':
+    bundle(distDirectory);
     break;
 }
 
