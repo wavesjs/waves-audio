@@ -38,7 +38,9 @@
     "babel-runtime": "^5.8.20"
   },
   "devDependencies": {
+    "babel": "^5.8.20",
     "benchmark": "^1.0.0",
+    "browserify": "^13.0.0",
     "fs-extra": "^0.16.3",
     "inquirer": "^0.8.0",
     "jshint": "^2.6.0",

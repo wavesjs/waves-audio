@@ -47,7 +47,7 @@ export default class SchedulingQueue extends TimeEngine {
       } else if (nextEngineTime > time && nextEngineTime < Infinity) {
         nextTime = this.__queue.move(engine, nextEngineTime);
       } else {
-        nextTime = this.__queue.remove(engine);
+        throw new Error('engine did not advance time');
       }
     }
 
