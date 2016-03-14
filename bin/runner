@@ -26,13 +26,13 @@ var watchOptions = {
   ignoreUnreadableDir: true,
   ignoreNotPermitted: true,
   interval: 2000, // watch internally use `fs.watchFile`
-}
+};
 
 /**
  * Watched directories
  */
 var srcDirectory = path.join(cwd, 'src');
-var distDirectory = path.join(cwd, 'dist');
+var distDirectory = path.join(cwd, '.');
 
 /**
  * Define which file should be ignored by every command.
@@ -144,3 +144,4 @@ switch (command) {
 
 /* --------------------------------------------------------------------------
  * -------------------------------------------------------------------------- */
+
