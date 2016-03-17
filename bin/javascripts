@@ -17,7 +17,9 @@ function getTranspiler(srcDirectory, distDirectory, isAllowed, babelOptions, bro
    * Returns the name of the target transpiled file
    */
   function getTarget(filename) {
-    return filename.replace(new RegExp('^' + srcDirectory), distDirectory);
+    var relFilename = path.relative(srcDirectory, filename);
+    var outFilename = path.join(distDirectory, relFilename);
+    return outFilename;
   }
 
   /**

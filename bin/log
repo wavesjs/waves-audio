@@ -2,14 +2,15 @@
 var pkg = require('../package.json');
 var colors = require('colors');
 var ora = require('ora');
+var path = require('path');
 
 'use strict';
 
 var prefix = '[' + pkg.name + ']\t';
 var cwd = process.cwd();
 
-function toRel(path) {
-  return path.replace(new RegExp('^' + cwd), '');
+function toRel(target) {
+  return path.relative(cwd, target);
 }
 
 function getDeltaTime(time) {
