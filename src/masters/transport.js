@@ -34,8 +34,8 @@ class Transported extends TimeEngine {
     super();
     this.master = transport;
 
-    engine.master = this;
     this.__engine = engine;
+    engine.master = this;
 
     this.__startPosition = start;
     this.__endPosition = !isFinite(duration) ? Infinity : start + duration;
@@ -140,12 +140,13 @@ class Transported extends TimeEngine {
 
   destroy() {
     this.master = null;
+
     this.__engine.master = null;
     this.__engine = null;
   }
 }
 
-// TransportedScheduled
+// TransportedTransported
 // has to switch on and off the scheduled engines when the transport hits the engine's start and end position
 class TransportedTransported extends Transported {
   constructor(transport, engine, startPosition, endPosition, offsetPosition) {
@@ -214,6 +215,9 @@ class TransportedSpeedControlled extends Transported {
 class TransportedScheduled extends Transported {
   constructor(transport, engine, startPosition, endPosition, offsetPosition) {
     super(transport, engine, startPosition, endPosition, offsetPosition);
+
+    // scheduling queue becomes master of engine
+    engine.master = null;
     transport.__schedulingQueue.add(engine, Infinity);
   }
 
@@ -231,6 +235,7 @@ class TransportedScheduled extends Transported {
   }
 }
 
+// translates advancePosition of *transported* engines into global scheduler times
 class TransportSchedulerHook extends TimeEngine {
   constructor(transport) {
     super();
@@ -275,6 +280,7 @@ class TransportSchedulerHook extends TimeEngine {
   }
 }
 
+// internal scheduling queue that returns the current position (and time) of the play control
 class TransportSchedulingQueue extends SchedulingQueue {
   constructor(transport) {
     super();

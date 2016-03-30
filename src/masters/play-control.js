@@ -63,12 +63,13 @@ class LoopControl extends TimeEngine {
   }
 }
 
+// play controlled base class
 class PlayControlled {
   constructor(playControl, engine) {
     this.__playControl = playControl;
-    this.__engine = engine;
 
     engine.master = this;
+    this.__engine = engine;
   }
 
   syncSpeed(time, position, speed, seek, lastSpeed) {
@@ -84,20 +85,98 @@ class PlayControlled {
   }
 
   destroy() {
-    this.__engine.master = null;
-
     this.__playControl = null;
+
+    this.__engine.master = null;
     this.__engine = null;
   }
 }
 
+// play control for engines implementing the *speed-controlled* interface
 class PlayControlledSpeedControlled extends PlayControlled {
   constructor(playControl, engine) {
     super(playControl, engine);
   }
 }
 
-class TransportedSchedulerHook extends TimeEngine {
+// play control for engines implmenting the *transported* interface
+class PlayControlledTransported extends PlayControlled {
+  constructor(playControl, engine) {
+    super(playControl, engine);
+
+    this.__schedulerHook = new PlayControlledSchedulerHook(playControl, engine);
+  }
+
+  syncSpeed(time, position, speed, seek, lastSpeed) {
+    if (speed !== lastSpeed || (seek && speed !== 0)) {
+      var nextPosition;
+
+      // resync transported engines
+      if (seek || speed * lastSpeed < 0) {
+        // seek or reverse direction
+        nextPosition = this.__engine.syncPosition(time, position, speed);
+      } else if (lastSpeed === 0) {
+        // start
+        nextPosition = this.__engine.syncPosition(time, position, speed);
+      } else if (speed === 0) {
+        // stop
+        nextPosition = Infinity;
+
+        if (this.__engine.syncSpeed)
+          this.__engine.syncSpeed(time, position, 0);
+      } else if (this.__engine.syncSpeed) {
+        // change speed without reversing direction
+        this.__engine.syncSpeed(time, position, speed);
+      }
+
+      this.__schedulerHook.resetPosition(nextPosition);
+    }
+  }
+
+  resetEnginePosition(engine, position = undefined) {
+    if (position === undefined) {
+      var playControl = this.__playControl;
+      var time = playControl.__sync();
+
+      position = this.__engine.syncPosition(time, playControl.__position, playControl.__speed);
+    }
+
+    this.__schedulerHook.resetPosition(position);
+  }
+
+  destroy() {
+    this.__schedulerHook.destroy();
+    this.__schedulerHook = null;
+
+    super.destroy();
+  }
+}
+
+// play control for time engines implementing the *scheduled* interface
+class PlayControlledScheduled extends PlayControlled {
+  constructor(playControl, engine) {
+    super(playControl, engine);
+
+    // scheduling queue becomes master of engine
+    engine.master = null;
+    this.__schedulingQueue = new PlayControlledSchedulingQueue(playControl, engine);
+  }
+
+  syncSpeed(time, position, speed, seek, lastSpeed) {
+    if (lastSpeed === 0 && speed !== 0) // start or seek
+      this.__engine.resetTime();
+    else if (lastSpeed !== 0 && speed === 0) // stop
+      this.__engine.resetTime(Infinity);
+  }
+
+  destroy() {
+    this.__schedulingQueue.destroy();
+    super.destroy();
+  }
+}
+
+// translates transported engine advancePosition into global scheduler times
+class PlayControlledSchedulerHook extends TimeEngine {
   constructor(playControl, engine) {
     super();
 
@@ -124,6 +203,14 @@ class TransportedSchedulerHook extends TimeEngine {
     return nextTime;
   }
 
+  get currentTime() {
+    return this.__playControl.currentTime;
+  }
+
+  get currentPosition() {
+    return this.__playControl.currentPosition;
+  }
+
   resetPosition(position = this.__nextPosition) {
     var time = this.__playControl.__getTimeAtPosition(position);
     this.__nextPosition = position;
@@ -132,64 +219,13 @@ class TransportedSchedulerHook extends TimeEngine {
 
   destroy() {
     this.__playControl.__scheduler.remove(this);
-
     this.__playControl = null;
     this.__engine = null;
   }
 }
 
-class PlayControlledTransported extends PlayControlled {
-  constructor(playControl, engine) {
-    super(playControl, engine);
-
-    this.__schedulerHook = new TransportedSchedulerHook(playControl, engine);
-  }
-
-  syncSpeed(time, position, speed, seek, lastSpeed) {
-    var nextPosition = this.__nextPosition;
-
-    if (seek) {
-      nextPosition = this.__engine.syncPosition(time, position, speed);
-    } else if (lastSpeed === 0) {
-      // start
-      nextPosition = this.__engine.syncPosition(time, position, speed);
-    } else if (speed === 0) {
-      // stop
-      nextPosition = Infinity;
-
-      if (this.__engine.syncSpeed)
-        this.__engine.syncSpeed(time, position, 0);
-    } else if (speed * lastSpeed < 0) {
-      // change transport direction
-      nextPosition = this.__engine.syncPosition(time, position, speed);
-    } else if (this.__engine.syncSpeed) {
-      // change speed
-      this.__engine.syncSpeed(time, position, speed);
-    }
-
-    this.__schedulerHook.resetPosition(nextPosition);
-  }
-
-  resetEnginePosition(engine, position = undefined) {
-    if (position === undefined) {
-      var playControl = this.__playControl;
-      var time = playControl.__sync();
-
-      position = this.__engine.syncPosition(time, playControl.__position, playControl.__speed);
-    }
-
-    this.__schedulerHook.resetPosition(position);
-  }
-
-  destroy() {
-    this.__schedulerHook.destroy();
-    this.__schedulerHook = null;
-
-    super.destroy();
-  }
-}
-
-class ScheduledSchedulingQueue extends SchedulingQueue {
+// internal scheduling queue that returns the current position (and time) of the play control
+class PlayControlledSchedulingQueue extends SchedulingQueue {
   constructor(playControl, engine) {
     super();
     this.__playControl = playControl;
@@ -216,25 +252,7 @@ class ScheduledSchedulingQueue extends SchedulingQueue {
   }
 }
 
-class PlayControlledScheduled extends PlayControlled {
-  constructor(playControl, engine) {
-    super(playControl, engine);
-    this.__schedulingQueue = new ScheduledSchedulingQueue(playControl, engine);
-  }
-
-  syncSpeed(time, position, speed, seek, lastSpeed) {
-    if (lastSpeed === 0 && speed !== 0) // start or seek
-      this.__engine.resetTime();
-    else if (lastSpeed !== 0 && speed === 0) // stop
-      this.__engine.resetTime(Infinity);
-  }
-
-  destroy() {
-    this.__schedulingQueue.destroy();
-    super.destroy();
-  }
-}
-
+// play control meta-class
 export default class PlayControl extends TimeEngine {
   constructor(engine, options = {}) {
     super();
