@@ -282,11 +282,11 @@ export default class PlayControl extends TimeEngine {
     if (engine.master)
       throw new Error("object has already been added to a master");
 
-    if (engine.implementsSpeedControlled())
+    if (TimeEngine.implementsSpeedControlled(engine))
       this.__playControlled = new PlayControlledSpeedControlled(this, engine);
-    else if (engine.implementsTransported())
+    else if (TimeEngine.implementsTransported(engine))
       this.__playControlled = new PlayControlledTransported(this, engine);
-    else if (engine.implementsScheduled())
+    else if (TimeEngine.implementsScheduled(engine))
       this.__playControlled = new PlayControlledScheduled(this, engine);
     else
       throw new Error("object cannot be added to play control");

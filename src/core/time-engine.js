@@ -27,8 +27,8 @@ export default class TimeEngine {
    * Scheduled interface
    *   - advanceTime(time), called to generate next event at given time, returns next time
    */
-  implementsScheduled() {
-    return (this.advanceTime && this.advanceTime instanceof Function);
+  static implementsScheduled(engine) {
+    return (engine.advanceTime && engine.advanceTime instanceof Function);
   }
 
   resetTime(time = undefined) {
@@ -41,10 +41,10 @@ export default class TimeEngine {
    *   - syncPosition(time, position, speed), called to reposition TimeEngine, returns next position
    *   - advancePosition(time, position, speed), called to generate next event at given time and position, returns next position
    */
-  implementsTransported() {
+  static implementsTransported(engine) {
     return (
-      this.syncPosition && this.syncPosition instanceof Function &&
-      this.advancePosition && this.advancePosition instanceof Function
+      engine.syncPosition && engine.syncPosition instanceof Function &&
+      engine.advancePosition && engine.advancePosition instanceof Function
     );
   }
 
@@ -57,7 +57,7 @@ export default class TimeEngine {
    * Speed-controlled interface
    *   - syncSpeed(time, position, speed, ), called to
    */
-  implementsSpeedControlled() {
-    return (this.syncSpeed && this.syncSpeed instanceof Function);
+  static implementsSpeedControlled(engine) {
+    return (engine.syncSpeed && engine.syncSpeed instanceof Function);
   }
 }

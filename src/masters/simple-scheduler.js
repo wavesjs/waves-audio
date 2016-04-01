@@ -120,13 +120,13 @@ export default class SimpleScheduler {
       throw new Error("object cannot be defered by scheduler");
 
     this.add({
-      advanceTime: function() { fun(); }, // make sur that the advanceTime method does not returm anything
+      advanceTime: function(time) { fun(time); }, // make sur that the advanceTime method does not returm anything
     }, time);
   }
 
-  // add a time engine to the queue and return the engine
-  add(engine, time = this.currentTime, getCurrentPosition = null) {
-    if (!engine.implementsScheduled())
+  // add a time engine to the scheduler
+  add(engine, time = this.currentTime) {
+    if (!TimeEngine.implementsScheduled(engine))
       throw new Error("object cannot be added to scheduler");
 
     if (engine.master)
@@ -139,8 +139,6 @@ export default class SimpleScheduler {
     // schedule engine
     this.__scheduleEngine(engine, time);
     this.__resetTick();
-
-    return engine;
   }
 
   remove(engine) {

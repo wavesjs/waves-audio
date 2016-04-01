@@ -475,11 +475,11 @@ export default class Transport extends TimeEngine {
     if (engine.master)
       throw new Error("object has already been added to a master");
 
-    if (engine.implementsTransported())
+    if (TimeEngine.implementsTransported(engine))
       transported = new TransportedTransported(this, engine, startPosition, endPosition, offsetPosition);
-    else if (engine.implementsSpeedControlled())
+    else if (TimeEngine.implementsSpeedControlled(engine))
       transported = new TransportedSpeedControlled(this, engine, startPosition, endPosition, offsetPosition);
-    else if (engine.implementsScheduled())
+    else if (TimeEngine.implementsScheduled(engine))
       transported = new TransportedScheduled(this, engine, startPosition, endPosition, offsetPosition);
     else
       throw new Error("object cannot be added to a transport");
