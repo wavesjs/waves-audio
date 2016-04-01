@@ -1,6 +1,6 @@
 {
   "name": "waves-audio",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "low level web audio components for synthesis and scheduling",
   "authors": [
     "Norbert Schnell",
