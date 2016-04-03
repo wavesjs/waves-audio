@@ -264,7 +264,7 @@ export default class PlayControl extends TimeEngine {
 
     this.__loopControl = null;
     this.__loopStart = 0;
-    this.__loopEnd = Infinity;
+    this.__loopEnd = 1;
 
     // synchronized tie, position, and speed
     this.__time = 0;
@@ -371,8 +371,19 @@ export default class PlayControl extends TimeEngine {
         this.__scheduler.add(this.__loopControl, Infinity);
       }
 
-      if (this.__speed !== 0)
+      if (this.__speed !== 0) {
+        const position = this.currentPosition;
+
+        var lower = Math.min(playControl.__loopStart, playControl.__loopEnd);
+        var upper = Math.max(playControl.__loopStart, playControl.__loopEnd);
+
+        if(this.__speed > 0 && position > upper)
+          this.seek(upper);
+        else if(this.__speed < 0 && position < lower)
+          this.seek(lower);
+
         this.__loopControl.reschedule(this.__speed);
+      }
     } else if (this.__loopControl) {
       this.__scheduler.remove(this.__loopControl);
       this.__loopControl = null;
