@@ -372,7 +372,7 @@ export default class PlayControl extends TimeEngine {
       }
 
       if (this.__speed !== 0) {
-        const position = this.__loopControl.applyLoopBoundaries(position, this.__speed);
+        const position = this.__loopControl.applyLoopBoundaries();
 
         this.seek(position);
         this.__loopControl.reschedule(this.__speed);
