@@ -374,8 +374,8 @@ export default class PlayControl extends TimeEngine {
       if (this.__speed !== 0) {
         const position = this.currentPosition;
 
-        var lower = Math.min(playControl.__loopStart, playControl.__loopEnd);
-        var upper = Math.max(playControl.__loopStart, playControl.__loopEnd);
+        var lower = Math.min(this.__loopStart, this.__loopEnd);
+        var upper = Math.max(this.__loopStart, this.__loopEnd);
 
         if(this.__speed > 0 && position > upper)
           this.seek(upper);
