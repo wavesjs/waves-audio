@@ -71,14 +71,15 @@ export default class SimpleScheduler {
 
   __tick() {
     var audioContext = this.audioContext;
+    var currentTime = audioContext.currentTime;
     var i = 0;
 
     while (i < this.__schedEngines.length) {
       var engine = this.__schedEngines[i];
       var time = this.__schedTimes[i];
 
-      while (time && time <= audioContext.currentTime + this.lookahead) {
-        time = Math.max(time, audioContext.currentTime);
+      while (time && time <= currentTime + this.lookahead) {
+        time = Math.max(time, currentTime);
         this.__currentTime = time;
         time = engine.advanceTime(time);
       }
