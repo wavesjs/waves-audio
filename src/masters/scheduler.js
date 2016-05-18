@@ -29,11 +29,12 @@ export default class Scheduler extends SchedulingQueue {
   // setTimeout scheduling loop
   __tick() {
     const audioContext = this.audioContext;
+    const currentTime = audioContext.currentTime;
     let time = this.__nextTime;
 
     this.__timeout = null;
 
-    while (time <= audioContext.currentTime + this.lookahead) {
+    while (time <= currentTime + this.lookahead) {
       this.__currentTime = time;
       time = this.advanceTime(time);
     }
