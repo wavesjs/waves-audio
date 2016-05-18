@@ -450,6 +450,7 @@ export default class SegmentEngine extends AudioTimeEngine {
         var segmentEndTime = segmentTime + segmentDuration;
         var releaseStartTime = segmentEndTime - release;
 
+        envelope.gain.value = 0;
         envelope.gain.setValueAtTime(0.0, segmentTime);
         envelope.gain.linearRampToValueAtTime(this.gain, attackEndTime);
 
