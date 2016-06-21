@@ -43,9 +43,9 @@ class LoopControl extends TimeEngine {
       speed = 0;
 
     if (speed > 0)
-      this.resetTime(playControl.__getTimeAtPosition(upper - 1e-6));
+      this.resetTime(playControl.__getTimeAtPosition(upper - Number.EPSILON));
     else if (speed < 0)
-      this.resetTime(playControl.__getTimeAtPosition(lower + 1e-6));
+      this.resetTime(playControl.__getTimeAtPosition(lower + Number.EPSILON));
     else
       this.resetTime(Infinity);
   }
