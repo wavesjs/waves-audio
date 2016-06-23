@@ -3,6 +3,8 @@ import TimeEngine from '../core/time-engine';
 import SchedulingQueue from '../utils/scheduling-queue';
 import { getScheduler } from './factories';
 
+const ESPILON = 1e-8;
+
 class LoopControl extends TimeEngine {
   constructor(playControl) {
     super();
@@ -14,26 +16,26 @@ class LoopControl extends TimeEngine {
 
   // TimeEngine method (scheduled interface)
   advanceTime(time) {
-    var playControl = this.__playControl;
-    var speed = playControl.speed;
-    var lower = this.lower;
-    var upper = this.upper;
+    const playControl = this.__playControl;
+    const speed = playControl.speed;
+    const lower = this.lower;
+    const upper = this.upper;
 
     if (speed > 0) {
       playControl.syncSpeed(time, lower, speed, true);
-      return playControl.__getTimeAtPosition(upper);
+      return playControl.__getTimeAtPosition(upper - ESPILON);
     } else if (speed < 0) {
       playControl.syncSpeed(time, upper, speed, true);
-      return playControl.__getTimeAtPosition(lower);
+      return playControl.__getTimeAtPosition(lower + ESPILON);
     }
 
     return Infinity;
   }
 
   reschedule(speed) {
-    var playControl = this.__playControl;
-    var lower = Math.min(playControl.__loopStart, playControl.__loopEnd);
-    var upper = Math.max(playControl.__loopStart, playControl.__loopEnd);
+    const playControl = this.__playControl;
+    const lower = Math.min(playControl.__loopStart, playControl.__loopEnd);
+    const upper = Math.max(playControl.__loopStart, playControl.__loopEnd);
 
     this.speed = speed;
     this.lower = lower;
@@ -43,16 +45,16 @@ class LoopControl extends TimeEngine {
       speed = 0;
 
     if (speed > 0)
-      this.resetTime(playControl.__getTimeAtPosition(upper - Number.EPSILON));
+      this.resetTime(playControl.__getTimeAtPosition(upper - ESPILON));
     else if (speed < 0)
-      this.resetTime(playControl.__getTimeAtPosition(lower + Number.EPSILON));
+      this.resetTime(playControl.__getTimeAtPosition(lower + ESPILON));
     else
       this.resetTime(Infinity);
   }
 
   applyLoopBoundaries(position, speed) {
-    var lower = this.lower;
-    var upper = this.upper;
+    const lower = this.lower;
+    const upper = this.upper;
 
     if (speed > 0 && position >= upper)
       return lower + (position - lower) % (upper - lower);
@@ -193,11 +195,6 @@ class PlayControlledSchedulerHook extends TimeEngine {
     var position = this.__nextPosition;
     var nextPosition = engine.advancePosition(time, position, playControl.__speed);
     var nextTime = playControl.__getTimeAtPosition(nextPosition);
-
-    while (nextTime <= time) {
-      nextPosition = engine.advancePosition(time, position, playControl.__speed);
-      nextTime = playControl.__getTimeAtPosition(nextPosition);
-    }
 
     this.__nextPosition = nextPosition;
     return nextTime;

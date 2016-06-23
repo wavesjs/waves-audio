@@ -23,22 +23,18 @@ export default class SchedulingQueue extends TimeEngine {
 
   // TimeEngine 'scheduled' interface
   advanceTime(time) {
-    var nextTime = this.__queue.time;
+    const engine = this.__queue.head;
+    const nextEngineTime = engine.advanceTime(time);
 
-    while (nextTime <= time) {
-      var engine = this.__queue.head;
-      var nextEngineTime = engine.advanceTime(time);
-
-      if (!nextEngineTime) {
-        engine.master = null;
-        this.__engines.delete(engine);
-        nextTime = this.__queue.remove(engine);
-      } else {
-        nextTime = this.__queue.move(engine, nextEngineTime);
-      }
+    if (!nextEngineTime) {
+      engine.master = null;
+      this.__engines.delete(engine);
+      this.__queue.remove(engine);
+    } else {
+      this.__queue.move(engine, nextEngineTime);
     }
 
-    return nextTime;
+    return this.__queue.time;
   }
 
   // TimeEngine master method to be implemented by derived class
@@ -68,7 +64,7 @@ export default class SchedulingQueue extends TimeEngine {
 
     // add to engines and queue
     this.__engines.add(engine);
-    var nextTime = this.__queue.insert(engine, time);
+    const nextTime = this.__queue.insert(engine, time);
 
     // reschedule queue
     this.resetTime(nextTime);
@@ -83,7 +79,7 @@ export default class SchedulingQueue extends TimeEngine {
 
     // remove from array and queue
     this.__engines.delete(engine);
-    var nextTime = this.__queue.remove(engine);
+    const nextTime = this.__queue.remove(engine);
 
     // reschedule queue
     this.resetTime(nextTime);
@@ -94,7 +90,13 @@ export default class SchedulingQueue extends TimeEngine {
     if (engine.master !== this)
       throw new Error("object has not been added to this scheduler");
 
-    var nextTime = this.__queue.move(engine, time);
+    let nextTime;
+
+    if (this.__queue.has(engine))
+      nextTime = this.__queue.move(engine, time);
+    else
+      nextTime = this.__queue.insert(engine, time);
+
     this.resetTime(nextTime);
   }
 
@@ -106,7 +108,7 @@ export default class SchedulingQueue extends TimeEngine {
   // clear queue
   clear() {
     this.__queue.clear();
-    this.__engines.clear;
+    this.__engines.clear();
     this.resetTime(Infinity);
   }
 }

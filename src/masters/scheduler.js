@@ -1,6 +1,4 @@
 import defaultAudioContext from '../core/audio-context';
-import TimeEngine from '../core/time-engine';
-import PriorityQueue from '../utils/priority-queue';
 import SchedulingQueue from '../utils/scheduling-queue';
 
 export default class Scheduler extends SchedulingQueue {

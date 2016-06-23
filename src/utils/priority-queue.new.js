@@ -49,7 +49,6 @@ const _isHigherMinHeap = function(time1, time2) {
 }
 
 const POSITIVE_INFINITY = Number.POSITIVE_INFINITY;
-const NEGATIVE_INFINITY = Number.NEGATIVE_INFINITY;
 
 /**
  * Priority queue implementing a binary heap.
@@ -88,9 +87,8 @@ export default class PriorityQueue {
    * @returns {Number}
    */
   get time() {
-    if (this._currentLength > 1) {
-      return this._heap[1].time;
-    }
+    if (this._currentLength > 1)
+      return this._heap[1].queueTime;
 
     return Infinity;
   }
@@ -138,7 +136,7 @@ export default class PriorityQueue {
     let parentIndex = Math.floor(index / 2);
     let parent = this._heap[parentIndex];
 
-    while (parent && this._isHigher(entry.time, parent.time)) {
+    while (parent && this._isHigher(entry.queueTime, parent.queueTime)) {
       swap(this._heap, index, parentIndex);
 
       index = parentIndex;
@@ -160,14 +158,14 @@ export default class PriorityQueue {
     let child1 = this._heap[c1index];
     let child2 = this._heap[c2index];
 
-    while ((child1 && this._isLower(entry.time, child1.time)) ||
-           (child2 && this._isLower(entry.time, child2.time)))
+    while ((child1 && this._isLower(entry.queueTime, child1.queueTime)) ||
+           (child2 && this._isLower(entry.queueTime, child2.queueTime)))
     {
       // swap with the minimum child
       let targetIndex;
 
       if (child2)
-        targetIndex = this._isHigher(child1.time, child2.time) ? c1index : c2index;
+        targetIndex = this._isHigher(child1.queueTime, child2.queueTime) ? c1index : c2index;
       else
         targetIndex = c1index;
 
@@ -195,21 +193,14 @@ export default class PriorityQueue {
   }
 
   /**
-   *
-   */
-  set(entries) {
-    for (let i = 0, l = entries.length; i < l; i++)
-      this.insert(entries[i]);
-  }
-
-  /**
    * Insert a new object in the binary heap, and sort it.
-   * @param {Object} entry - The object to sort.
-   * @param {Number} time - The time at which the entry should be inserted, if infinite, the entry is removed from from the heap.
+   * @param {Object} entry - Entry to insert.
+   * @param {Number} time - Time at which the entry should be orderer.
    * @returns {Number} - Time of the first entry in the heap.
    */
-  insert(entry) {
-    if (entry.time !== POSITIVE_INFINITY && entry.time !== NEGATIVE_INFINITY) {
+  insert(entry, time) {
+    if (Math.abs(time) !== POSITIVE_INFINITY) {
+      entry.queueTime = time;
       // add the new entry at the end of the heap
       this._heap[this._currentLength] = entry;
       // bubble it up
@@ -219,13 +210,63 @@ export default class PriorityQueue {
       return this.time;
     }
 
+    entry.queueTime = undefined;
+    return this.remove(entry);
+  }
+
+  /**
+   * Move an entry to a new position.
+   * @param {Object} entry - Entry to move.
+   * @param {Number} time - Time at which the entry should be orderer.
+   * @return {Number} - Time of first entry in the heap.
+   */
+  move(entry, time) {
+    if (Math.abs(time) !== POSITIVE_INFINITY) {
+      const index = indexOf(this._heap, entry);
+      // console.log(index);
+
+      if (index !== -1) {
+        entry.queueTime = time;
+        // define if the entry should be bubbled up or down
+        const parent = this._heap[Math.floor(index / 2)]
+
+        if (parent && this._isHigher(time, parent.queueTime))
+          this._bubbleUp(index);
+        else
+          this._bubbleDown(index);
+      }
+
+      return this.time;
+    }
+
+    entry.queueTime = undefined;
+    return this.remove(entry);
+  }
+
+  /**
+   * Move the first entry (e.g. `this.head`) to a new position.
+   * @param {Object} entry - Entry to move.
+   * @param {Number} time - Time at which the entry should be orderer.
+   * @return {Number} - Time of first entry in the heap.
+   */
+  moveFirst(time) {
+    const entry = this.head;
+
+    if (Math.abs(time) !== POSITIVE_INFINITY) {
+      entry.queueTime = time;
+      this._bubbleDown(1);
+
+      return this.time;
+    }
+
+    entry.queueTime = undefined;
     return this.remove(entry);
   }
 
   /**
    * This is broken, assuming bubbling down only is false
    * Remove an entry from the heap and fix the heap.
-   * @param {Object} entry - The entry to remove.
+   * @param {Object} entry - Entry to remove.
    * @return {Number} - Time of first entry in the heap.
    */
   remove(entry) {
@@ -253,10 +294,10 @@ export default class PriorityQueue {
           this._bubbleDown(1);
         } else {
           // bubble the (ex last) element up or down according to its new context
-          const e = this._heap[index];
+          const entry = this._heap[index];
           const parent = this._heap[Math.floor(index / 2)];
 
-          if (parent && this._isHigher(e.time, parent.time))
+          if (parent && this._isHigher(entry.queueTime, parent.queueTime))
             this._bubbleUp(index);
           else
             this._bubbleDown(index);
@@ -270,39 +311,15 @@ export default class PriorityQueue {
     return this.time;
   }
 
-
-  /**
-   * Move an entry to a new position.
-   * @param {Object} entry - The entry to move.
-   * @return {Number} - Time of first entry in the heap.
-   */
-  move(entry) {
-    const time = entry.time;
-
-    if (time !== POSITIVE_INFINITY && time !== NEGATIVE_INFINITY) {
-      const index = indexOf(this._heap, entry);
-
-      if (index !== -1) {
-        // define if the entry should be bubbled up or down
-        const parent = this._heap[Math.floor(index / 2)]
-
-        if (parent && this._isHigher(time, parent.time))
-          this._bubbleUp(index);
-        else
-          this._bubbleDown(index);
-      }
-
-      return this.time;
-    }
-
-    return this.remove(entry);
-  }
-
   /**
    * Clear the queue.
    */
   clear() {
     this._currentLength = 1;
     this._heap = new Array(this._heap.length);
+  }
+
+  has(entry) {
+    return this._heap.indexOf(entry) !== -1;
   }
 }

@@ -90,6 +90,19 @@ export default class PriorityQueue {
     return this.__removeObject(object);
   }
 
+  moveFirst(time) {
+    var object = this.__objects[0][0];
+
+    if (time !== Infinity && time != -Infinity) {
+      this.__objects[0][1] = time; // update time of existing object
+      this.__sortObjects();
+
+      return this.__objects[0][1]; // return time of first object
+    }
+
+    return this.__removeObject(object);
+  }
+
   /**
    * Remove an object from the queue
    */
@@ -103,6 +116,10 @@ export default class PriorityQueue {
   clear() {
     this.__objects.length = 0; // clear object list
     return Infinity;
+  }
+
+  has(object) {
+    return this.__objectIndex(object) !== -1;
   }
 
   /**
