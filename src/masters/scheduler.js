@@ -1,5 +1,5 @@
 import defaultAudioContext from '../core/audio-context';
-import SchedulingQueue from '../utils/scheduling-queue';
+import SchedulingQueue from '../core/scheduling-queue';
 
 export default class Scheduler extends SchedulingQueue {
   constructor(options = {}) {

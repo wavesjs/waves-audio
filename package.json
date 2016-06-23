@@ -14,6 +14,7 @@
   "scripts": {
     "bundle": "node ./bin/runner --bundle",
     "transpile": "node ./bin/runner --transpile",
+    "prewatch": "npm run transpile",
     "watch": "node ./bin/runner --watch"
   },
   "license": "BSD-3-Clause",

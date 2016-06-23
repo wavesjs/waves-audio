@@ -1,6 +1,6 @@
 import defaultAudioContext from '../core/audio-context';
+import SchedulingQueue from '../core/scheduling-queue';
 import TimeEngine from '../core/time-engine';
-import SchedulingQueue from '../utils/scheduling-queue';
 import { getScheduler } from './factories';
 
 const ESPILON = 1e-8;
@@ -21,12 +21,17 @@ class LoopControl extends TimeEngine {
     const lower = this.lower;
     const upper = this.upper;
 
+    if(speed > 0)
+      time += ESPILON;
+    else
+      time -= EPSILON;
+
     if (speed > 0) {
       playControl.syncSpeed(time, lower, speed, true);
-      return playControl.__getTimeAtPosition(upper - ESPILON);
+      return playControl.__getTimeAtPosition(upper) - ESPILON;
     } else if (speed < 0) {
       playControl.syncSpeed(time, upper, speed, true);
-      return playControl.__getTimeAtPosition(lower + ESPILON);
+      return playControl.__getTimeAtPosition(lower) + ESPILON;
     }
 
     return Infinity;
@@ -45,9 +50,9 @@ class LoopControl extends TimeEngine {
       speed = 0;
 
     if (speed > 0)
-      this.resetTime(playControl.__getTimeAtPosition(upper - ESPILON));
+      this.resetTime(playControl.__getTimeAtPosition(upper) - ESPILON);
     else if (speed < 0)
-      this.resetTime(playControl.__getTimeAtPosition(lower + ESPILON));
+      this.resetTime(playControl.__getTimeAtPosition(lower) + ESPILON);
     else
       this.resetTime(Infinity);
   }

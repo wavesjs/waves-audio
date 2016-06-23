@@ -1,7 +1,7 @@
 import defaultAudioContext from '../core/audio-context';
+import PriorityQueue from '../core/priority-queue';
+import SchedulingQueue from '../core/scheduling-queue';
 import TimeEngine from '../core/time-engine';
-import PriorityQueue from '../utils/priority-queue';
-import SchedulingQueue from '../utils/scheduling-queue';
 import { getScheduler } from './factories';
 
 

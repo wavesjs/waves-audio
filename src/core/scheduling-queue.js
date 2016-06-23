@@ -6,9 +6,9 @@
  * Copyright 2014, 2015 IRCAM – Centre Pompidou
  */
 
-import PriorityQueue from '../utils/priority-queue';
-import TimeEngine from '../core/time-engine';
-import defaultAudioContext from '../core/audio-context';
+import PriorityQueue from './priority-queue';
+import TimeEngine from './time-engine';
+import defaultAudioContext from './audio-context';
 
 /**
  * @class SchedulingQueue
