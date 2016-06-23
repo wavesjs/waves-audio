@@ -185,7 +185,7 @@ export default class PriorityQueue {
    */
   buildHeap() {
     // find the index of the last internal node
-    // @todo - make sure it's the right way to do.
+    // @todo - make sure that's the right way to do.
     let maxIndex = Math.floor((this._currentLength - 1) / 2);
 
     for (let i = maxIndex; i > 0; i--)
@@ -223,7 +223,6 @@ export default class PriorityQueue {
   move(entry, time) {
     if (Math.abs(time) !== POSITIVE_INFINITY) {
       const index = indexOf(this._heap, entry);
-      // console.log(index);
 
       if (index !== -1) {
         entry.queueTime = time;
@@ -235,26 +234,6 @@ export default class PriorityQueue {
         else
           this._bubbleDown(index);
       }
-
-      return this.time;
-    }
-
-    entry.queueTime = undefined;
-    return this.remove(entry);
-  }
-
-  /**
-   * Move the first entry (e.g. `this.head`) to a new position.
-   * @param {Object} entry - Entry to move.
-   * @param {Number} time - Time at which the entry should be orderer.
-   * @return {Number} - Time of first entry in the heap.
-   */
-  moveFirst(time) {
-    const entry = this.head;
-
-    if (Math.abs(time) !== POSITIVE_INFINITY) {
-      entry.queueTime = time;
-      this._bubbleDown(1);
 
       return this.time;
     }
