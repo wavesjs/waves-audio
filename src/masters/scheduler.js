@@ -1,7 +1,8 @@
+import debug from 'debug';
 import defaultAudioContext from '../core/audio-context';
-import TimeEngine from '../core/time-engine';
-import PriorityQueue from '../utils/priority-queue';
-import SchedulingQueue from '../utils/scheduling-queue';
+import SchedulingQueue from '../core/scheduling-queue';
+
+const log = debug('wavesjs:audio');
 
 export default class Scheduler extends SchedulingQueue {
   constructor(options = {}) {
@@ -29,11 +30,12 @@ export default class Scheduler extends SchedulingQueue {
   // setTimeout scheduling loop
   __tick() {
     const audioContext = this.audioContext;
+    const currentTime = audioContext.currentTime;
     let time = this.__nextTime;
 
     this.__timeout = null;
 
-    while (time <= audioContext.currentTime + this.lookahead) {
+    while (time <= currentTime + this.lookahead) {
       this.__currentTime = time;
       time = this.advanceTime(time);
     }
@@ -53,7 +55,7 @@ export default class Scheduler extends SchedulingQueue {
 
       if (time !== Infinity) {
         if (this.__nextTime === Infinity)
-          console.log("Scheduler Start");
+          log('Scheduler Start');
 
         const timeOutDelay = Math.max((time - this.lookahead - this.audioContext.currentTime), this.period);
 
@@ -61,7 +63,7 @@ export default class Scheduler extends SchedulingQueue {
           this.__tick();
         }, timeOutDelay * 1000);
       } else if (this.__nextTime !== Infinity) {
-        console.log("Scheduler Stop");
+        log('Scheduler Stop');
       }
 
       this.__nextTime = time;

@@ -58,7 +58,7 @@ Synth.prototype.advanceTime = function(time) {
   s.connect(audioContext.destination);
   s.start(time);
 
-  // remeber time to reschedule properly when changing frequency
+  // remember time to reschedule properly when changing frequency
   this.lastTime = time;
 
   // advance to next time

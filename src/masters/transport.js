@@ -1,7 +1,7 @@
 import defaultAudioContext from '../core/audio-context';
+import PriorityQueue from '../core/priority-queue';
+import SchedulingQueue from '../core/scheduling-queue';
 import TimeEngine from '../core/time-engine';
-import PriorityQueue from '../utils/priority-queue';
-import SchedulingQueue from '../utils/scheduling-queue';
 import { getScheduler } from './factories';
 
 
@@ -11,10 +11,10 @@ function addDuplet(firstArray, secondArray, firstElement, secondElement) {
 }
 
 function removeDuplet(firstArray, secondArray, firstElement) {
-  var index = firstArray.indexOf(firstElement);
+  const index = firstArray.indexOf(firstElement);
 
   if (index >= 0) {
-    var secondElement = secondArray[index];
+    const secondElement = secondArray[index];
 
     firstArray.splice(index, 1);
     secondArray.splice(index, 1);
@@ -41,8 +41,7 @@ class Transported extends TimeEngine {
     this.__endPosition = !isFinite(duration) ? Infinity : start + duration;
     this.__offsetPosition = start + offset;
     this.__stretchPosition = stretch;
-    this.__haltPosition = Infinity; // engine's next halt position when not running (is null when engine hes been started)
-    // console.log(this.__startPosition, this.__endPosition, this.__offsetPosition, this.__stretchPosition)
+    this.__isRunning = false;
   }
 
   setBoundaries(start, duration, offset = 0, stretch = 1) {
@@ -75,66 +74,59 @@ class Transported extends TimeEngine {
     if (speed > 0) {
       if (position < this.__startPosition) {
 
-        if (this.__haltPosition === null)
+        if (this.__isRunning)
           this.stop(time, position - this.__offsetPosition);
 
-        this.__haltPosition = this.__endPosition;
-
+        this.__isRunning = false;
         return this.__startPosition;
-      } else if (position <= this.__endPosition) {
+      } else if (position < this.__endPosition) {
         this.start(time, position - this.__offsetPosition, speed);
 
-        this.__haltPosition = null; // engine is active
-
+        this.__isRunning = true;
         return this.__endPosition;
       }
     } else {
-      if (position >= this.__endPosition) {
-        if (this.__haltPosition === null)
+      if (position > this.__endPosition) {
+        if (this.__isRunning) // if engine is running
           this.stop(time, position - this.__offsetPosition);
 
-        this.__haltPosition = this.__startPosition;
-
+        this.__isRunning = false;
         return this.__endPosition;
       } else if (position > this.__startPosition) {
         this.start(time, position - this.__offsetPosition, speed);
 
-        this.__haltPosition = null; // engine is active
-
+        this.__isRunning = true;
         return this.__startPosition;
       }
     }
 
-    if (this.__haltPosition === null)
+    if (this.__isRunning) // if engine is running
       this.stop(time, position);
 
-    this.__haltPosition = Infinity;
-
-    return Infinity;
+    this.__isRunning = false;
+    return Infinity * speed;
   }
 
   advancePosition(time, position, speed) {
-    var haltPosition = this.__haltPosition;
-
-    if (haltPosition !== null) {
+    if (!this.__isRunning) {
       this.start(time, position - this.__offsetPosition, speed);
+      this.__isRunning = true;
 
-      this.__haltPosition = null;
+      if (speed > 0)
+        return this.__endPosition;
 
-      return haltPosition;
+      return this.__startPosition;
     }
 
     // stop engine
-    if (this.__haltPosition === null)
-      this.stop(time, position - this.__offsetPosition);
+    this.stop(time, position - this.__offsetPosition);
 
-    this.__haltPosition = Infinity;
-
-    return Infinity;
+    this.__isRunning = false;
+    return Infinity * speed;
   }
 
   syncSpeed(time, position, speed) {
-    if (speed === 0)
+    if (speed === 0) // stop
       this.stop(time, position - this.__offsetPosition);
   }
 
@@ -168,7 +160,7 @@ class TransportedTransported extends Transported {
     if (speed > 0 && position < this.__endPosition || speed < 0 && position >= this.__startPosition)
       return position;
 
-    return Infinity;
+    return Infinity * speed;
   }
 
   syncSpeed(time, position, speed) {
@@ -200,7 +192,7 @@ class TransportedSpeedControlled extends Transported {
   }
 
   syncSpeed(time, position, speed) {
-    if (this.__haltPosition === null) // engine is active
+    if (this.__isRunning)
       this.__engine.syncSpeed(time, position, speed);
   }
 
@@ -249,28 +241,25 @@ class TransportSchedulerHook extends TimeEngine {
 
   // TimeEngine method (scheduled interface)
   advanceTime(time) {
-    var transport = this.__transport;
-    var position = this.__nextPosition;
-    var speed = transport.__speed;
-    var nextPosition = transport.advancePosition(time, position, speed);
-    var nextTime = transport.__getTimeAtPosition(nextPosition);
-
-    while (nextTime <= time) {
-      nextPosition = transport.advancePosition(nextTime, nextPosition, speed);
-      nextTime = transport.__getTimeAtPosition(nextPosition);
-    }
+    const transport = this.__transport;
+    const position = this.__nextPosition;
+    const speed = transport.__speed;
+    const nextPosition = transport.advancePosition(time, position, speed);
+    const nextTime = transport.__getTimeAtPosition(nextPosition);
 
     this.__nextPosition = nextPosition;
     this.__nextTime = nextTime;
+
     return nextTime;
   }
 
   resetPosition(position = this.__nextPosition) {
-    var transport = this.__transport;
-    var time = transport.__getTimeAtPosition(position);
+    const transport = this.__transport;
+    const time = transport.__getTimeAtPosition(position);
 
     this.__nextPosition = position;
     this.__nextTime = time;
+
     this.resetTime(time);
   }
 
@@ -335,31 +324,27 @@ export default class Transport extends TimeEngine {
   }
 
   __syncTransportedPosition(time, position, speed) {
-    var numTransportedEngines = this.__transported.length;
-    var nextPosition = Infinity;
+    const numTransportedEngines = this.__transported.length;
+    let nextPosition = Infinity * speed;
 
     if (numTransportedEngines > 0) {
-      var engine, nextEnginePosition;
-
       this.__transportedQueue.clear();
       this.__transportedQueue.reverse = (speed < 0);
 
-      for (var i = numTransportedEngines - 1; i > 0; i--) {
-        engine = this.__transported[i];
-        nextEnginePosition = engine.syncPosition(time, position, speed);
-        this.__transportedQueue.insert(engine, nextEnginePosition, false); // insert but don't sort
+      for (let i = 0; i < numTransportedEngines; i++) {
+        const engine = this.__transported[i];
+        const nextEnginePosition = engine.syncPosition(time, position, speed);
+        this.__transportedQueue.insert(engine, nextEnginePosition);
       }
 
-      engine = this.__transported[0];
-      nextEnginePosition = engine.syncPosition(time, position, speed);
-      nextPosition = this.__transportedQueue.insert(engine, nextEnginePosition, true); // insert and sort
+      nextPosition = this.__transportedQueue.time;
     }
 
     return nextPosition;
   }
 
   __syncTransportedSpeed(time, position, speed) {
-    for (var transported of this.__transported)
+    for (let transported of this.__transported)
       transported.syncSpeed(time, position, speed);
   }
 
@@ -380,7 +365,7 @@ export default class Transport extends TimeEngine {
    * This function will be replaced when the transport is added to a master (i.e. transport or play-control).
    */
   get currentPosition() {
-    var master = this.master;
+    const master = this.master;
 
     if (master && master.currentPosition !== undefined)
       return master.currentPosition;
@@ -393,7 +378,7 @@ export default class Transport extends TimeEngine {
    * @param {Number} next transport position
    */
   resetPosition(position) {
-    var master = this.master;
+    const master = this.master;
 
     if (master && master.resetEnginePosition !== undefined)
       master.resetEnginePosition(this, position);
@@ -412,34 +397,21 @@ export default class Transport extends TimeEngine {
 
   // TimeEngine method (transported interface)
   advancePosition(time, position, speed) {
-    // console.log(time, position, speed);
-    var nextPosition = this.__transportedQueue.time;
-
-    while (nextPosition === position) {
-      var engine = this.__transportedQueue.head;
-      var nextEnginePosition = engine.advancePosition(time, position, speed);
-
-      if (((speed > 0 && nextEnginePosition > position) || (speed < 0 && nextEnginePosition < position)) &&
-        (nextEnginePosition < Infinity && nextEnginePosition > -Infinity)) {
-        nextPosition = this.__transportedQueue.move(engine, nextEnginePosition);
-      } else {
-        nextPosition = this.__transportedQueue.remove(engine);
-      }
-    }
-
-    return nextPosition;
+    const engine = this.__transportedQueue.head;
+    const nextEnginePosition = engine.advancePosition(time, position, speed);
+    return this.__transportedQueue.move(engine, nextEnginePosition);
   }
 
   // TimeEngine method (speed-controlled interface)
   syncSpeed(time, position, speed, seek = false) {
-    var lastSpeed = this.__speed;
+    const lastSpeed = this.__speed;
 
     this.__time = time;
     this.__position = position;
     this.__speed = speed;
 
     if (speed !== lastSpeed || (seek && speed !== 0)) {
-      var nextPosition;
+      let nextPosition;
 
       // resync transported engines
       if (seek || speed * lastSpeed < 0) {
@@ -467,7 +439,7 @@ export default class Transport extends TimeEngine {
    * @param {Number} position start position
    */
   add(engine, startPosition = 0, endPosition = Infinity, offsetPosition = 0) {
-    var transported = null;
+    let transported = null;
 
     if (offsetPosition === -Infinity)
       offsetPosition = 0;
@@ -485,14 +457,14 @@ export default class Transport extends TimeEngine {
       throw new Error("object cannot be added to a transport");
 
     if (transported) {
-      var speed = this.__speed;
+      const speed = this.__speed;
 
       addDuplet(this.__engines, this.__transported, engine, transported);
 
       if (speed !== 0) {
         // sync and start
-        var nextEnginePosition = transported.syncPosition(this.currentTime, this.currentPosition, speed);
-        var nextPosition = this.__transportedQueue.insert(transported, nextEnginePosition);
+        const nextEnginePosition = transported.syncPosition(this.currentTime, this.currentPosition, speed);
+        const nextPosition = this.__transportedQueue.insert(transported, nextEnginePosition);
 
         this.resetPosition(nextPosition);
       }
@@ -506,8 +478,8 @@ export default class Transport extends TimeEngine {
    * @param {object} engineOrTransported engine or transported to be removed from the transport
    */
   remove(engineOrTransported) {
-    var engine = engineOrTransported;
-    var transported = removeDuplet(this.__engines, this.__transported, engineOrTransported);
+    let engine = engineOrTransported;
+    let transported = removeDuplet(this.__engines, this.__transported, engineOrTransported);
 
     if (!transported) {
       engine = removeDuplet(this.__transported, this.__engines, engineOrTransported);
@@ -515,7 +487,7 @@ export default class Transport extends TimeEngine {
     }
 
     if (engine && transported) {
-      var nextPosition = this.__transportedQueue.remove(transported);
+      const nextPosition = this.__transportedQueue.remove(transported);
 
       transported.destroy();
 
@@ -527,13 +499,13 @@ export default class Transport extends TimeEngine {
   }
 
   resetEnginePosition(transported, position = undefined) {
-    var speed = this.__speed;
+    const speed = this.__speed;
 
     if (speed !== 0) {
       if (position === undefined)
         position = transported.syncPosition(this.currentTime, this.currentPosition, speed);
 
-      var nextPosition = this.__transportedQueue.move(transported, position);
+      const nextPosition = this.__transportedQueue.move(transported, position);
       this.resetPosition(nextPosition);
     }
   }
@@ -544,7 +516,7 @@ export default class Transport extends TimeEngine {
   clear() {
     this.syncSpeed(this.currentTime, this.currentPosition, 0);
 
-    for (var transported of this.__transported)
+    for (let transported of this.__transported)
       transported.destroy();
   }
 }

@@ -89,7 +89,7 @@ loader.load(assets).then(function(loaded) {
   };
 
   positionDisplay.advancePosition = function(time, position, speed) {
-    seekSlider.value = (playControl.currentPosition / beatDuration).toFixed();
+    seekSlider.value = (playControl.currentPosition / beatDuration).toFixed(2);
 
     if (speed < 0)
       return position - this.period;
@@ -101,9 +101,9 @@ loader.load(assets).then(function(loaded) {
   // create transport and add engines
   var transport = new wavesAudio.Transport();
   transport.add(metronome);
-  transport.add(playerEngine);
-  transport.add(granularEngine);
-  transport.add(segmentEngine);
+  //transport.add(playerEngine);
+  //transport.add(granularEngine);
+  //transport.add(segmentEngine);
   transport.add(positionDisplay);
 
   // create play control
@@ -126,7 +126,7 @@ loader.load(assets).then(function(loaded) {
     speedSlider.value = playControl.speed;
   });
 
-  var seekSlider = new wavesBasicControllers.Slider("Seek", 0, 8, 0.125, 0, "beats", 'large', containerId, function(value) {
+  var seekSlider = new wavesBasicControllers.Slider("Seek", 0, 8, 0.01, 0, "beats", 'large', containerId, function(value) {
     playControl.seek(value * beatDuration);
   });
 
@@ -147,21 +147,21 @@ loader.load(assets).then(function(loaded) {
       transport.remove(metronome);
   });
 
-  new wavesBasicControllers.Toggle("Player Engine", true, containerId, function(value) {
+  new wavesBasicControllers.Toggle("Player Engine", false, containerId, function(value) {
     if (value)
       transport.add(playerEngine);
     else
       transport.remove(playerEngine);
   });
 
-  new wavesBasicControllers.Toggle("Granular Engine", true, containerId, function(value) {
+  new wavesBasicControllers.Toggle("Granular Engine", false, containerId, function(value) {
     if (value)
       transport.add(granularEngine);
     else
       transport.remove(granularEngine);
   });
 
-  new wavesBasicControllers.Toggle("Segment Engine", true, containerId, function(value) {
+  new wavesBasicControllers.Toggle("Segment Engine", false, containerId, function(value) {
     if (value)
       transport.add(segmentEngine);
     else
