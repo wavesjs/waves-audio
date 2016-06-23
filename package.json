@@ -29,7 +29,8 @@
     "devel": true
   },
   "dependencies": {
-    "babel-runtime": "^6.6.1"
+    "babel-runtime": "^6.6.1",
+    "debug": "^2.2.0"
   },
   "devDependencies": {
     "babel-core": "^6.6.5",

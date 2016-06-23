@@ -1,5 +1,8 @@
+import debug from 'debug';
 import defaultAudioContext from '../core/audio-context';
 import TimeEngine from '../core/time-engine';
+
+const log = debug('wavesjs:audio');
 
 export default class SimpleScheduler {
   constructor(options = {}) {
@@ -59,11 +62,11 @@ export default class SimpleScheduler {
   __resetTick() {
     if (this.__schedEngines.length > 0) {
       if (!this.__timeout) {
-        console.log("SimpleScheduler Start");
+        log('SimpleScheduler Start');
         this.__tick();
       }
     } else if (this.__timeout) {
-      console.log("SimpleScheduler Stop");
+      log('SimpleScheduler Stop');
       clearTimeout(this.__timeout);
       this.__timeout = null;
     }
