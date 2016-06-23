@@ -426,12 +426,15 @@ export default class SegmentEngine extends AudioTimeEngine {
 
       // shorten duration of segments over the edges of the buffer
       if (segmentPosition < 0) {
+        //segmentTime -= grainPosition; hm, not sure if we want to do this
         segmentDuration += segmentPosition;
         segmentPosition = 0;
       }
 
       if (segmentPosition + segmentDuration > this.buffer.duration)
         segmentDuration = this.buffer.duration - segmentPosition;
+
+      segmentDuration /= resamplingRate;
 
       // make segment
       if (this.gain > 0 && segmentDuration > 0) {
@@ -468,7 +471,7 @@ export default class SegmentEngine extends AudioTimeEngine {
         source.connect(envelope);
 
         source.start(segmentTime, segmentPosition);
-        source.stop(segmentTime + segmentDuration / resamplingRate);
+        source.stop(segmentTime + segmentDuration);
       }
     }
 
