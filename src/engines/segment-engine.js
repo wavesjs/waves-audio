@@ -7,7 +7,7 @@ function optOrDef(opt, def) {
   return def;
 }
 
-function getCurrentOrPreviousIndex(sortedArray, value, index = 0) {
+function getCurrentOrPreviousIndex(sortedArray, value, index = -1) {
   var size = sortedArray.length;
 
   if (size > 0) {
@@ -33,7 +33,7 @@ function getCurrentOrPreviousIndex(sortedArray, value, index = 0) {
   return index;
 }
 
-function getCurrentOrNextIndex(sortedArray, value, index = 0) {
+function getCurrentOrNextIndex(sortedArray, value, index = -1) {
   var size = sortedArray.length;
 
   if (size > 0) {
@@ -51,7 +51,7 @@ function getCurrentOrNextIndex(sortedArray, value, index = 0) {
       while (sortedArray[index] < value)
         index++;
 
-      while (sortedArray[index + 1] >= value)
+      while (sortedArray[index - 1] >= value)
         index--;
     }
   }
