@@ -8,7 +8,6 @@
 
 import PriorityQueue from './priority-queue';
 import TimeEngine from './time-engine';
-import defaultAudioContext from './audio-context';
 
 /**
  * @class SchedulingQueue
