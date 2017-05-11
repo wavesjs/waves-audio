@@ -27,11 +27,11 @@ function indexOf(arr, el) {
  */
 const _isLowerMaxHeap = function(time1, time2) {
   return time1 < time2;
-}
+};
 
 const _isLowerMinHeap = function(time1, time2) {
   return time1 > time2;
-}
+};
 
 /**
  * Define if `time1` should be higher in the topography than `time2`.
@@ -42,11 +42,11 @@ const _isLowerMinHeap = function(time1, time2) {
  */
 const _isHigherMaxHeap = function(time1, time2) {
   return time1 > time2;
-}
+};
 
 const _isHigherMinHeap = function(time1, time2) {
   return time1 < time2;
-}
+};
 
 const POSITIVE_INFINITY = Number.POSITIVE_INFINITY;
 
@@ -227,7 +227,7 @@ export default class PriorityQueue {
       if (index !== -1) {
         entry.queueTime = time;
         // define if the entry should be bubbled up or down
-        const parent = this._heap[Math.floor(index / 2)]
+        const parent = this._heap[Math.floor(index / 2)];
 
         if (parent && this._isHigher(time, parent.queueTime))
           this._bubbleUp(index);
