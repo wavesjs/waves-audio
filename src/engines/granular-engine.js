@@ -47,6 +47,12 @@ export default class GranularEngine extends AudioTimeEngine {
     this.periodVar = optOrDef(options.periodVar, 0);
 
     /**
+     * Minimum grain period
+     * @type {Number}
+     */
+    this.periodMin = optOrDef(options.periodMin, 0.001);
+
+    /**
      * Grain position (onset time in audio buffer) in sec
      * @type {Number}
      */
@@ -295,6 +301,6 @@ export default class GranularEngine extends AudioTimeEngine {
       }
     }
 
-    return grainPeriod;
+    return Math.max(this.periodMin, grainPeriod);
   }
 }

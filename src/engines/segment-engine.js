@@ -1,7 +1,7 @@
 import AudioTimeEngine from '../core/audio-time-engine';
 
 function optOrDef(opt, def) {
-  if(opt !== undefined)
+  if (opt !== undefined)
     return opt;
 
   return def;
@@ -98,6 +98,12 @@ export default class SegmentEngine extends AudioTimeEngine {
      * @type {Number}
      */
     this.periodVar = optOrDef(options.periodVar, 0);
+
+    /**
+     * Minimum segment period
+     * @type {Number}
+     */
+    this.periodMin = optOrDef(options.periodMin, 0.001);
 
     /**
      * Array of segment positions (onset times in audio buffer) in sec
@@ -364,10 +370,10 @@ export default class SegmentEngine extends AudioTimeEngine {
 
       // calculate inter-segment distance
       if (segmentDuration === 0 || this.periodRel > 0) {
-        var nextSegementIndex = segmentIndex + 1;
+        var nextSegmentIndex = segmentIndex + 1;
         var nextPosition, nextOffset;
 
-        if (nextSegementIndex === this.positionArray.length) {
+        if (nextSegmentIndex === this.positionArray.length) {
           if (this.cyclic) {
             nextPosition = this.positionArray[0] + bufferDuration;
             nextOffset = this.offsetArray[0];
@@ -376,8 +382,8 @@ export default class SegmentEngine extends AudioTimeEngine {
             nextOffset = 0;
           }
         } else {
-          nextPosition = this.positionArray[nextSegementIndex];
-          nextOffset = this.offsetArray[nextSegementIndex];
+          nextPosition = this.positionArray[nextSegmentIndex];
+          nextOffset = this.offsetArray[nextSegmentIndex];
         }
 
         var interSegmentDistance = nextPosition - segmentPosition;
@@ -475,6 +481,10 @@ export default class SegmentEngine extends AudioTimeEngine {
       }
     }
 
-    return segmentPeriod;
+    // grain period randon variation
+    if (this.periodVar > 0.0)
+      segmentPeriod += 2.0 * (Math.random() - 0.5) * this.periodVar * grainPeriod;
+
+    return Math.max(this.periodMin, segmentPeriod);
   }
 }
