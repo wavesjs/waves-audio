@@ -187,6 +187,18 @@ export default class SegmentEngine extends AudioTimeEngine {
     this.releaseRel = optOrDef(options.releaseRel, 0);
 
     /**
+    * Fading volume relase time in seconds of previous segment when new segment triggers on top.
+    * @type {Number}
+    */
+    this.polyCutoff = optOrDef(options.polyCutoff, 2);
+
+    /**
+    * End volume of previous segment at the end of fade release time.
+    * @type {Number}
+    */
+    this.polyEndvol = optOrDef(options.polyEndvol, 0);
+
+    /**
      * Segment resampling in cent
      * @type {Number}
      */
@@ -341,6 +353,11 @@ export default class SegmentEngine extends AudioTimeEngine {
     var segmentPeriod = this.periodAbs;
     var segmentIndex = this.segmentIndex;
 
+    // fade out previous segment on new segment trigger
+    if (this.prevGain) {
+        this.prevGain.gain.setTargetAtTime(this.polyEndvol, audioContext.currentTime, this.polyCutoff);
+    }
+
     if (this.buffer) {
       var segmentPosition = 0.0;
       var segmentDuration = 0.0;
@@ -445,7 +462,9 @@ export default class SegmentEngine extends AudioTimeEngine {
       // make segment
       if (this.gain > 0 && segmentDuration > 0) {
         // make segment envelope
-        var envelope = audioContext.createGain();
+        this.prevGain = audioContext.createGain();
+        var envelope = this.prevGain;
+
         var attack = this.attackAbs + this.attackRel * segmentDuration;
         var release = this.releaseAbs + this.releaseRel * segmentDuration;
 
