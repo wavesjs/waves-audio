@@ -24,7 +24,7 @@ const log = debug('wavesjs:audio');
  * default. The factory creates a single scheduler for each audio context.
  *
  * Example that shows three Metronome engines running in a Scheduler:
- * {@link https://cdn.rawgit.com/wavesjs/waves-audio/master/examples/scheduler/index.html}
+ * {@link https://cdn.rawgit.com/wavesjs/waves-audio/master/examples/scheduler.html}
  *
  * @param {Object} [options={}] - default options
  * @param {Number} [options.period=0.025] - period of the scheduler.

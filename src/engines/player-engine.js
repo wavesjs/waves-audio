@@ -10,7 +10,7 @@ function optOrDef(opt, def) {
 /**
  * Used with a buffer to serve audio files.
  *
- * [example]{@link https://cdn.rawgit.com/wavesjs/waves-audio/master/examples/player-engine/index.html}
+ * [example]{@link https://cdn.rawgit.com/wavesjs/waves-audio/master/examples/player-engine.html}
  *
  * @extends AudioTimeEngine
  * @example

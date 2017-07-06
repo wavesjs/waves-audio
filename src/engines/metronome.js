@@ -9,7 +9,7 @@ function optOrDef(opt, def) {
 
 /**
  * Metronome audio engine. It extends Time Engine as a transported interface.
- * [example]{@link https://cdn.rawgit.com/wavesjs/waves-audio/master/examples/metronome/index.html}
+ * [example]{@link https://cdn.rawgit.com/wavesjs/waves-audio/master/examples/metronome.html}
  *
  * @extends AudioTimeEngine
  * @example
