@@ -7,7 +7,26 @@ function optOrDef(opt, def) {
   return def;
 }
 
-export default class PlayerEngine extends AudioTimeEngine {
+/**
+ * Used with a buffer to serve audio files.
+ *
+ * [example]{@link https://cdn.rawgit.com/wavesjs/waves-audio/master/examples/player-engine/index.html}
+ *
+ * @extends AudioTimeEngine
+ * @example
+ * import * as audio from 'waves-audio';
+ * const playerEngine = wavesAudio.PlayerEngine();
+ * const playControl = new wavesAudio.PlayControl(playerEngine);
+ *
+ * playControl.start();
+ *
+ * @param {Object} [options={}] - Default options
+ * @param {Number} [options.buffer=1] - Audio buffer
+ * @param {Number} [options.fadeTime=600] - Fade time for chaining segments
+ * @param {Number} [options.cyclic=false] - Loop mode
+ * @param {Number} [options.gain=1] - Gain
+ */
+class PlayerEngine extends AudioTimeEngine {
   constructor(options = {}) {
     super(options.audioContext);
 
@@ -15,13 +34,23 @@ export default class PlayerEngine extends AudioTimeEngine {
 
     /**
      * Audio buffer
+     *
      * @type {AudioBuffer}
+     * @name buffer
+     * @memberof PlayerEngine
+     * @instance
+     * @default null
      */
     this.buffer = optOrDef(options.buffer, null);
 
     /**
      * Fade time for chaining segments (e.g. in start, stop, and seek)
-     * @type {AudioBuffer}
+     *
+     * @type {Number}
+     * @name fadeTime
+     * @memberof PlayerEngine
+     * @instance
+     * @default 0.005
      */
     this.fadeTime = optOrDef(options.fadeTime, 0.005);
 
@@ -103,7 +132,10 @@ export default class PlayerEngine extends AudioTimeEngine {
 
   /**
    * Set whether the audio buffer is considered as cyclic
-   * @param {Bool} cyclic whether the audio buffer is considered as cyclic
+   * @type {Bool}
+   * @name cyclic
+   * @memberof PlayerEngine
+   * @instance
    */
   set cyclic(cyclic) {
     if (cyclic !== this.__cyclic) {
@@ -118,17 +150,16 @@ export default class PlayerEngine extends AudioTimeEngine {
     }
   }
 
-  /**
-   * Get whether the audio buffer is considered as cyclic
-   * @return {Bool} whether the audio buffer is considered as cyclic
-   */
   get cyclic() {
     return this.__cyclic;
   }
 
   /**
-   * Set gain
-   * @param {Number} value linear gain factor
+   * Linear gain factor
+   * @type {Number}
+   * @name gain
+   * @memberof PlayerEngine
+   * @instance
    */
   set gain(value) {
     var time = this.currentTime;
@@ -137,17 +168,17 @@ export default class PlayerEngine extends AudioTimeEngine {
     this.__gainNode.linearRampToValueAtTime(0, time + this.fadeTime);
   }
 
-  /**
-   * Get gain
-   * @return {Number} current gain
-   */
   get gain() {
     return this.__gainNode.gain.value;
   }
 
   /**
    * Get buffer duration
-   * @return {Number} current buffer duration
+   * @type {Number}
+   * @name bufferDuration
+   * @memberof PlayerEngine
+   * @instance
+   * @readonly
    */
   get bufferDuration() {
     if(this.buffer)
@@ -156,3 +187,5 @@ export default class PlayerEngine extends AudioTimeEngine {
     return 0;
   }
 }
+
+export default PlayerEngine;

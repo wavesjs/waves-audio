@@ -7,31 +7,63 @@ function optOrDef(opt, def) {
   return def;
 }
 
-export default class Metronome extends AudioTimeEngine {
+/**
+ * Metronome audio engine. It extends Time Engine as a transported interface.
+ * [example]{@link https://cdn.rawgit.com/wavesjs/waves-audio/master/examples/metronome/index.html}
+ *
+ * @extends AudioTimeEngine
+ * @example
+ * import * as audio from 'waves-audio';
+ * const scheduler = audio.getScheduler();
+ * const metronome = new audio.Metronome({period: 0.333});
+ *
+ * scheduler.add(metronome);
+ *
+ * @param {Object} [options={}] - Default options
+ * @param {Number} [options.period=1] - Metronome period
+ * @param {Number} [options.clickFreq=600] - Metronome click frequency
+ * @param {Number} [options.clickAttack=0.002] - Metronome click attack time
+ * @param {Number} [options.clickRelease=0.098] - Metronome click release time
+ * @param {Number} [options.gain=1] - Gain
+ */
+class Metronome extends AudioTimeEngine {
   constructor(options = {}) {
     super(options.audioContext);
 
     /**
      * Metronome period
      * @type {Number}
+     * @private
      */
     this.__period = optOrDef(options.period, 1);
 
     /**
      * Metronome click frequency
+     *
      * @type {Number}
+     * @memberof Metronome
+     * @name clickFreq
+     * @instance
      */
     this.clickFreq = optOrDef(options.clickFreq, 600);
 
     /**
      * Metronome click attack time
+     *
      * @type {Number}
+     * @memberof Metronome
+     * @name clickAttack
+     * @instance
      */
     this.clickAttack = optOrDef(options.clickAttack, 0.002);
 
     /**
      * Metronome click release time
+     *
      * @type {Number}
+     * @memberof Metronome
+     * @name clickRelease
+     * @instance
      */
     this.clickRelease = optOrDef(options.clickRelease, 0.098);
 
@@ -102,24 +134,28 @@ export default class Metronome extends AudioTimeEngine {
   }
 
   /**
-   * Set gain
-   * @param {Number} value linear gain factor
+   * linear gain factor
+   *
+   * @type {Number}
+   * @name gain
+   * @memberof Metronome
+   * @instance
    */
   set gain(value) {
     this.__gainNode.gain.value = value;
   }
 
-  /**
-   * Get gain
-   * @return {Number} current gain
-   */
   get gain() {
     return this.__gainNode.gain.value;
   }
 
   /**
-   * Set period parameter
-   * @param {Number} period metronome period
+   * metronome period
+   *
+   * @type {Number}
+   * @name period
+   * @memberof Metronome
+   * @instance
    */
   set period(period) {
     this.__period = period;
@@ -134,17 +170,18 @@ export default class Metronome extends AudioTimeEngine {
     }
   }
 
-  /**
-   * Get period parameter
-   * @return {Number} value of period parameter
-   */
   get period() {
     return this.__period;
   }
 
   /**
-   * Set phase parameter (available only when 'transported')
-   * @param {Number} phase metronome phase [0, 1[
+   * Set phase parameter (available only when 'transported'), should be
+   * between [0, 1[
+   *
+   * @type {Number}
+   * @name phase
+   * @memberof Metronome
+   * @instance
    */
   set phase(phase) {
     this.__phase = phase - Math.floor(phase);
@@ -155,11 +192,9 @@ export default class Metronome extends AudioTimeEngine {
       master.resetEnginePosition(this);
   }
 
-  /**
-   * Get phase parameter
-   * @return {Number} value of phase parameter
-   */
   get phase() {
     return this.__phase;
   }
 }
+
+export default Metronome;

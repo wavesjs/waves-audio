@@ -21,6 +21,8 @@ function indexOf(arr, el) {
 /**
  * Define if `time1` should be lower in the topography than `time2`.
  * Is dynamically affected to the priority queue according to handle `min` and `max` heap.
+ *
+ * @private
  * @param {Number} time1
  * @param {Number} time2
  * @return {Boolean}
@@ -36,6 +38,8 @@ const _isLowerMinHeap = function(time1, time2) {
 /**
  * Define if `time1` should be higher in the topography than `time2`.
  * Is dynamically affected to the priority queue according to handle `min` and `max` heap.
+ *
+ * @private
  * @param {Number} time1
  * @param {Number} time2
  * @return {Boolean}
@@ -52,29 +56,40 @@ const POSITIVE_INFINITY = Number.POSITIVE_INFINITY;
 
 /**
  * Priority queue implementing a binary heap.
- * Acts as a min heap by default, can be dynamically changed to a max heap by setting `reverse` to true.
+ * Acts as a min heap by default, can be dynamically changed to a max heap
+ * by setting `reverse` to true.
+ *
+ * _note_: the queue creates and maintains a new property (i.e. `queueTime`)
+ * to each object added.
+ *
+ * @param {Number} [heapLength=100] - Default size of the array used to create the heap.
  */
-export default class PriorityQueue {
-  /**
-   * @param {String} [accessor='time'] - The attribute of the entries that should be used as the priority value. This attribute must be a number.
-   * @param {Number} [heapLength=100] - The size of the array used to create the heap.
-   */
+class PriorityQueue {
   constructor(heapLength = 100) {
     /**
+     * Pointer to the first empty index of the heap.
      * @type {Number}
-     * A pointer to the first empty index of the heap.
+     * @memberof PriorityQueue
+     * @name _currentLength
+     * @private
      */
     this._currentLength = 1;
 
     /**
-     * An array of the sorted indexes of the entries, the actual heap. Ignore the index 0.
+     * Array of the sorted indexes of the entries, the actual heap. Ignore the index 0.
      * @type {Array}
+     * @memberof PriorityQueue
+     * @name _heap
+     * @private
      */
     this._heap = new Array(heapLength + 1);
 
     /**
-     * Define the type of the queue: `min` heap if `false`, `max` heap if `true`
+     * Type of the queue: `min` heap if `false`, `max` heap if `true`
      * @type {Boolean}
+     * @memberof PriorityQueue
+     * @name _reverse
+     * @private
      */
     this._reverse = null;
 
@@ -83,7 +98,7 @@ export default class PriorityQueue {
   }
 
   /**
-   * Return the time of the first element in the binary heap.
+   * Time of the first element in the binary heap.
    * @returns {Number}
    */
   get time() {
@@ -94,15 +109,18 @@ export default class PriorityQueue {
   }
 
   /**
-   * Returns the entry of the first element in the binary heap.
+   * First element in the binary heap.
    * @returns {Number}
+   * @readonly
    */
   get head() {
     return this._heap[1];
   }
 
   /**
-   * Change the order of the queue, rebuild the heap with the existing entries.
+   * Change the order of the queue (max heap if true, min heap if false),
+   * rebuild the heap with the existing entries.
+   *
    * @type {Boolean}
    */
   set reverse(value) {
@@ -127,6 +145,8 @@ export default class PriorityQueue {
 
   /**
    * Fix the heap by moving an entry to a new upper position.
+   *
+   * @private
    * @param {Number} startIndex - The index of the entry to move.
    */
   _bubbleUp(startIndex) {
@@ -147,6 +167,8 @@ export default class PriorityQueue {
 
   /**
    * Fix the heap by moving an entry to a new lower position.
+   *
+   * @private
    * @param {Number} startIndex - The index of the entry to move.
    */
   _bubbleDown(startIndex) {
@@ -181,7 +203,7 @@ export default class PriorityQueue {
   }
 
   /**
-   * Build the heap from bottom up.
+   * Build the heap (from bottom up).
    */
   buildHeap() {
     // find the index of the last internal node
@@ -193,7 +215,8 @@ export default class PriorityQueue {
   }
 
   /**
-   * Insert a new object in the binary heap, and sort it.
+   * Insert a new object in the binary heap and sort it.
+   *
    * @param {Object} entry - Entry to insert.
    * @param {Number} time - Time at which the entry should be orderer.
    * @returns {Number} - Time of the first entry in the heap.
@@ -215,7 +238,8 @@ export default class PriorityQueue {
   }
 
   /**
-   * Move an entry to a new position.
+   * Move a given entry to a new position.
+   *
    * @param {Object} entry - Entry to move.
    * @param {Number} time - Time at which the entry should be orderer.
    * @return {Number} - Time of first entry in the heap.
@@ -243,8 +267,8 @@ export default class PriorityQueue {
   }
 
   /**
-   * This is broken, assuming bubbling down only is false
    * Remove an entry from the heap and fix the heap.
+   *
    * @param {Object} entry - Entry to remove.
    * @return {Number} - Time of first entry in the heap.
    */
@@ -298,7 +322,15 @@ export default class PriorityQueue {
     this._heap = new Array(this._heap.length);
   }
 
+  /**
+   * Defines if the queue contains the given `entry`.
+   *
+   * @param {Object} entry - Entry to be checked
+   * @return {Boolean}
+   */
   has(entry) {
     return this._heap.indexOf(entry) !== -1;
   }
 }
+
+export default PriorityQueue;

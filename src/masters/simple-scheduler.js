@@ -4,7 +4,44 @@ import TimeEngine from '../core/time-engine';
 
 const log = debug('wavesjs:audio');
 
-export default class SimpleScheduler {
+/**
+ *
+ *
+ *
+ * The SimpleScheduler class implements a simplified master for time engines
+ * (see TimeEngine or AudioTimeEngine) that implement the scheduled interface
+ * such as the Metronome and the GranularEngine. The API and funtionalities of
+ * the SimpleScheduler class are identical to the Scheduler class. But, other
+ * than the Scheduler, the SimpleScheduler class does not guarantee the order
+ * of events (i.e. calls to the advanceTime method of scheduled time engines
+ * and to scheduled callback functions) within a scheduling period (see period
+ * attribute).
+ *
+ * To get a unique instance of SimpleScheduler as the global scheduler of an
+ * application, the getSimpleScheduler factory function should be used. The
+ * function accepts an audio context as optional argument and uses the Waves
+ * default audio context (see Audio Context) as default. The factory creates
+ * a single (simple) scheduler for each audio context.
+ *
+ * Example that shows three Metronome engines running in a SimpleScheduler:
+ * {@link https://cdn.rawgit.com/wavesjs/waves-audio/master/examples/simple-scheduler/index.html}
+ *
+ * @param {Object} [options={}] - default options
+ * @param {Number} [options.period=0.025] - period of the scheduler.
+ * @param {Number} [options.lookahead=0.1] - lookahead of the scheduler.
+ *
+ * @see TimeEngine
+ * @see AudioTimeEngine
+ * @see getSimpleScheduler
+ * @see Scheduler
+ *
+ * @example
+ * import * as audio from 'waves-audio';
+ * const scheduler = audio.getSimpleScheduler();
+ *
+ * scheduler.add(myEngine);
+ */
+class SimpleScheduler {
   constructor(options = {}) {
     this.audioContext = options.audioContext ||  defaultAudioContext;
 
@@ -19,12 +56,18 @@ export default class SimpleScheduler {
     /**
      * scheduler (setTimeout) period
      * @type {Number}
+     * @name period
+     * @memberof Scheduler
+     * @instance
      */
     this.period = options.period || 0.025;
 
     /**
      * scheduler lookahead time (> period)
      * @type {Number}
+     * @name lookahead
+     * @memberof Scheduler
+     * @instance
      */
     this.lookahead = options.lookahead || 0.1;
   }
@@ -110,6 +153,14 @@ export default class SimpleScheduler {
     }
   }
 
+  /**
+   * Scheduler current logical time.
+   *
+   * @name currentTime
+   * @type {Number}
+   * @memberof Scheduler
+   * @instance
+   */
   get currentTime() {
     return this.__currentTime || this.audioContext.currentTime + this.lookahead;
   }
@@ -119,6 +170,12 @@ export default class SimpleScheduler {
   }
 
   // call a function at a given time
+  /**
+   * Defer the execution of a function at a given time.
+   *
+   * @param {Function} fun - Function to defer
+   * @param {Number} [time=this.currentTime] - Schedule time
+   */
   defer(fun, time = this.currentTime) {
     if (!(fun instanceof Function))
       throw new Error("object cannot be defered by scheduler");
@@ -128,7 +185,12 @@ export default class SimpleScheduler {
     }, time);
   }
 
-  // add a time engine to the scheduler
+  /**
+   * Add a TimeEngine function to the scheduler at an optionally given time.
+   *
+   * @param {TimeEngine} engine - Engine to add to the scheduler
+   * @param {Number} [time=this.currentTime] - Schedule time
+   */
   add(engine, time = this.currentTime) {
     if (!TimeEngine.implementsScheduled(engine))
       throw new Error("object cannot be added to scheduler");
@@ -145,6 +207,13 @@ export default class SimpleScheduler {
     this.__resetTick();
   }
 
+  /**
+   * Remove a TimeEngine from the scheduler that has been added to the
+   * scheduler using the add method.
+   *
+   * @param {TimeEngine} engine - Engine to remove from the scheduler
+   * @param {Number} [time=this.currentTime] - Schedule time
+   */
   remove(engine) {
     if (!engine.master || engine.master !== this)
       throw new Error("engine has not been added to this scheduler");
@@ -158,16 +227,29 @@ export default class SimpleScheduler {
     this.__resetTick();
   }
 
+  /**
+   * Reschedule a scheduled time engine at a given time.
+   *
+   * @param {TimeEngine} engine - Engine to reschedule
+   * @param {Number} time - Schedule time
+   */
   resetEngineTime(engine, time = this.currentTime) {
     this.__rescheduleEngine(engine, time);
     this.__resetTick();
   }
 
-  // check whether a given engine is scheduled
+  /**
+   * Check whether a given engine is scheduled.
+   *
+   * @param {TimeEngine} engine - Engine to check
+   */
   has(engine) {
     return this.__engines.has(engine);
   }
 
+  /**
+   * Remove all engines from the scheduler.
+   */
   clear() {
     if (this.__timeout) {
       clearTimeout(this.__timeout);
@@ -178,3 +260,5 @@ export default class SimpleScheduler {
     this.__schedTimes.length = 0;
   }
 }
+
+export default SimpleScheduler;

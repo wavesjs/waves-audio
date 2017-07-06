@@ -293,9 +293,23 @@ class TransportSchedulingQueue extends SchedulingQueue {
 }
 
 /**
- * Transport class
+ * Provides synchronized scheduling of Time Engine instances.
+ *
+ * [example]{@link https://cdn.rawgit.com/wavesjs/waves-audio/master/examples/transport/index.html}
+ *
+ * @example
+ * import * as audio from 'waves-audio';
+ * const transport = audio.Transport();
+ * const playControl = new audio.PlayControl(transport);
+ * const myEngine = new MyEngine();
+ * const yourEngine = new yourEngine();
+ *
+ * transport.add(myEngine);
+ * transport.add(yourEngine);
+ *
+ * playControl.start();
  */
-export default class Transport extends TimeEngine {
+class Transport extends TimeEngine {
   constructor(options = {}) {
     super();
 
@@ -349,20 +363,28 @@ export default class Transport extends TimeEngine {
   }
 
   /**
-   * Get current master time
-   * @return {Number} current time
+   * Get current master time. This getter will be replaced when the transport
+   * is added to a master (i.e. transport or play-control).
    *
-   * This function will be replaced when the transport is added to a master (i.e. transport or play-control).
+   * @type {Number}
+   * @name currentTime
+   * @memberof Transport
+   * @instance
+   * @readonly
    */
   get currentTime() {
     return this.__scheduler.currentTime;
   }
 
   /**
-   * Get current master position
-   * @return {Number} current playing position
+   * Get current master position. This getter will be replaced when the transport
+   * is added to a master (i.e. transport or play-control).
    *
-   * This function will be replaced when the transport is added to a master (i.e. transport or play-control).
+   * @type {Number}
+   * @name currentPosition
+   * @memberof Transport
+   * @instance
+   * @readonly
    */
   get currentPosition() {
     const master = this.master;
@@ -375,7 +397,8 @@ export default class Transport extends TimeEngine {
 
   /**
    * Reset next transport position
-   * @param {Number} next transport position
+   *
+   * @param {Number} next - transport position
    */
   resetPosition(position) {
     const master = this.master;
@@ -386,7 +409,13 @@ export default class Transport extends TimeEngine {
       this.__schedulerHook.resetPosition(position);
   }
 
-  // TimeEngine method (transported interface)
+  /**
+   * Implementation of the transported time engine interface.
+   *
+   * @param {Number} time
+   * @param {Number} position
+   * @param {Number} speed
+   */
   syncPosition(time, position, speed) {
     this.__time = time;
     this.__position = position;
@@ -395,14 +424,27 @@ export default class Transport extends TimeEngine {
     return this.__syncTransportedPosition(time, position, speed);
   }
 
-  // TimeEngine method (transported interface)
+  /**
+   * Implementation of the transported time engine interface.
+   *
+   * @param {Number} time
+   * @param {Number} position
+   * @param {Number} speed
+   */
   advancePosition(time, position, speed) {
     const engine = this.__transportedQueue.head;
     const nextEnginePosition = engine.advancePosition(time, position, speed);
     return this.__transportedQueue.move(engine, nextEnginePosition);
   }
 
-  // TimeEngine method (speed-controlled interface)
+  /**
+   * Implementation of the transported time engine interface.
+   *
+   * @param {Number} time
+   * @param {Number} position
+   * @param {Number} speed
+   * @param {Boolean} [seek=false]
+   */
   syncSpeed(time, position, speed, seek = false) {
     const lastSpeed = this.__speed;
 
@@ -434,9 +476,10 @@ export default class Transport extends TimeEngine {
   }
 
   /**
-   * Add a time engine to the transport
-   * @param {Object} engine engine to be added to the transport
-   * @param {Number} position start position
+   * Add a time engine to the transport.
+   *
+   * @param {Object} engine - engine to be added to the transport
+   * @param {Number} position - start position
    */
   add(engine, startPosition = 0, endPosition = Infinity, offsetPosition = 0) {
     let transported = null;
@@ -474,8 +517,9 @@ export default class Transport extends TimeEngine {
   }
 
   /**
-   * Remove a time engine from the transport
-   * @param {object} engineOrTransported engine or transported to be removed from the transport
+   * Remove a time engine from the transport.
+   *
+   * @param {object} engineOrTransported - engine or transported to be removed from the transport
    */
   remove(engineOrTransported) {
     let engine = engineOrTransported;
@@ -498,6 +542,12 @@ export default class Transport extends TimeEngine {
     }
   }
 
+  /**
+   * Reset position of the given engine.
+   *
+   * @param {TimeEngine} transported - Engine to reset
+   * @param {Number} position - New position
+   */
   resetEnginePosition(transported, position = undefined) {
     const speed = this.__speed;
 
@@ -511,7 +561,7 @@ export default class Transport extends TimeEngine {
   }
 
   /**
-   * Remove all time engines from the transport
+   * Remove all time engines from the transport.
    */
   clear() {
     this.syncSpeed(this.currentTime, this.currentPosition, 0);
@@ -520,3 +570,5 @@ export default class Transport extends TimeEngine {
       transported.destroy();
   }
 }
+
+export default Transport;

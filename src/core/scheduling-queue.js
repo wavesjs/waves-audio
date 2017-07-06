@@ -11,8 +11,9 @@ import TimeEngine from './time-engine';
 
 /**
  * @class SchedulingQueue
+ * @extends TimeEngine
  */
-export default class SchedulingQueue extends TimeEngine {
+class SchedulingQueue extends TimeEngine {
   constructor() {
     super();
 
@@ -114,3 +115,5 @@ export default class SchedulingQueue extends TimeEngine {
     this.resetTime(Infinity);
   }
 }
+
+export default SchedulingQueue

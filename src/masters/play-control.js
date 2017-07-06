@@ -255,8 +255,23 @@ class PlayControlledSchedulingQueue extends SchedulingQueue {
   }
 }
 
-// play control meta-class
-export default class PlayControl extends TimeEngine {
+
+/**
+ * Extends Time Engine to provide playback control of a Time Engine instance.
+ *
+ * [example]{@link https://cdn.rawgit.com/wavesjs/waves-audio/master/examples/play-control/index.html}
+ *
+ * @extends TimeEngine
+ * @param {TimeEngine} engine - engine to control
+ *
+ * @example
+ * import * as audio from 'waves-audio';
+ * const playerEngine = audio.PlayerEngine();
+ * const playControl = new audio.PlayControl(playerEngine);
+ *
+ * playControl.start();
+ */
+class PlayControl extends TimeEngine {
   constructor(engine, options = {}) {
     super();
 
@@ -302,8 +317,10 @@ export default class PlayControl extends TimeEngine {
 
   /**
    * Calculate/extrapolate playing time for given position
+   *
    * @param {Number} position position
    * @return {Number} extrapolated time
+   * @private
    */
   __getTimeAtPosition(position) {
     return this.__time + (position - this.__position) / this.__speed;
@@ -311,8 +328,10 @@ export default class PlayControl extends TimeEngine {
 
   /**
    * Calculate/extrapolate playing position for given time
+   *
    * @param {Number} time time
    * @return {Number} extrapolated position
+   * @private
    */
   __getPositionAtTime(time) {
     return this.__position + (time - this.__time) * this.__speed;
@@ -326,25 +345,32 @@ export default class PlayControl extends TimeEngine {
   }
 
   /**
-   * Get current master time
-   * @return {Number} current time
-   *
+   * Get current master time.
    * This function will be replaced when the play-control is added to a master.
+   *
+   * @name currentTime
+   * @type {Number}
+   * @memberof PlayControl
+   * @instance
+   * @readonly
    */
   get currentTime() {
     return this.__scheduler.currentTime;
   }
 
   /**
-   * Get current master position
-   * @return {Number} current playing position
-   *
+   * Get current master position.
    * This function will be replaced when the play-control is added to a master.
+   *
+   * @name currentPosition
+   * @type {Number}
+   * @memberof PlayControl
+   * @instance
+   * @readonly
    */
   get currentPosition() {
     return this.__position + (this.__scheduler.currentTime - this.__time) * this.__speed;
   }
-
 
   set(engine = null) {
     var time = this.__sync();
@@ -367,6 +393,14 @@ export default class PlayControl extends TimeEngine {
     }
   }
 
+  /**
+   * Sets the play control loop behavior.
+   *
+   * @type {Boolean}
+   * @name loop
+   * @memberof PlayControl
+   * @instance
+   */
   set loop(enable) {
     if (enable && this.__loopStart > -Infinity && this.__loopEnd < Infinity) {
       if (!this.__loopControl) {
@@ -396,6 +430,12 @@ export default class PlayControl extends TimeEngine {
     return (!!this.__loopControl);
   }
 
+  /**
+   * Sets loop start and end time.
+   *
+   * @param {Number} loopStart - loop start value.
+   * @param {Number} loopEnd - loop end value.
+   */
   setLoopBoundaries(loopStart, loopEnd) {
     this.__loopStart = loopStart;
     this.__loopEnd = loopEnd;
@@ -403,6 +443,14 @@ export default class PlayControl extends TimeEngine {
     this.loop = this.loop;
   }
 
+  /**
+   * Sets loop start value
+   *
+   * @type {Number}
+   * @name loopStart
+   * @memberof PlayControl
+   * @instance
+   */
   set loopStart(loopStart) {
     this.setLoopBoundaries(loopStart, this.__loopEnd);
   }
@@ -411,6 +459,14 @@ export default class PlayControl extends TimeEngine {
     return this.__loopStart;
   }
 
+  /**
+   * Sets loop end value
+   *
+   * @type {Number}
+   * @name loopEnd
+   * @memberof PlayControl
+   * @instance
+   */
   set loopEnd(loopEnd) {
     this.setLoopBoundaries(this.__loopStart, loopEnd);
   }
@@ -440,7 +496,7 @@ export default class PlayControl extends TimeEngine {
   }
 
   /**
-   * Start playing
+   * Starts playback
    */
   start() {
     var time = this.__sync();
@@ -448,7 +504,7 @@ export default class PlayControl extends TimeEngine {
   }
 
   /**
-   * Pause playing
+   * Pauses playback and stays at the same position.
    */
   pause() {
     var time = this.__sync();
@@ -456,7 +512,7 @@ export default class PlayControl extends TimeEngine {
   }
 
   /**
-   * Stop playing
+   * Stops playback and seeks to initial (0) position.
    */
   stop() {
     var time = this.__sync();
@@ -465,8 +521,13 @@ export default class PlayControl extends TimeEngine {
   }
 
   /**
-   * Set playing speed
-   * @param {Number} speed playing speed (non-zero speed between -16 and -1/16 or between 1/16 and 16)
+   * If speed if provided, sets the playback speed. The speed value should
+   * be non-zero between -16 and -1/16 or between 1/16 and 16.
+   *
+   * @type {Number}
+   * @name speed
+   * @memberof PlayControl
+   * @instance
    */
   set speed(speed) {
     var time = this.__sync();
@@ -489,16 +550,13 @@ export default class PlayControl extends TimeEngine {
       this.syncSpeed(time, this.__position, speed);
   }
 
-  /**
-   * Get playing speed
-   * @return current playing speed
-   */
   get speed() {
     return this.__playingSpeed;
   }
 
   /**
-   * Set (jump to) playing position
+   * Set (jump to) playing position.
+   *
    * @param {Number} position target position
    */
   seek(position) {
@@ -509,3 +567,5 @@ export default class PlayControl extends TimeEngine {
     }
   }
 }
+
+export default PlayControl;
