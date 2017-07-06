@@ -1,88 +1,53 @@
-# WAVES - AUDIO
+# waves-audio
 
-_audio part of the `wavesjs` library._
+_Low level web audio components for synthesis and scheduling_
 
 ## Documentation
 
-[http://wavesjs.github.io/audio/](http://wavesjs.github.io/audio/)
+[http://wavesjs.github.io/waves-audio/](http://wavesjs.github.io/waves-audio/)
 
-## Use
+## Usage
 
-#### CommonJS (browserify)
+#### Install
 
-install with npm
-
-```bash
-npm install --save wavesjs/audio
+```sh
+npm install [--save] audio
 ```
 
-consume in your modules
+#### import
 
-```javascript
-var wavesUI = require('waves-audio');
+```js
+import audio from 'waves-audio';
 ```
-
-#### AMD (requireJS)
-
-add the waves library to your config
-
-```javascript
-requirejs.config({
-  paths: {
-    waves: 'path/to/waves-audio.umd'
-  }
-});
-```
-
-consume in your modules
-
-```javascript
-define(['waves-audio'], function(wavesAudio) {
-  var timeEngine = new wavesAudio.TimeEngine();
-  // ...
-});
-```
-
-#### Global
-
-add the script tag in your at the bottom of the `<body>`
-
-```html
-<script scr="/path/to/waves-audio.umd.js"></script>
-```
-
-the library is exposed in the `window.wavesAudio` namespace
 
 ## List of components
 
 #### core
 
 - `audioContext`
-- `TimeEngine`
 - `AudioTimeEngine`
-
-#### utils
-
 - `PriorityQueue`
+- `SchedulingQueue`
+- `TimeEngine`
 
 #### masters
 
+- `PlayControl`
 - `SimpleScheduler`
 - `Scheduler`
 - `Transport`      
-- `PlayControl`
 
 #### engines
 
-- `Metronome`
 - `GranularEngine`
-- `SegmentEngine`
+- `Metronome`
 - `PlayerEngine`
+- `SegmentEngine`
 
-## License
+<hr />
+
+## Credits and License
 
 This module is released under the BSD-3-Clause license.
 
-Acknowledgments
-
-This code has been developed in the framework of the WAVE and CoSiMa research projects, funded by the French National Research Agency (ANR).
+The code has been developed in the framework of the WAVE and CoSiMa research projects, funded by the French National Research Agency (ANR).
