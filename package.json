@@ -10,23 +10,30 @@
     "Samuel Goldszmidt"
   ],
   "main": "dist/index.js",
-  "standalone": "wavesAudio",
-  "scripts": {
-    "bundle": "node ./bin/runner --bundle",
-    "transpile": "node ./bin/runner --transpile",
-    "prewatch": "npm run transpile",
-    "watch": "node ./bin/runner --watch"
-  },
   "license": "BSD-3-Clause",
   "repository": {
     "type": "git",
-    "url": "https://github.com/wavesjs/audio"
+    "url": "https://github.com/wavesjs/waves-audio"
   },
-  "jshintConfig": {
-    "esnext": true,
-    "browser": true,
-    "node": true,
-    "devel": true
+  "bugs": {
+    "url": "https://github.com/wavesjs/waves-audio/issues"
+  },
+  "homepage": "http://wavesjs.github.io/waves-audio",
+  "keywords": [
+    "dsp",
+    "feature extraction",
+    "filters",
+    "audio",
+    "sensors"
+  ],
+  "scripts": {
+    "bundle": "node ./bin/runner --bundle",
+    "deploy": "np --yolo",
+    "doc": "jsdoc -c jsdoc.json",
+    "transpile": "node ./bin/runner --transpile",
+    "prewatch": "npm run transpile",
+    "version": "npm run transpile",
+    "watch": "node ./bin/runner --watch"
   },
   "dependencies": {
     "babel-runtime": "^6.6.1",
@@ -41,7 +48,8 @@
     "browserify": "^13.0.0",
     "colors": "^1.1.2",
     "fs-extra": "^0.26.5",
-    "ora": "^0.2.0",
+    "jsdoc": "^3.4.3",
+    "jsdoc-template": "github:ircam-jstools/jsdoc-template",
     "uglify-js": "^2.6.2",
     "watch": "^0.17.1"
   }
