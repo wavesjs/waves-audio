@@ -15,8 +15,8 @@ function optOrDef(opt, def) {
  * @extends AudioTimeEngine
  * @example
  * import * as audio from 'waves-audio';
- * const playerEngine = wavesAudio.PlayerEngine();
- * const playControl = new wavesAudio.PlayControl(playerEngine);
+ * const playerEngine = audio.PlayerEngine();
+ * const playControl = new audio.PlayControl(playerEngine);
  *
  * playControl.start();
  *
