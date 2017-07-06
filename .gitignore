@@ -1,9 +1,10 @@
 coverage
 coverage1.json
+
 npm-debug.log
 .DS_Store
 
 node_modules
 dist
 
-# docs
+docs

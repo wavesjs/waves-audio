@@ -44,8 +44,8 @@ var browserifyOptions = {
 var srcDirectory = path.join(cwd, 'src');
 var distDirectory = path.join(cwd, 'dist');
 
-var umdTarget = path.join(cwd, pkg.name + '.umd.js');
-var minTarget = path.join(cwd, pkg.name + '.min.js');
+var umdTarget = path.join(cwd, 'examples', 'assets', pkg.name + '.umd.js');
+var minTarget = path.join(cwd, 'examples', 'assets', pkg.name + '.min.js');
 
 /**
  * Define which file should be ignored by every command.
