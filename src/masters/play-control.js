@@ -10,6 +10,7 @@ class LoopControl extends TimeEngine {
     super();
 
     this.__playControl = playControl;
+    this.speed = 1;
     this.lower = -Infinity;
     this.upper = Infinity;
   }
@@ -17,11 +18,11 @@ class LoopControl extends TimeEngine {
   // TimeEngine method (scheduled interface)
   advanceTime(time) {
     const playControl = this.__playControl;
-    const speed = playControl.speed;
+    const speed = this.speed;
     const lower = this.lower;
     const upper = this.upper;
 
-    if(speed > 0)
+    if (speed > 0)
       time += ESPILON;
     else
       time -= EPSILON;
@@ -484,7 +485,7 @@ export default class PlayControl extends TimeEngine {
 
     this.__playingSpeed = speed;
 
-    if (this.__speed !== 0)
+    if (!this.master && this.__speed !== 0)
       this.syncSpeed(time, this.__position, speed);
   }
 
