@@ -6,7 +6,14 @@ import SimpleScheduler from './simple-scheduler';
 const schedulerMap = new WeakMap();
 const simpleSchedulerMap = new WeakMap();
 
-// scheduler factory
+/**
+ * Returns a unique instance of `Scheduler`
+ *
+ * @global
+ * @function
+ * @returns {Scheduler}
+ * @see Scheduler
+ */
 export const getScheduler = function(audioContext = defaultAudioContext) {
   let scheduler = schedulerMap.get(audioContext);
 
@@ -18,6 +25,14 @@ export const getScheduler = function(audioContext = defaultAudioContext) {
   return scheduler;
 };
 
+/**
+ * Returns a unique instance of `SimpleScheduler`
+ *
+ * @global
+ * @function
+ * @returns {SimpleScheduler}
+ * @see SimpleScheduler
+ */
 export const getSimpleScheduler = function(audioContext = defaultAudioContext) {
   let simpleScheduler = simpleSchedulerMap.get(audioContext);
 

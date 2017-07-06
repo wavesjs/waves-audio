@@ -1,10 +1,9 @@
 coverage
 coverage1.json
-
-node_modules
-# dist/*
-# waves-audio.min.js
-# waves-audio.umd.js
-
 npm-debug.log
 .DS_Store
+
+node_modules
+dist
+
+# docs

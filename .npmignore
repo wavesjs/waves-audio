@@ -1,0 +1,7 @@
+bin
+docs
+examples
+src
+tests
+
+jsdoc.json

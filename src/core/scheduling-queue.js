@@ -8,12 +8,12 @@
 
 import PriorityQueue from './priority-queue';
 import TimeEngine from './time-engine';
-import defaultAudioContext from './audio-context';
 
 /**
  * @class SchedulingQueue
+ * @extends TimeEngine
  */
-export default class SchedulingQueue extends TimeEngine {
+class SchedulingQueue extends TimeEngine {
   constructor() {
     super();
 
@@ -107,8 +107,13 @@ export default class SchedulingQueue extends TimeEngine {
 
   // clear queue
   clear() {
+    for(let engine of this.__engines)
+      engine.master = null;
+
     this.__queue.clear();
     this.__engines.clear();
     this.resetTime(Infinity);
   }
 }
+
+export default SchedulingQueue

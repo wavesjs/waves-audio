@@ -1,13 +1,13 @@
 import AudioTimeEngine from '../core/audio-time-engine';
 
 function optOrDef(opt, def) {
-  if(opt !== undefined)
+  if (opt !== undefined)
     return opt;
 
   return def;
 }
 
-function getCurrentOrPreviousIndex(sortedArray, value, index = 0) {
+function getCurrentOrPreviousIndex(sortedArray, value, index = -1) {
   var size = sortedArray.length;
 
   if (size > 0) {
@@ -33,7 +33,7 @@ function getCurrentOrPreviousIndex(sortedArray, value, index = 0) {
   return index;
 }
 
-function getCurrentOrNextIndex(sortedArray, value, index = 0) {
+function getCurrentOrNextIndex(sortedArray, value, index = -1) {
   var size = sortedArray.length;
 
   if (size > 0) {
@@ -51,7 +51,7 @@ function getCurrentOrNextIndex(sortedArray, value, index = 0) {
       while (sortedArray[index] < value)
         index++;
 
-      while (sortedArray[index + 1] >= value)
+      while (sortedArray[index - 1] >= value)
         index--;
     }
   }
@@ -60,160 +60,304 @@ function getCurrentOrNextIndex(sortedArray, value, index = 0) {
 }
 
 /**
- * @class SegmentEngine
+ * Used with a buffer to serve audio files via granular synthesis.
+ *
+ * The engine implements the "scheduled" and "transported" interfaces.
+ * When "scheduled", the engine  generates segments more or less periodically
+ * (controlled by the periodAbs, periodRel, and perioVar attributes).
+ * When "transported", the engine generates segments at the position of their onset time.
+ *
+ * Example that shows a `SegmentEngine` with a few parameter controls running in a `Scheduler`.
+ * {@link https://cdn.rawgit.com/wavesjs/waves-audio/master/examples/segment-engine.html}
+ *
+ * @extends AudioTimeEngine
+ * @example
+ * import * as audio from 'waves-audio';
+ * const scheduler = audio.getScheduler();
+ * const segmentEngine = new audio.SegmentEngine();
+ *
+ * scheduler.add(segmentEngine);
+ *
+ * @param {Object} [options={}] - Default options
+ * @param {AudioBuffer} [options.buffer=null] - Audio buffer
+ * @param {Number} [options.periodAbs=0] - Absolute segment period in sec
+ * @param {Number} [options.periodRel=1] - Segment period relative to inter-segment distance
+ * @param {Number} [options.periodVar=0] - Amout of random segment period variation relative
+ *  to segment period
+ * @param {Number} [options.periodMin=0.001] - Minimum segment period
+ * @param {Number} [options.positionArray=[0.0]] - Array of segment positions (onset times
+ *  in audio buffer) in sec
+ * @param {Number} [options.positionVar=0] - Amout of random segment position variation in sec
+ * @param {Number} [options.durationArray=[0.0]] - Array of segment durations in sec
+ * @param {Number} [options.durationAbs=0] - Absolute segment duration in sec
+ * @param {Number} [options.durationRel=1] - Segment duration relative to given segment
+ *  duration or inter-segment distance
+ * @param {Array} [options.offsetArray=[0.0]] - Array of segment offsets in sec
+ * @param {Number} [options.offsetAbs=-0.005] - Absolute segment offset in sec
+ * @param {Number} [options.offsetRel=0] - Segment offset relative to segment duration
+ * @param {Number} [options.delay=0.005] - Time by which all segments are delayed (especially
+ *  to realize segment offsets)
+ * @param {Number} [options.attackAbs=0.005] - Absolute attack time in sec
+ * @param {Number} [options.attackRel=0] - Attack time relative to segment duration
+ * @param {Number} [options.releaseAbs=0.005] - Absolute release time in sec
+ * @param {Number} [options.releaseRel=0] - Release time relative to segment duration
+ * @param {Number} [options.resampling=0] - Segment resampling in cent
+ * @param {Number} [options.resamplingVar=0] - Amout of random resampling variation in cent
+ * @param {Number} [options.gain=1] - Linear gain factor
+ * @param {Number} [options.segmentIndex=0] - Index of the segment to synthesize (i.e. of
+ *  this.positionArray/durationArray/offsetArray)
+ * @param {Bool} [options.cyclic=false] - Whether the audio buffer and segment indices are
+ *  considered as cyclic
+ * @param {Number} [options.wrapAroundExtension=0] - Portion at the end of the audio buffer
+ *  that has been copied from the beginning to assure cyclic behavior
  */
-export default class SegmentEngine extends AudioTimeEngine {
-  /**
-   * @constructor
-   * @param {AudioBuffer} buffer initial audio buffer for granular synthesis
-   *
-   * The engine implements the "scheduled" and "transported" interfaces.
-   * When "scheduled", the engine  generates segments more or less periodically
-   * (controlled by the periodAbs, periodRel, and perioVar attributes).
-   * When "transported", the engine generates segments at the position of their onset time.
-   */
+class SegmentEngine extends AudioTimeEngine {
   constructor(options = {}) {
     super(options.audioContext);
 
     /**
      * Audio buffer
+     * @name buffer
      * @type {AudioBuffer}
+     * @default null
+     * @memberof SegmentEngine
+     * @instance
      */
     this.buffer = optOrDef(options.buffer, null);
 
     /**
      * Absolute segment period in sec
+     * @name periodAbs
      * @type {Number}
+     * @default 0
+     * @memberof SegmentEngine
+     * @instance
      */
     this.periodAbs = optOrDef(options.periodAbs, 0);
 
     /**
      * Segment period relative to inter-segment distance
+     * @name periodRel
      * @type {Number}
+     * @default 1
+     * @memberof SegmentEngine
+     * @instance
      */
     this.periodRel = optOrDef(options.periodRel, 1);
 
     /**
      * Amout of random segment period variation relative to segment period
+     * @name periodVar
      * @type {Number}
+     * @default 0
+     * @memberof SegmentEngine
+     * @instance
      */
     this.periodVar = optOrDef(options.periodVar, 0);
 
     /**
-     * Array of segment positions (onset times in audio buffer) in sec
+     * Minimum segment period
+     * @name periodMin
      * @type {Number}
+     * @default 0.001
+     * @memberof SegmentEngine
+     * @instance
+     */
+    this.periodMin = optOrDef(options.periodMin, 0.001);
+
+    /**
+     * Array of segment positions (onset times in audio buffer) in sec
+     * @name positionArray
+     * @type {Number}
+     * @default [0.0]
+     * @memberof SegmentEngine
+     * @instance
      */
     this.positionArray = optOrDef(options.positionArray, [0.0]);
 
     /**
      * Amout of random segment position variation in sec
+     * @name positionVar
      * @type {Number}
+     * @default 0
+     * @memberof SegmentEngine
+     * @instance
      */
     this.positionVar = optOrDef(options.positionVar, 0);
 
     /**
      * Array of segment durations in sec
+     * @name durationArray
      * @type {Number}
+     * @default [0.0]
+     * @memberof SegmentEngine
+     * @instance
      */
     this.durationArray = optOrDef(options.durationArray, [0.0]);
 
     /**
      * Absolute segment duration in sec
+     * @name durationAbs
      * @type {Number}
+     * @default 0
+     * @memberof SegmentEngine
+     * @instance
      */
     this.durationAbs = optOrDef(options.durationAbs, 0);
 
     /**
      * Segment duration relative to given segment duration or inter-segment distance
+     * @name durationRel
      * @type {Number}
+     * @default 1
+     * @memberof SegmentEngine
+     * @instance
      */
     this.durationRel = optOrDef(options.durationRel, 1);
 
     /**
      * Array of segment offsets in sec
-     * @type {Number}
      *
      * offset > 0: the segment's reference position is after the given segment position
-     * offset < 0: the given segment position is the segment's reference position and the duration has to be corrected by the offset
+     * offset < 0: the given segment position is the segment's reference position
+     * and the duration has to be corrected by the offset
+     *
+     * @name offsetArray
+     * @type {Array}
+     * @default [0.0]
+     * @memberof SegmentEngine
+     * @instance
      */
     this.offsetArray = optOrDef(options.offsetArray, [0.0]);
 
     /**
      * Absolute segment offset in sec
+     * @name offsetAbs
      * @type {Number}
+     * @default -0.005
+     * @memberof SegmentEngine
+     * @instance
      */
     this.offsetAbs = optOrDef(options.offsetAbs, -0.005);
 
     /**
      * Segment offset relative to segment duration
+     * @name offsetRel
      * @type {Number}
+     * @default 0
+     * @memberof SegmentEngine
+     * @instance
      */
     this.offsetRel = optOrDef(options.offsetRel, 0);
 
     /**
      * Time by which all segments are delayed (especially to realize segment offsets)
+     * @name delay
      * @type {Number}
+     * @default 0.005
+     * @memberof SegmentEngine
+     * @instance
      */
     this.delay = optOrDef(options.delay, 0.005);
 
     /**
      * Absolute attack time in sec
+     * @name attackAbs
      * @type {Number}
+     * @default 0.005
+     * @memberof SegmentEngine
+     * @instance
      */
     this.attackAbs = optOrDef(options.attackAbs, 0.005);
 
     /**
      * Attack time relative to segment duration
+     * @name attackRel
      * @type {Number}
+     * @default 0
+     * @memberof SegmentEngine
+     * @instance
      */
     this.attackRel = optOrDef(options.attackRel, 0);
 
     /**
      * Absolute release time in sec
+     * @name releaseAbs
      * @type {Number}
+     * @default 0.005
+     * @memberof SegmentEngine
+     * @instance
      */
     this.releaseAbs = optOrDef(options.releaseAbs, 0.005);
 
     /**
      * Release time relative to segment duration
+     * @name releaseRel
      * @type {Number}
+     * @default 0
+     * @memberof SegmentEngine
+     * @instance
      */
     this.releaseRel = optOrDef(options.releaseRel, 0);
 
     /**
      * Segment resampling in cent
+     * @name resampling
      * @type {Number}
+     * @default 0
+     * @memberof SegmentEngine
+     * @instance
      */
     this.resampling = optOrDef(options.resampling, 0);
 
     /**
      * Amout of random resampling variation in cent
+     * @name resamplingVar
      * @type {Number}
+     * @default 0
+     * @memberof SegmentEngine
+     * @instance
      */
     this.resamplingVar = optOrDef(options.resamplingVar, 0);
 
     /**
      * Linear gain factor
+     * @name gain
      * @type {Number}
+     * @default 1
+     * @memberof SegmentEngine
+     * @instance
      */
     this.gain = optOrDef(options.gain, 1);
 
     /**
      * Index of the segment to synthesize (i.e. of this.positionArray/durationArray/offsetArray)
+     * @name segmentIndex
      * @type {Number}
+     * @default 0
+     * @memberof SegmentEngine
+     * @instance
      */
     this.segmentIndex = optOrDef(options.segmentIndex, 0);
 
     /**
      * Whether the audio buffer and segment indices are considered as cyclic
+     * @name cyclic
      * @type {Bool}
+     * @default false
+     * @memberof SegmentEngine
+     * @instance
      */
     this.cyclic = optOrDef(options.cyclic, false);
     this.__cyclicOffset = 0;
 
     /**
      * Portion at the end of the audio buffer that has been copied from the beginning to assure cyclic behavior
+     * @name wrapAroundExtension
      * @type {Number}
+     * @default 0
+     * @memberof SegmentEngine
+     * @instance
      */
     this.wrapAroundExtension = optOrDef(options.wrapAroundExtension, 0);
 
@@ -222,7 +366,11 @@ export default class SegmentEngine extends AudioTimeEngine {
 
   /**
    * Get buffer duration (excluding wrapAroundExtension)
-   * @return {Number} current buffer duration
+   *
+   * @type {Number}
+   * @default 0
+   * @memberof SegmentEngine
+   * @instance
    */
   get bufferDuration() {
     if (this.buffer) {
@@ -322,12 +470,12 @@ export default class SegmentEngine extends AudioTimeEngine {
   }
 
   /**
-   * Trigger a segment
-   * @param {Number} time segment synthesis audio time
-   * @return {Number} period to next segment
-   *
+   * Trigger a segment.
    * This function can be called at any time (whether the engine is scheduled/transported or not)
    * to generate a single segment according to the current segment parameters.
+   *
+   * @param {Number} time segment synthesis audio time
+   * @return {Number} period to next segment
    */
   trigger(time) {
     var audioContext = this.audioContext;
@@ -364,10 +512,10 @@ export default class SegmentEngine extends AudioTimeEngine {
 
       // calculate inter-segment distance
       if (segmentDuration === 0 || this.periodRel > 0) {
-        var nextSegementIndex = segmentIndex + 1;
+        var nextSegmentIndex = segmentIndex + 1;
         var nextPosition, nextOffset;
 
-        if (nextSegementIndex === this.positionArray.length) {
+        if (nextSegmentIndex === this.positionArray.length) {
           if (this.cyclic) {
             nextPosition = this.positionArray[0] + bufferDuration;
             nextOffset = this.offsetArray[0];
@@ -376,8 +524,8 @@ export default class SegmentEngine extends AudioTimeEngine {
             nextOffset = 0;
           }
         } else {
-          nextPosition = this.positionArray[nextSegementIndex];
-          nextOffset = this.offsetArray[nextSegementIndex];
+          nextPosition = this.positionArray[nextSegmentIndex];
+          nextOffset = this.offsetArray[nextSegmentIndex];
         }
 
         var interSegmentDistance = nextPosition - segmentPosition;
@@ -475,6 +623,12 @@ export default class SegmentEngine extends AudioTimeEngine {
       }
     }
 
-    return segmentPeriod;
+    // grain period randon variation
+    if (this.periodVar > 0.0)
+      segmentPeriod += 2.0 * (Math.random() - 0.5) * this.periodVar * grainPeriod;
+
+    return Math.max(this.periodMin, segmentPeriod);
   }
 }
+
+export default SegmentEngine;
