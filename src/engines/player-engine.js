@@ -10,13 +10,13 @@ function optOrDef(opt, def) {
 /**
  * Used with a buffer to serve audio files.
  *
- * [example]{@link https://cdn.rawgit.com/wavesjs/waves-audio/master/examples/player-engine.html}
+ * [example]{@link https://rawgit.com/wavesjs/waves-audio/master/examples/player-engine.html}
  *
  * @extends AudioTimeEngine
  * @example
  * import * as audio from 'waves-audio';
- * const playerEngine = wavesAudio.PlayerEngine();
- * const playControl = new wavesAudio.PlayControl(playerEngine);
+ * const playerEngine = audio.PlayerEngine();
+ * const playControl = new audio.PlayControl(playerEngine);
  *
  * playControl.start();
  *

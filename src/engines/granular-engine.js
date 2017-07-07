@@ -15,7 +15,7 @@ function optOrDef(opt, def) {
  *
  * Example that shows a `GranularEngine` (with a few parameter controls) driven
  * by a `Scheduler` and a `PlayControl`:
- * {@link https://cdn.rawgit.com/wavesjs/waves-audio/master/examples/granular-engine.html}
+ * {@link https://rawgit.com/wavesjs/waves-audio/master/examples/granular-engine.html}
  *
  * @extends AudioTimeEngine
  * @example

@@ -295,7 +295,7 @@ class TransportSchedulingQueue extends SchedulingQueue {
 /**
  * Provides synchronized scheduling of Time Engine instances.
  *
- * [example]{@link https://cdn.rawgit.com/wavesjs/waves-audio/master/examples/transport.html}
+ * [example]{@link https://rawgit.com/wavesjs/waves-audio/master/examples/transport.html}
  *
  * @example
  * import * as audio from 'waves-audio';
