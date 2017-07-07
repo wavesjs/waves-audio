@@ -24,7 +24,7 @@ const log = debug('wavesjs:audio');
  * a single (simple) scheduler for each audio context.
  *
  * Example that shows three Metronome engines running in a SimpleScheduler:
- * {@link https://cdn.rawgit.com/wavesjs/waves-audio/master/examples/simple-scheduler.html}
+ * {@link https://rawgit.com/wavesjs/waves-audio/master/examples/simple-scheduler.html}
  *
  * @param {Object} [options={}] - default options
  * @param {Number} [options.period=0.025] - period of the scheduler.

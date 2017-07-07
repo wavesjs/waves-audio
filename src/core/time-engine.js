@@ -87,7 +87,7 @@
  *
  * Example that shows a `TimeEngine` running in a `Scheduler` that counts up
  * at a given frequency:
- * {@link https://cdn.rawgit.com/wavesjs/waves-audio/master/examples/time-engine.html}
+ * {@link https://rawgit.com/wavesjs/waves-audio/master/examples/time-engine.html}
  *
  * @example
  * import * as audio from 'waves-audio';

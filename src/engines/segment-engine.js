@@ -68,7 +68,7 @@ function getCurrentOrNextIndex(sortedArray, value, index = -1) {
  * When "transported", the engine generates segments at the position of their onset time.
  *
  * Example that shows a `SegmentEngine` with a few parameter controls running in a `Scheduler`.
- * {@link https://cdn.rawgit.com/wavesjs/waves-audio/master/examples/segment-engine.html}
+ * {@link https://rawgit.com/wavesjs/waves-audio/master/examples/segment-engine.html}
  *
  * @extends AudioTimeEngine
  * @example
