@@ -52,6 +52,7 @@
     "fs-extra": "^0.26.5",
     "jsdoc": "^3.4.3",
     "jsdoc-template": "github:ircam-jstools/jsdoc-template",
+    "np": "^2.16.0",
     "uglify-js": "^2.6.2",
     "watch": "^0.17.1"
   }
