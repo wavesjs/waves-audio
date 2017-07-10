@@ -610,7 +610,7 @@ class SegmentEngine extends AudioTimeEngine {
 
       segmentDuration /= resamplingRate;
 
-      if(this.monophonic)
+      if (this.monophonic)
         this.abort(segmentTime);
 
       // make segment
@@ -671,19 +671,25 @@ class SegmentEngine extends AudioTimeEngine {
     const endTime = this.__currentEndTime;
     const abortTime = time || audioContext.currentTime;
 
-    if(abortTime < endTime) {
+    if (abortTime < endTime) {
       const segmentEndTime = Math.min(abortTime + this.abortTime, endTime);
       const envelope = this.__currentEnv;
       let currentGainValue = this.__currentGain;
 
-      if(abortTime > this.__releaseStartTime) {
+      if (abortTime > this.__releaseStartTime) {
         const releaseStart = this.__releaseStartTime;
         currentGainValue *= (abortTime - releaseStart) / (endTime - releaseStart);
       }
 
       envelope.gain.cancelScheduledValues(abortTime);
-      envelope.gain.setValueAtTime(currentGainValue, segmentTime);
+      envelope.gain.setValueAtTime(currentGainValue, abortTime);
       envelope.gain.linearRampToValueAtTime(0, segmentEndTime);
+
+      this.__currentSrc = null;
+      this.__currentEnv = null;
+      this.__releaseStartTime = 0;
+      this.__currentGain = 0;
+      this.__currentEndTime = 0;
     }
   }
 }
