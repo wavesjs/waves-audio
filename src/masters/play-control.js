@@ -338,7 +338,7 @@ class PlayControl extends TimeEngine {
   }
 
   __sync() {
-    var now = this.currentTime;
+    const now = this.currentTime;
     this.__position += (now - this.__time) * this.__speed;
     this.__time = now;
     return now;
@@ -373,8 +373,8 @@ class PlayControl extends TimeEngine {
   }
 
   set(engine = null) {
-    var time = this.__sync();
-    var speed = this.__speed;
+    const time = this.__sync();
+    const speed = this.__speed;
 
     if (this.__playControlled !== null && this.__playControlled.__engine !== engine) {
 
@@ -477,7 +477,7 @@ class PlayControl extends TimeEngine {
 
   // TimeEngine method (speed-controlled interface)
   syncSpeed(time, position, speed, seek = false) {
-    var lastSpeed = this.__speed;
+    const lastSpeed = this.__speed;
 
     if (speed !== lastSpeed || seek) {
       if ((seek || lastSpeed === 0) && this.__loopControl)
@@ -499,7 +499,7 @@ class PlayControl extends TimeEngine {
    * Starts playback
    */
   start() {
-    var time = this.__sync();
+    const time = this.__sync();
     this.syncSpeed(time, this.__position, this.__playingSpeed);
   }
 
@@ -507,7 +507,7 @@ class PlayControl extends TimeEngine {
    * Pauses playback and stays at the same position.
    */
   pause() {
-    var time = this.__sync();
+    const time = this.__sync();
     this.syncSpeed(time, this.__position, 0);
   }
 
@@ -515,7 +515,7 @@ class PlayControl extends TimeEngine {
    * Stops playback and seeks to initial (0) position.
    */
   stop() {
-    var time = this.__sync();
+    const time = this.__sync();
     this.syncSpeed(time, this.__position, 0);
     this.seek(0);
   }
@@ -530,7 +530,7 @@ class PlayControl extends TimeEngine {
    * @instance
    */
   set speed(speed) {
-    var time = this.__sync();
+    const time = this.__sync();
 
     if (speed >= 0) {
       if (speed < 0.01)
@@ -560,11 +560,9 @@ class PlayControl extends TimeEngine {
    * @param {Number} position target position
    */
   seek(position) {
-    if (position !== this.__position) {
-      var time = this.__sync();
-      this.__position = position;
-      this.syncSpeed(time, position, this.__speed, true);
-    }
+    const time = this.__sync();
+    this.__position = position;
+    this.syncSpeed(time, position, this.__speed, true);
   }
 }
 
