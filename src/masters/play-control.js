@@ -3,7 +3,7 @@ import SchedulingQueue from '../core/scheduling-queue';
 import TimeEngine from '../core/time-engine';
 import { getScheduler } from './factories';
 
-const ESPILON = 1e-8;
+const EPSILON = 1e-8;
 
 class LoopControl extends TimeEngine {
   constructor(playControl) {
@@ -23,16 +23,16 @@ class LoopControl extends TimeEngine {
     const upper = this.upper;
 
     if (speed > 0)
-      time += ESPILON;
+      time += EPSILON;
     else
       time -= EPSILON;
 
     if (speed > 0) {
       playControl.syncSpeed(time, lower, speed, true);
-      return playControl.__getTimeAtPosition(upper) - ESPILON;
+      return playControl.__getTimeAtPosition(upper) - EPSILON;
     } else if (speed < 0) {
       playControl.syncSpeed(time, upper, speed, true);
-      return playControl.__getTimeAtPosition(lower) + ESPILON;
+      return playControl.__getTimeAtPosition(lower) + EPSILON;
     }
 
     return Infinity;
@@ -51,9 +51,9 @@ class LoopControl extends TimeEngine {
       speed = 0;
 
     if (speed > 0)
-      this.resetTime(playControl.__getTimeAtPosition(upper) - ESPILON);
+      this.resetTime(playControl.__getTimeAtPosition(upper) - EPSILON);
     else if (speed < 0)
-      this.resetTime(playControl.__getTimeAtPosition(lower) + ESPILON);
+      this.resetTime(playControl.__getTimeAtPosition(lower) + EPSILON);
     else
       this.resetTime(Infinity);
   }
@@ -372,6 +372,19 @@ class PlayControl extends TimeEngine {
     return this.__position + (this.__scheduler.currentTime - this.__time) * this.__speed;
   }
 
+  /**
+   * Returns if the play control is runnin g.
+   *
+   * @name running
+   * @type {Boolean}
+   * @memberof PlayControl
+   * @instance
+   * @readonly
+   */
+  get running() {
+    return !(this.__speed === 0);
+  }
+
   set(engine = null) {
     const time = this.__sync();
     const speed = this.__speed;
@@ -516,8 +529,7 @@ class PlayControl extends TimeEngine {
    */
   stop() {
     const time = this.__sync();
-    this.syncSpeed(time, this.__position, 0);
-    this.seek(0);
+    this.syncSpeed(time, 0, 0, true);
   }
 
   /**
