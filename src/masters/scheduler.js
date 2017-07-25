@@ -104,7 +104,7 @@ class Scheduler extends SchedulingQueue {
 
         this.__timeout = setTimeout(() => {
           this.__tick();
-        }, timeOutDelay * 1000);
+        }, Math.ceil(timeOutDelay * 1000));
       } else if (this.__nextTime !== Infinity) {
         log('Scheduler Stop');
       }

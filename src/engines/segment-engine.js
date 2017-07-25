@@ -104,6 +104,7 @@ function getCurrentOrNextIndex(sortedArray, value, index = -1) {
  * @param {Number} [options.resampling=0] - Segment resampling in cent
  * @param {Number} [options.resamplingVar=0] - Amout of random resampling variation in cent
  * @param {Number} [options.gain=1] - Linear gain factor
+ * @param {Number} [options.abortTime=0.005] - fade-out time when aborted
  * @param {Number} [options.segmentIndex=0] - Index of the segment to synthesize (i.e. of
  *  this.positionArray/durationArray/offsetArray)
  * @param {Bool} [options.cyclic=false] - Whether the audio buffer and segment indices are
@@ -352,6 +353,31 @@ class SegmentEngine extends AudioTimeEngine {
     this.__cyclicOffset = 0;
 
     /**
+     * Whether the last segment is aborted when triggering the next
+     * @name monophonic
+     * @type {Number}
+     * @default false
+     * @memberof SegmentEngine
+     * @instance
+     */
+    this.monophonic = optOrDef(options.monophonic, false);
+    this.__currentSrc = null;
+    this.__currentEnv = null;
+    this.__releaseStartTime = 0;
+    this.__currentGain = 0;
+    this.__currentEndTime = 0;
+
+    /**
+     * Fade-out time (when aborted)
+     * @name abortTime
+     * @type {Number}
+     * @default 0.005
+     * @memberof SegmentEngine
+     * @instance
+     */
+    this.abortTime = optOrDef(options.abortTime, 0.005);
+
+    /**
      * Portion at the end of the audio buffer that has been copied from the beginning to assure cyclic behavior
      * @name wrapAroundExtension
      * @type {Number}
@@ -584,6 +610,9 @@ class SegmentEngine extends AudioTimeEngine {
 
       segmentDuration /= resamplingRate;
 
+      if (this.monophonic)
+        this.abort(segmentTime);
+
       // make segment
       if (this.gain > 0 && segmentDuration > 0) {
         // make segment envelope
@@ -611,6 +640,8 @@ class SegmentEngine extends AudioTimeEngine {
         envelope.gain.linearRampToValueAtTime(0.0, segmentEndTime);
         envelope.connect(this.outputNode);
 
+        this.__currentEnv = envelope;
+
         // make source
         var source = audioContext.createBufferSource();
 
@@ -620,6 +651,11 @@ class SegmentEngine extends AudioTimeEngine {
 
         source.start(segmentTime, segmentPosition);
         source.stop(segmentTime + segmentDuration);
+
+        this.__currentSrc = source;
+        this.__releaseStartTime = releaseStartTime;
+        this.__currentGain = this.gain;
+        this.__currentEndTime = segmentEndTime;
       }
     }
 
@@ -628,6 +664,33 @@ class SegmentEngine extends AudioTimeEngine {
       segmentPeriod += 2.0 * (Math.random() - 0.5) * this.periodVar * grainPeriod;
 
     return Math.max(this.periodMin, segmentPeriod);
+  }
+
+  abort(time) {
+    const audioContext = this.audioContext;
+    const endTime = this.__currentEndTime;
+    const abortTime = time || audioContext.currentTime;
+
+    if (abortTime < endTime) {
+      const segmentEndTime = Math.min(abortTime + this.abortTime, endTime);
+      const envelope = this.__currentEnv;
+      let currentGainValue = this.__currentGain;
+
+      if (abortTime > this.__releaseStartTime) {
+        const releaseStart = this.__releaseStartTime;
+        currentGainValue *= (abortTime - releaseStart) / (endTime - releaseStart);
+      }
+
+      envelope.gain.cancelScheduledValues(abortTime);
+      envelope.gain.setValueAtTime(currentGainValue, abortTime);
+      envelope.gain.linearRampToValueAtTime(0, segmentEndTime);
+
+      this.__currentSrc = null;
+      this.__currentEnv = null;
+      this.__releaseStartTime = 0;
+      this.__currentGain = 0;
+      this.__currentEndTime = 0;
+    }
   }
 }
 
