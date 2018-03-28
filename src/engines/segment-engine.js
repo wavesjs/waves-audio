@@ -666,6 +666,11 @@ class SegmentEngine extends AudioTimeEngine {
     return Math.max(this.periodMin, segmentPeriod);
   }
 
+  /**
+   * Abort the current segment at given time, fade out duration
+   *
+   * @param {Number} time - abort time
+   */
   abort(time) {
     const audioContext = this.audioContext;
     const endTime = this.__currentEndTime;
