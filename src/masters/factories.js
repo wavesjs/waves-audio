@@ -1,10 +1,8 @@
-// schedulers should be singletons
-import defaultAudioContext from '../core/audio-context';
-import Scheduler from './scheduler';
-import SimpleScheduler from './simple-scheduler';
+import defaultAudioContext from '../core/audioContext';
+import { Scheduler, SimpleScheduler } from 'waves-masters';
 
-const schedulerMap = new WeakMap();
-const simpleSchedulerMap = new WeakMap();
+const schedulerMap = new Map();
+const simpleSchedulerMap = new Map();
 
 /**
  * Returns a unique instance of `Scheduler`
@@ -14,11 +12,13 @@ const simpleSchedulerMap = new WeakMap();
  * @returns {Scheduler}
  * @see Scheduler
  */
-export const getScheduler = function(audioContext = defaultAudioContext) {
+export function getScheduler(audioContext = defaultAudioContext) {
   let scheduler = schedulerMap.get(audioContext);
 
   if (!scheduler) {
-    scheduler = new Scheduler({ audioContext: audioContext });
+    const getTimeFunction = () => audioContext.currentTime;
+    scheduler = new Scheduler(getTimeFunction);
+
     schedulerMap.set(audioContext, scheduler);
   }
 
@@ -33,11 +33,13 @@ export const getScheduler = function(audioContext = defaultAudioContext) {
  * @returns {SimpleScheduler}
  * @see SimpleScheduler
  */
-export const getSimpleScheduler = function(audioContext = defaultAudioContext) {
+export function getSimpleScheduler(audioContext = defaultAudioContext) {
   let simpleScheduler = simpleSchedulerMap.get(audioContext);
 
   if (!simpleScheduler) {
-    simpleScheduler = new SimpleScheduler({ audioContext: audioContext });
+    const getTimeFunction = () => audioContext.currentTime;
+    simpleScheduler = new SimpleScheduler(getTimeFunction);
+
     simpleSchedulerMap.set(audioContext, simpleScheduler);
   }
 

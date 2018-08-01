@@ -1,4 +1,4 @@
-import AudioTimeEngine from '../core/audio-time-engine';
+import AudioTimeEngine from '../core/AudioTimeEngine';
 
 function optOrDef(opt, def) {
   if (opt !== undefined)

@@ -1,5 +1,5 @@
-import TimeEngine from './time-engine';
-import defaultAudioContext from './audio-context';
+import { TimeEngine } from 'waves-masters';
+import defaultAudioContext from './audioContext';
 
 /**
  * This is the base class for all audio related time engine components. It is
