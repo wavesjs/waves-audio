@@ -1,7 +1,7 @@
 {
   "name": "waves-audio",
   "version": "0.3.3",
-  "description": "low level web audio components for synthesis and scheduling",
+  "description": "low level WebAudio components for synthesis",
   "authors": [
     "Norbert Schnell",
     "Benjamin Matuszewski",
@@ -40,7 +40,8 @@
   },
   "dependencies": {
     "babel-runtime": "^6.6.1",
-    "debug": "^2.2.0"
+    "debug": "^2.2.0",
+    "waves-masters": "github:wavesjs/waves-masters"
   },
   "devDependencies": {
     "@ircam/jsdoc-template": "^1.0.2",
