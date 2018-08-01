@@ -299,7 +299,7 @@ class TransportSchedulingQueue extends SchedulingQueue {
  *
  * @example
  * import * as audio from 'waves-audio';
- * const transport = audio.Transport();
+ * const transport = new audio.Transport();
  * const playControl = new audio.PlayControl(transport);
  * const myEngine = new MyEngine();
  * const yourEngine = new yourEngine();
@@ -330,7 +330,10 @@ class Transport extends TimeEngine {
   }
 
   __getTimeAtPosition(position) {
-    return this.__time + (position - this.__position) / this.__speed;
+    if (this.__speed === 0)
+      return +Infinity;
+    else
+      return this.__time + (position - this.__position) / this.__speed;
   }
 
   __getPositionAtTime(time) {
