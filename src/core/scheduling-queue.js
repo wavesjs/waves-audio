@@ -48,7 +48,7 @@ class SchedulingQueue extends TimeEngine {
       throw new Error("object cannot be defered by scheduler");
 
     this.add({
-      advanceTime: function(time) { fun(time); }, // make sur that the advanceTime method does not returm anything
+      advanceTime: function(time) { fun(time); }, // make sure that the advanceTime method does not returm anything
     }, time);
   }
 

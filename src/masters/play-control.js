@@ -255,7 +255,6 @@ class PlayControlledSchedulingQueue extends SchedulingQueue {
   }
 }
 
-
 /**
  * Extends Time Engine to provide playback control of a Time Engine instance.
  *
@@ -341,6 +340,7 @@ class PlayControl extends TimeEngine {
     const now = this.currentTime;
     this.__position += (now - this.__time) * this.__speed;
     this.__time = now;
+
     return now;
   }
 
@@ -373,7 +373,7 @@ class PlayControl extends TimeEngine {
   }
 
   /**
-   * Returns if the play control is runnin g.
+   * Returns if the play control is running.
    *
    * @name running
    * @type {Boolean}
