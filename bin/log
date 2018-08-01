@@ -1,67 +1,60 @@
 #!/usr/bin/env node
-var pkg = require('../package.json');
-var colors = require('colors');
-var path = require('path');
+const pkg = require('../package.json');
+const chalk = require('chalk');
+const path = require('path');
 
-'use strict';
+const prefix = '[' + pkg.name + ']\t';
+const getDeltaTime = time => new Date().getTime() - time;
 
-var prefix = '[' + pkg.name + ']\t';
-var cwd = process.cwd();
 
-function toRel(target) {
-  return path.relative(cwd, target);
+module.exports.transpileSuccess = (src, dist, dt) => {
+    const msg = prefix + chalk.green('%s: successfully transpiled to "%s" (%sms)');
+    console.log(msg, src.rel, dist.rel, dt);
+
+    return Promise.resolve([src, dist]);
+  },
+
+module.exports.transpileError = (src, err) => {
+  const msg = prefix + chalk.red('%s');
+  const content = err.message.replace(src.abs, src.rel);
+
+  console.log(msg, content);
+  console.log(err.codeFrame);
+
+  return Promise.resolve(src);
 }
 
-function getDeltaTime(time) {
-  return new Date().getTime() - time;
+module.exports.deleteFileSuccess = (file) => {
+  const msg = prefix + chalk.yellow('%s: successfully removed');
+  console.log(msg, file.rel);
+
+  return Promise.resolve(file);
 }
 
-var log = {
-  bundleStart: function(dest) {
-    var msg = prefix + (toRel(dest) + ': bundle start').yellow;
+module.exports.deleteFileError = (file, err) => {
+  const msg = prefix + chalk.red('error deleting %s');
 
-    console.log(msg);
+  console.log(msg, file.rel);
+  console.error(err.stack);
+
+  return Promise.resolve(file);
+}
+
+module.exports.bundleSuccess = (src, dist, min, dt) => {
+    const msg1 = prefix + chalk.green('%s: successfully bundled to "%s" (%sms)');
+    console.log(msg1, src.rel, dist.rel, dt);
+
+    const msg2 = prefix + chalk.green('%s: successfully minified to "%s" (%sms)');
+    console.log(msg2, src.rel, min.rel, dt);
+
+    return Promise.resolve([src, dist]);
   },
 
-  bundleSuccess: function(dest, startTime) {
-    var time = getDeltaTime(startTime);
-    var msg = prefix + '%s: successfully created (%sms)'.green;
+module.exports.bundleError = (src, err) => {
+  const msg = prefix + chalk.red(`${err.message}`);
 
-    console.log(msg, toRel(dest), time);
-  },
+  console.log(msg);
+  console.error(err.stack);
 
-  bundleError: function(dest, err) {
-    var msg = prefix + '%s: bundle error'.red;
-
-    console.log(msg, toRel(dest));
-    console.log('> ' + err.message);
-  },
-
-  transpileSuccess: function(src, dest, startTime) {
-    var time = getDeltaTime(startTime);
-    var msg = prefix + '%s: successfully transpiled to "%s" (%sms)'.green;
-
-    console.log(msg, toRel(src), toRel(dest), time);
-  },
-
-  transpileError: function(err) {
-    var parts = err.message.split(':');
-    var msg = prefix + '%s'.red;
-
-    console.log(msg, toRel(err.message));
-    console.log(err.codeFrame);
-  },
-
-  uglifySuccess: function(src, dest, startTime) {
-    var time = getDeltaTime(startTime);
-    var msg = prefix + '%s: successfully uglified to "%s" (%sms)'.green;
-    console.log(msg, toRel(src), toRel(dest), time);
-  },
-
-  deleteFile: function(filename) {
-    var msg = prefix + '%s: successfully removed'.yellow;
-    console.log(msg, toRel(filename));
-  }
-};
-
-module.exports = log;
+  return Promise.reject(src);
+}

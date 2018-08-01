@@ -1,10 +1,10 @@
-coverage
-coverage1.json
+# junk files
+.DS_Store
+Thumbs.db
 
 node_modules
 dist
 
-npm-debug.log
-.DS_Store
-
-docs
+# bundled files
+*.umd.js
+*.min.js

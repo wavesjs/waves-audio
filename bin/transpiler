@@ -1,0 +1,86 @@
+#!/usr/bin/env node
+const babel = require('babel-core');
+const browserify = require('browserify');
+const uglify = require('uglify-js');
+const fse = require('fs-extra');
+
+// transpile `src` into `dist`
+module.exports.transpile = (src, dist, babelOptions) => {
+  return new Promise((resolve, reject) => {
+    babel.transformFile(src.abs, babelOptions, (err, result) => {
+      if (err)
+        return reject(err);
+
+      fse.outputFile(dist.abs, result.code, err => {
+        if (err)
+          reject(err);
+        else
+          resolve([src, dist]);
+      });
+    });
+  });
+};
+
+// delete a transpiled file
+module.exports.delete = function(file) {
+  return new Promise((resolve, reject) => {
+    fse.stat(file.abs, (err, stats) => {
+      if (err)
+        return reject(err);
+
+      if (stats.isFile()) {
+        fse.remove(file.abs, err => {
+          if (err)
+            reject(err);
+          else
+            resolve(file);
+        });
+      }
+    });
+  });
+};
+
+/**
+ * Transform a given file to it's browserified version, client only.
+ */
+module.exports.bundle = function(src, dist, min, browserifyOptions) {
+  if (!browserifyOptions.standalone)
+    throw new Error('Undefined "standalone" entry in package.json');
+
+  return new Promise((resolve, reject) => {
+    const bundler = browserify(src.abs, browserifyOptions);
+    fse.ensureFileSync(dist.abs); // ensure file exists
+
+    const writeStream = fse.createWriteStream(dist.abs);
+
+    bundler
+      .bundle()
+      .on('error', err => {
+        return reject(err);
+      })
+      .on('end', () => { /*do nothing*/ })
+      .pipe(writeStream);
+
+    writeStream.on('finish', () => {
+      // uglify
+      const code = fse.readFileSync(dist.abs, 'utf8');
+      const result = uglify.minify(code);
+
+      fse.outputFile(min.abs, result.code, err => {
+        if (err)
+          return reject(err.message);
+        else
+          resolve([src, dist, min]);
+      });
+    });
+  });
+}
+
+/**
+ * Uglify `scr` into `dist`.
+ */
+module.exports.uglify = function(src, dist) {
+  return new Promise((resolve, reject) => {
+
+  });
+}

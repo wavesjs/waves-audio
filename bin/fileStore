@@ -1,0 +1,60 @@
+#!/usr/bin/env node
+const klaw = require('klaw')
+const path = require('path');
+
+const cwd = process.cwd();
+
+/**
+ * return a file entity { abs, rel } from an absolute filename
+ */
+const get = module.exports.get = abs => {
+  const rel = path.relative(cwd, abs);
+  const file = { abs, rel };
+
+  return Promise.resolve(file);
+}
+
+/**
+ * return a collection of file entities { abs, rel } from absolute dirname
+ */
+const getAll = module.exports.getAll = dirname => {
+  const files = [];
+
+  // @todo - clean that
+  // filter function for klaw (__transpile)
+  const klawFilter = (item) => {
+    const basename = path.basename(item)
+    return basename === '.' || basename[0] !== '.'
+  }
+
+  return new Promise((resolve, reject) => {
+    klaw(dirname, { filter: klawFilter })
+      .on('data', item => {
+        if (item.stats.isFile())
+          files.push(item.path);
+      })
+      .on('end', () => {
+        const promises = files.map(file => get(file));
+        const promiseAll = Promise.all(promises);
+        resolve(promiseAll);
+      });
+  });
+}
+
+/**
+ *
+ */
+module.exports.delete = (file) => {
+  dictionnary.delete(file.abs);
+  return Promise.resolve(file);
+}
+
+/**
+ *
+ */
+const filter = module.exports.filter = (file, regexp) => {
+  if (regexp.test(file.rel))
+    return Promise.reject(file);
+
+  return Promise.resolve(file);
+}
