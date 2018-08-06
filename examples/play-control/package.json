@@ -16,7 +16,7 @@
   "dependencies": {
     "@ircam/basic-controllers": "^1.0.4",
     "babel-runtime": "^6.9.2",
-    "waves-audio": "^0.4.0",
+    "waves-audio": "^0.5.0",
     "waves-loaders": "^0.1.5"
   },
   "devDependencies": {
