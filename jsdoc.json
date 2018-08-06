@@ -2,36 +2,24 @@
   "source": {
     "include": [
       "README.md",
-      "src/core/audio-context.js",
-      "src/core/audio-time-engine.js",
-      "src/core/priority-queue.js",
-      "src/core/time-engine.js",
-
-      "src/engines/granular-engine.js",
-      "src/engines/metronome.js",
-      "src/engines/player-engine.js",
-      "src/engines/segment-engine.js",
-
-      "src/masters/factories.js",
-      "src/masters/play-control.js",
-      "src/masters/scheduler.js",
-      "src/masters/simple-scheduler.js",
-      "src/masters/transport.js"
-    ]
+      "src",
+      "src/core",
+      "src/masters"
+    ],
+    "includePattern": ".+\\.js(doc)?$",
+    "excludePattern": "(^|\\/|\\\\)_"
   },
   "plugins": [
     "plugins/markdown"
   ],
   "opts": {
-    "projectTitle": "waves-audio",
-    "template": "node_modules/jsdoc-template",
     "destination": "./docs",
-    "encoding": "utf8"
+    "encoding": "utf8",
+    "template": "node_modules/@ircam/jsdoc-template"
   },
   "templates": {
     "default": {
       "useLongnameInNav": true
-    },
-    "footer": ""
+    }
   }
 }

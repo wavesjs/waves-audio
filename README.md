@@ -1,6 +1,6 @@
 # waves-audio
 
-_Low level web audio components for synthesis and scheduling_
+> Low level WebAudio components for audio synthesis
 
 ## Documentation
 
@@ -11,13 +11,13 @@ _Low level web audio components for synthesis and scheduling_
 #### Install
 
 ```sh
-npm install [--save] audio
+npm install [--save] waves-audio
 ```
 
 #### import
 
 ```js
-import audio from 'waves-audio';
+import * as audio from 'waves-audio';
 ```
 
 ## List of components

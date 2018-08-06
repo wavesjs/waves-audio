@@ -1,7 +1,8 @@
+.babelrc
+jsdoc.conf
+
 bin
 docs
-examples
 src
 tests
-
-jsdoc.json
+examples

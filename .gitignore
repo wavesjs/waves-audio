@@ -1,12 +1,10 @@
-coverage
-coverage1.json
-
-npm-debug.log
+# junk files
 .DS_Store
+Thumbs.db
 
 node_modules
-
-# this must stay ignored as the library is on npm now
 dist
 
-# docs
+# bundled files
+*.umd.js
+*.min.js

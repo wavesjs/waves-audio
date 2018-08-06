@@ -1,178 +1,152 @@
 #!/usr/bin/env node
-var fse = require('fs-extra');
-var watch = require('watch');
-var path = require('path');
-var pkg = require('../package.json');
-var util = require('util');
+const pkg = require('../package.json');
+const fileStore = require('./fileStore');
+const fs = require('fs');
+const log = require('./log');
+const path = require('path');
+const transpiler = require('./transpiler');
+const watch = require('watch');
 
-var javascripts = require('./javascripts');
-var cwd = process.cwd();
+const cwd = process.cwd();
 
-'use strict';
+/* --------------------------------------------------------------------------
+ * Configuration
+ * -------------------------------------------------------------------------- */
 
-/**
- * Options for babel transpiling.
- */
-var babelOptions = {
-  sourceMap: 'inline',
-  presets: ['es2015'],
-  plugins: ['transform-runtime', 'transform-es2015-modules-commonjs'],
-};
+const srcDir = path.join(cwd, 'src');
+const srcRegExp = new RegExp('^' + srcDir);
 
-/**
- * Options for watch.
- */
-var watchOptions = {
+const distDir = path.join(cwd, 'dist');
+const distRegExp = new RegExp('^' + distDir);
+
+const watchOptions = {
   ignoreDotFiles: true,
   ignoreUnreadableDir: true,
   ignoreNotPermitted: true,
-  interval: 2000, // watch internally use `fs.watchFile`
+  interval: 2,
 };
 
-/**
- * Options for browserify.
- */
-var browserifyOptions = {
+const babelOptions = JSON.parse(fs.readFileSync(path.join(cwd, '.babelrc')));
+
+// bundle configuration
+const umdTarget = pkg.name + '.umd.js';
+const minTarget = pkg.name + '.min.js';
+
+const browserifyOptions = {
   debug: true,
   fullPaths: false,
   standalone: pkg.standalone,
 };
 
-/**
- * Watched directories
- */
-var srcDirectory = path.join(cwd, 'src');
-var distDirectory = path.join(cwd, 'dist');
+const transpileFile = (file, distDirectory, babelOptions) => {
+  return fileStore.get(file.abs.replace(srcRegExp, distDirectory))
+    .then(dist => {
+      const startTime = new Date().getTime();
 
-var umdTarget = path.join(cwd, 'examples', 'assets', pkg.name + '.umd.js');
-var minTarget = path.join(cwd, 'examples', 'assets', pkg.name + '.min.js');
-
-/**
- * Define which file should be ignored by every command.
- */
-var allowedExtentions = /\.ejs$|\.scss$|\.js$/;
-var excludeFiles = /^\./; // exclude hidden files
-
-/**
- * Test the given filename, to ensure it can be processed by any command / tranpsiler
- * @param {String} filename - The filename to be checked.
- * @param {Boolean} [ensureFile=true] - If set to false, don't test if the file exists.
- */
-function isAllowed(filename, ensureFile) {
-  ensureFile = ensureFile === undefined ? true : ensureFile;
-
-  var basename = path.basename(filename);
-  var isFile = true;
-
-  if (ensureFile) {
-    try {
-      isFile = fse.lstatSync(filename).isFile() && !fse.lstatSync(filename).isSymbolicLink();
-    } catch(e) {
-      console.log(e.message);
-      isFile = false;
-    }
-  }
-
-  var hasAllowedExt = allowedExtentions.test(basename);
-  var notExcludeFile = !excludeFiles.test(basename);
-
-  return isFile && hasAllowedExt && notExcludeFile;
-}
-
-/**
- * Returns a list of the file in a given folder recursively.
- */
-function _getFileList(folder, callback) {
-  var files = [];
-
-  fse.walk(folder)
-    .on('data', function(item) {
-      if (item.stats.isFile() && isAllowed(item.path))
-        files.push(item.path);
-    })
-    .on('end', function() {
-      callback(files);
+      return transpiler.transpile(file, dist, babelOptions)
+        .then(([file, dist]) => {
+          const dt = new Date().getTime() - startTime;
+          return log.transpileSuccess(file, dist, dt);
+        })
+        .catch(err => log.transpileError(file, err));
     });
-}
-
-/**
- * Watch javascript source files.
- */
-function watchFiles(srcDirectory, distDirectory) {
-  watch.createMonitor(srcDirectory, watchOptions, function(monitor) {
-    var transpiler = javascripts.getTranspiler(srcDirectory, distDirectory, isAllowed, babelOptions);
-
-    monitor.on('created', function(filename, stats) {
-      if (isAllowed(filename))
-        transpiler.transpile(filename, []);
-    });
-
-    monitor.on('changed', function(filename, stats) {
-      if (isAllowed(filename))
-        transpiler.transpile(filename, []);
-    });
-
-    monitor.on('removed', function(filename, stats) {
-      if (isAllowed(filename, false))
-        transpiler.delete(filename);
-    });
-  });
-}
-
-
-function transpileFiles(srcDirectory, distDirectory, callback) {
-  _getFileList(srcDirectory, function(files) {
-    var transpiler = javascripts.getTranspiler(srcDirectory, distDirectory, isAllowed, babelOptions);
-    transpiler.transpile(undefined, files, callback);
-  });
-}
-
-function bundle(distDirectory) {
-  var entryPoint = path.join(distDirectory, 'index.js');
-  var transpiler = javascripts.getTranspiler(srcDirectory, distDirectory, isAllowed, babelOptions, browserifyOptions);
-
-  transpileFiles(srcDirectory, distDirectory, function() {
-    transpiler.bundle(entryPoint, umdTarget, function() {
-      transpiler.uglify(umdTarget, minTarget);
-    });
-  });
-}
-
+};
 
 /* --------------------------------------------------------------------------
- * Process and execute the given command.
+ * High-Level logic
  * -------------------------------------------------------------------------- */
 
-var command = process.argv[2];
-var args = process.argv.slice(3);
-var argv = {};
-for (var i = 0; i < args.length; i += 2) {
-  argv[args[i]] = args[i + 1];
+function __transpile(srcDirectory, distDirectory, babelOptions) {
+  return fileStore.getAll(srcDirectory)
+    .then(sources => { // 1. transpile all js files (if json, just copy)
+      return sources.reduce((promise, src) => {
+        return promise.then(all => {
+          return transpileFile(src, distDirectory, babelOptions).then(pair => {
+            all.push(pair);
+            return all;
+          });
+        }).catch(err => {});
+      }, Promise.resolve([]));
+    })
+    .catch(err => {});
 }
+
+// watch
+function __watch(srcDirectory, distDirectory, watchOptions, babelOptions) {
+
+  const processFile = (filename, stats) => {
+    const startTime = new Date().getTime();
+    const distFilename = filename.replace(srcRegExp, distDirectory);
+
+    fileStore.get(filename)
+      .then(src => transpileFile(src, distDirectory, babelOptions))
+      .catch(err => console.error(err.stack))
+  };
+
+  const deleteFile = (filename, stats) => {
+    const distFilename = filename.replace(srcRegExp, distDir);
+
+    fileStore.get(distFilename)
+      .then(transpiler.delete)
+      .then(log.deleteFileSuccess)
+      .catch(err => log.deleteFileError(dist, err));
+  };
+
+  // watch file system
+  watch.createMonitor(srcDirectory, watchOptions, function(monitor) {
+    monitor.on('created', processFile);
+    monitor.on('changed', processFile);
+    monitor.on('removed', deleteFile);
+  });
+}
+
+function __bundle(entryPoint, umdTarget, minTarget, browserifyOptions) {
+  const startTime = new Date().getTime();
+  const promises = [
+    fileStore.get(entryPoint),
+    fileStore.get(umdTarget),
+    fileStore.get(minTarget),
+  ];
+
+  return Promise.all(promises)
+    .then(([src, umd, min]) => {
+      return transpiler.bundle(src, umd, min, browserifyOptions);
+    })
+    .then(([src, dist, min]) => {
+      const dt = new Date().getTime() - startTime;
+      return log.bundleSuccess(src, dist, min, dt);
+    })
+    .catch(err => log.bundleError(entryPoint, err));
+}
+
+/* --------------------------------------------------------------------------
+ * Parse commands
+ * -------------------------------------------------------------------------- */
+
+const command = process.argv[2];
+// servers.configure(config.devices);
 
 switch (command) {
-  /**
-   * Watch the file system and transpile from es6 to es5.
-   */
+  // keep file system in sync with remote servers
   case '--watch':
-    watchFiles(srcDirectory, distDirectory);
+    __watch(srcDir, distDir, watchOptions, babelOptions);
     break;
 
-  /**
-   * Transpile all files in `src` from es6 to es5.
-   */
   case '--transpile':
-    transpileFiles(srcDirectory, distDirectory);
+    __transpile(srcDir, distDir, babelOptions);
     break;
 
-  /**
-   * Transpile all files in `src` from es6 to es5.
-   */
   case '--bundle':
-    bundle(distDirectory);
+    __transpile(srcDir, distDir, babelOptions)
+      .then(() => {
+        return __bundle(pkg.main, umdTarget, minTarget, browserifyOptions);
+      })
+      .catch(err => {
+        if (err && err.stack)
+          console.error(err.stack);
+      });
     break;
 }
 
-/* --------------------------------------------------------------------------
- * -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 
