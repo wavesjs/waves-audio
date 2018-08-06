@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Documentation - Source: masters/factories.js</title>
+    <title>Documentation - Source: masters/Transport.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -20,7 +20,7 @@
 
     <!-- if home page assume a title is already present in README -->
     
-    <h1 class="page-title">Source: masters/factories.js</h1>
+    <h1 class="page-title">Source: masters/Transport.js</h1>
     
 
     
@@ -31,52 +31,37 @@
     <section>
         <article>
             <pre class="prettyprint source linenums"><code>import defaultAudioContext from '../core/audioContext';
-import { Scheduler, SimpleScheduler } from 'waves-masters';
-
-const schedulerMap = new Map();
-const simpleSchedulerMap = new Map();
+import { getScheduler } from './factories';
+import * as masters from 'waves-masters';
 
 /**
- * Returns a unique instance of `Scheduler`
+ * Provides synchronized scheduling of Time Engine instances.
  *
- * @global
- * @function
- * @returns {Scheduler}
- * @see Scheduler
- */
-export function getScheduler(audioContext = defaultAudioContext) {
-  let scheduler = schedulerMap.get(audioContext);
-
-  if (!scheduler) {
-    const getTimeFunction = () => audioContext.currentTime;
-    scheduler = new Scheduler(getTimeFunction);
-
-    schedulerMap.set(audioContext, scheduler);
-  }
-
-  return scheduler;
-};
-
-/**
- * Returns a unique instance of `SimpleScheduler`
+ * [example]{@link https://rawgit.com/wavesjs/waves-audio/master/examples/transport.html}
  *
- * @global
- * @function
- * @returns {SimpleScheduler}
- * @see SimpleScheduler
+ * @example
+ * import * as audio from 'waves-audio';
+ * const transport = new audio.Transport();
+ * const playControl = new audio.PlayControl(transport);
+ * const myEngine = new MyEngine();
+ * const yourEngine = new yourEngine();
+ *
+ * transport.add(myEngine);
+ * transport.add(yourEngine);
+ *
+ * playControl.start();
  */
-export function getSimpleScheduler(audioContext = defaultAudioContext) {
-  let simpleScheduler = simpleSchedulerMap.get(audioContext);
+class Transport extends masters.Transport {
+  constructor(options = {}) {
+    const audioContext = options.audioContext || defaultAudioContext;
+    const scheduler = getScheduler(audioContext);
+    super(scheduler, options);
 
-  if (!simpleScheduler) {
-    const getTimeFunction = () => audioContext.currentTime;
-    simpleScheduler = new SimpleScheduler(getTimeFunction);
-
-    simpleSchedulerMap.set(audioContext, simpleScheduler);
+    this.audioContext = audioContext;
   }
+}
 
-  return simpleScheduler;
-};
+export default Transport;
 </code></pre>
         </article>
     </section>
