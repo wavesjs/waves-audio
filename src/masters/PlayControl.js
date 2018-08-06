@@ -5,7 +5,7 @@ import * as masters from 'waves-masters';
 /**
  * Extends Time Engine to provide playback control of a Time Engine instance.
  *
- * [example]{@link https://rawgit.com/wavesjs/waves-audio/master/examples/play-control.html}
+ * [example]{@link https://rawgit.com/wavesjs/waves-audio/master/examples/play-control/index.html}
  *
  * @extends TimeEngine
  * @param {TimeEngine} engine - engine to control

@@ -7,6 +7,8 @@ const simpleSchedulerMap = new Map();
 /**
  * Returns a unique instance of `Scheduler`
  *
+ * [example]{@link https://rawgit.com/wavesjs/waves-audio/master/examples/scheduler/index.html}}
+ *
  * @global
  * @function
  * @returns {Scheduler}
@@ -27,6 +29,8 @@ export function getScheduler(audioContext = defaultAudioContext) {
 
 /**
  * Returns a unique instance of `SimpleScheduler`
+ *
+ * [example]{@link https://rawgit.com/wavesjs/waves-audio/master/examples/simple-scheduler/index.html}}
  *
  * @global
  * @function

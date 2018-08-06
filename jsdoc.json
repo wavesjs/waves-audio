@@ -4,6 +4,7 @@
       "README.md",
       "src",
       "src/core",
+      "src/engines",
       "src/masters"
     ],
     "includePattern": ".+\\.js(doc)?$",
