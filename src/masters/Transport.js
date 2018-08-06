@@ -5,7 +5,7 @@ import * as masters from 'waves-masters';
 /**
  * Provides synchronized scheduling of Time Engine instances.
  *
- * [example]{@link https://rawgit.com/wavesjs/waves-audio/master/examples/transport.html}
+ * [example]{@link https://rawgit.com/wavesjs/waves-audio/master/examples/transport/index.html}
  *
  * @example
  * import * as audio from 'waves-audio';

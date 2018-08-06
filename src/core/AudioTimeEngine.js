@@ -7,7 +7,7 @@ import defaultAudioContext from './audioContext';
  * It extends the TimeEngine class by the standard web audio node methods
  * connect and disconnect.
  *
- * [example]{@link https://rawgit.com/wavesjs/waves-audio/master/examples/audio-time-engine.html}
+ * [example]{@link https://rawgit.com/wavesjs/waves-audio/master/examples/audio-time-engine/index.html}
  *
  * @extends TimeEngine
  * @example

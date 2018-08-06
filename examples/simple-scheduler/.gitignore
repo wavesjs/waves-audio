@@ -1,7 +1,5 @@
 node_modules/
 dist/
 
-bundle.js
-
 .DS_Store
 npm-debug.log
