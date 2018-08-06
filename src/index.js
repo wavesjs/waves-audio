@@ -3,8 +3,6 @@
 export { default as audioContext } from './core/audioContext';
 export { default as AudioTimeEngine } from './core/AudioTimeEngine';
 export { TimeEngine, PriorityQueue, SchedulingQueue } from 'waves-masters';
-// export PriorityQueue;
-// export SchedulingQueue;
 
 // engines
 export { default as GranularEngine } from './engines/GranularEngine';

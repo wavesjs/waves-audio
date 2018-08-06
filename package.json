@@ -41,7 +41,7 @@
   "dependencies": {
     "babel-runtime": "^6.6.1",
     "debug": "^2.2.0",
-    "waves-masters": "github:wavesjs/waves-masters"
+    "waves-masters": "^1.0.0"
   },
   "devDependencies": {
     "@ircam/jsdoc-template": "^1.0.2",
