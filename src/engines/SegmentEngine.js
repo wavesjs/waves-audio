@@ -659,7 +659,7 @@ class SegmentEngine extends AudioTimeEngine {
       }
     }
 
-    // grain period randon variation
+    // segment period randon variation
     if (this.periodVar > 0.0)
       segmentPeriod += 2.0 * (Math.random() - 0.5) * this.periodVar * segmentPeriod;
 
