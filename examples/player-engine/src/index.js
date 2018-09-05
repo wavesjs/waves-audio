@@ -29,9 +29,7 @@ async function init() {
 
   class PositionDisplay extends audio.TimeEngine {
     constructor() {
-      console.log('here');
       super();
-
       this.period = 0.05;
     }
 
