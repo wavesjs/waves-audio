@@ -163,9 +163,9 @@ class PlayerEngine extends AudioTimeEngine {
    */
   set gain(value) {
     var time = this.currentTime;
-    this.__gainNode.cancelScheduledValues(time);
-    this.__gainNode.setValueAtTime(this.__gainNode.gain.value, time);
-    this.__gainNode.linearRampToValueAtTime(0, time + this.fadeTime);
+    this.__gainNode.gain.cancelScheduledValues(time);
+    this.__gainNode.gain.setValueAtTime(this.__gainNode.gain.value, time);
+    this.__gainNode.gain.linearRampToValueAtTime(0, time + this.fadeTime);
   }
 
   get gain() {
