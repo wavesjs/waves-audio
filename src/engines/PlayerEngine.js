@@ -22,7 +22,7 @@ function optOrDef(opt, def) {
  *
  * @param {Object} [options={}] - Default options
  * @param {Number} [options.buffer=1] - Audio buffer
- * @param {Number} [options.fadeTime=600] - Fade time for chaining segments
+ * @param {Number} [options.fadeTime=0.005] - Fade time for chaining segments
  * @param {Number} [options.cyclic=false] - Loop mode
  * @param {Number} [options.gain=1] - Gain
  */
